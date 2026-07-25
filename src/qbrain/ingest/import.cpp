@@ -27,6 +27,7 @@ static void index_page(Brain& brain, Page& page) {
   brain.replace_chunks(page.id, chunks);
   auto links = graph::extract_links(page.source_id, page.slug, page.body);
   brain.replace_extracted_links(page.source_id, page.slug, links);
+  brain.enqueue_embed_page(page.id);
 }
 
 static Page put_file(Brain& brain, const fs::path& file, const fs::path& root) {
@@ -40,6 +41,8 @@ static Page put_file(Brain& brain, const fs::path& file, const fs::path& root) {
   in.body = body;
   in.frontmatter_json = fm;
   in.type = "note";
+  in.source_kind = "import";
+  in.ingested_via = "fs";
   try {
     auto j = nlohmann::json::parse(fm);
     if (j.contains("type")) in.type = j["type"].get<std::string>();
@@ -94,6 +97,8 @@ Page capture_text(Brain& brain, const std::string& text, const std::string& type
   in.title = title_from_body(text, "capture");
   in.body = text;
   in.type = type;
+  in.source_kind = "capture";
+  in.ingested_via = "cli";
   auto page = brain.put_page(in);
   index_page(brain, page);
   return page;

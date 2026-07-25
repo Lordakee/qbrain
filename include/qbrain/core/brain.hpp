@@ -38,6 +38,11 @@ class Brain {
   void update_chunk_embedding(int64_t chunk_id, const std::vector<float>& emb,
                               const std::string& model);
 
+  // N1: enqueue embed job (non-blocking). No-op if embed.auto=0.
+  void enqueue_embed_page(int64_t page_id);
+  // Process waiting embed jobs; returns number of chunks embedded.
+  int drain_embed_jobs(int max_jobs = 100);
+
   void add_link(const Link& link);
   void replace_extracted_links(const std::string& source_id,
                                const std::string& from_slug,

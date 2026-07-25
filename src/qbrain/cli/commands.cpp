@@ -85,7 +85,7 @@ void print_help() {
       "  think \"question\" [--json] [--save]\n"
       "  graph <slug> [--depth N]\n"
       "  delete <slug> [--source default]\n"
-      "  embed --all | --slug s\n"
+      "  embed --all | --slug s | --drain   (drain: process embed jobs queue)\n"
       "  serve [--brain id] [--allow-write]   MCP stdio (for Claude Code / Cursor)\n"
       "  version\n"
       "  help\n\n"
@@ -339,6 +339,11 @@ int cmd_delete(const std::vector<std::string>& args) {
 
 int cmd_embed(const std::vector<std::string>& args) {
   return with_brain(args, [&](Brain& b) {
+    if (flag(args, "--drain")) {
+      int n = b.drain_embed_jobs(1000);
+      std::cout << "drained embed jobs; chunks_updated=" << n << "\n";
+      return 0;
+    }
     std::vector<Chunk> targets;
     if (flag(args, "--all")) {
       targets = b.list_chunks_missing_embedding(100000);

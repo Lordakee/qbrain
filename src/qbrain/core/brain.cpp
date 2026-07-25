@@ -1,4 +1,5 @@
 #include "qbrain/core/brain.hpp"
+#include "qbrain/ai/embed.hpp"
 #include "qbrain/util/hash.hpp"
 #include "qbrain/util/paths.hpp"
 #include "qbrain/util/time_util.hpp"
@@ -21,43 +22,14 @@ void Brain::open() {
 
 void Brain::open_at(const std::string& db_path) {
   db_.open(db_path);
-  // locate schema relative to cwd or executable-adjacent
-  std::vector<std::string> candidates;
-  if (const char* env = std::getenv("QBRAIN_SCHEMA")) candidates.emplace_back(env);
-  candidates.push_back("schema/001_init.sql");
-  candidates.push_back("../schema/001_init.sql");
-  candidates.push_back("../../schema/001_init.sql");
-  // next to executable (best-effort via current path variants)
-  candidates.push_back("./schema/001_init.sql");
-  std::string schema_path;
-  for (const auto& c : candidates) {
-    std::ifstream t(c);
-    if (t.good()) {
-      schema_path = c;
-      break;
-    }
+  // Always migrate from embedded canonical schema (no CWD-dependent fallback DDL).
+  // Optional QBRAIN_SCHEMA path overrides only the v1 SQL text if the file exists.
+  std::string override_path;
+  if (const char* env = std::getenv("QBRAIN_SCHEMA")) {
+    std::ifstream t(env);
+    if (t.good()) override_path = env;
   }
-  if (schema_path.empty()) {
-    // embed minimal schema fallback
-    db_.exec(R"SQL(
-CREATE TABLE IF NOT EXISTS schema_version (version INTEGER PRIMARY KEY, applied_at TEXT DEFAULT (datetime('now')));
-CREATE TABLE IF NOT EXISTS sources (id TEXT PRIMARY KEY, name TEXT, local_path TEXT, config_json TEXT DEFAULT '{}', created_at TEXT DEFAULT (datetime('now')), last_sync_at TEXT);
-CREATE TABLE IF NOT EXISTS pages (id INTEGER PRIMARY KEY AUTOINCREMENT, source_id TEXT NOT NULL DEFAULT 'default', slug TEXT NOT NULL, type TEXT NOT NULL DEFAULT 'note', title TEXT NOT NULL DEFAULT '', body TEXT NOT NULL DEFAULT '', frontmatter_json TEXT NOT NULL DEFAULT '{}', content_hash TEXT, created_at TEXT DEFAULT (datetime('now')), updated_at TEXT DEFAULT (datetime('now')), deleted_at TEXT, UNIQUE(source_id, slug));
-CREATE TABLE IF NOT EXISTS content_chunks (id INTEGER PRIMARY KEY AUTOINCREMENT, page_id INTEGER NOT NULL, chunk_index INTEGER NOT NULL, text TEXT NOT NULL, embedding BLOB, dim INTEGER, model TEXT, UNIQUE(page_id, chunk_index));
-CREATE TABLE IF NOT EXISTS links (id INTEGER PRIMARY KEY AUTOINCREMENT, source_id TEXT NOT NULL DEFAULT 'default', from_slug TEXT NOT NULL, to_slug TEXT NOT NULL, link_type TEXT NOT NULL DEFAULT 'related', context TEXT NOT NULL DEFAULT '', link_source TEXT NOT NULL DEFAULT 'markdown', created_at TEXT DEFAULT (datetime('now')), UNIQUE(source_id, from_slug, to_slug, link_type, link_source));
-CREATE TABLE IF NOT EXISTS tags (page_id INTEGER NOT NULL, tag TEXT NOT NULL, PRIMARY KEY(page_id, tag));
-CREATE TABLE IF NOT EXISTS config (key TEXT PRIMARY KEY, value TEXT NOT NULL);
-CREATE TABLE IF NOT EXISTS jobs (id INTEGER PRIMARY KEY AUTOINCREMENT, queue TEXT NOT NULL DEFAULT 'default', type TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'waiting', payload_json TEXT NOT NULL DEFAULT '{}', result_json TEXT, priority INTEGER NOT NULL DEFAULT 100, attempts INTEGER NOT NULL DEFAULT 0, created_at TEXT DEFAULT (datetime('now')), updated_at TEXT DEFAULT (datetime('now')), lock_until TEXT);
-CREATE VIRTUAL TABLE IF NOT EXISTS pages_fts USING fts5(slug, title, body, content='pages', content_rowid='id', tokenize='unicode61');
-CREATE TRIGGER IF NOT EXISTS pages_ai AFTER INSERT ON pages BEGIN INSERT INTO pages_fts(rowid, slug, title, body) VALUES (new.id, new.slug, new.title, new.body); END;
-CREATE TRIGGER IF NOT EXISTS pages_ad AFTER DELETE ON pages BEGIN INSERT INTO pages_fts(pages_fts, rowid, slug, title, body) VALUES ('delete', old.id, old.slug, old.title, old.body); END;
-CREATE TRIGGER IF NOT EXISTS pages_au AFTER UPDATE ON pages BEGIN INSERT INTO pages_fts(pages_fts, rowid, slug, title, body) VALUES ('delete', old.id, old.slug, old.title, old.body); INSERT INTO pages_fts(rowid, slug, title, body) VALUES (new.id, new.slug, new.title, new.body); END;
-INSERT OR IGNORE INTO sources(id, name) VALUES ('default', 'Default Source');
-INSERT OR IGNORE INTO schema_version(version) VALUES (1);
-)SQL");
-  } else {
-    storage::apply_migrations(db_, schema_path);
-  }
+  storage::apply_migrations(db_, override_path);
   load_config();
 }
 
@@ -186,9 +158,12 @@ Page Brain::row_to_page(storage::Database::Statement& st) {
 Page Brain::put_page(const PageInput& in) {
   auto hash = util::content_hash(in.title, in.body);
   auto now = util::utc_now();
+  auto sk = in.source_kind.empty() ? "put_page" : in.source_kind;
+  auto via = in.ingested_via.empty() ? "cli" : in.ingested_via;
   auto st = db_.prepare(R"SQL(
-INSERT INTO pages(source_id, slug, type, title, body, frontmatter_json, content_hash, updated_at, deleted_at)
-VALUES(?,?,?,?,?,?,?,?,NULL)
+INSERT INTO pages(source_id, slug, type, title, body, frontmatter_json, content_hash, updated_at, deleted_at,
+  source_kind, ingested_via, ingested_at)
+VALUES(?,?,?,?,?,?,?,?,NULL,?,?,?)
 ON CONFLICT(source_id, slug) DO UPDATE SET
   type=excluded.type,
   title=excluded.title,
@@ -196,7 +171,9 @@ ON CONFLICT(source_id, slug) DO UPDATE SET
   frontmatter_json=excluded.frontmatter_json,
   content_hash=excluded.content_hash,
   updated_at=excluded.updated_at,
-  deleted_at=NULL
+  deleted_at=NULL,
+  source_kind=COALESCE(excluded.source_kind, pages.source_kind),
+  ingested_via=COALESCE(excluded.ingested_via, pages.ingested_via)
 )SQL");
   st.bind_text(1, in.source_id);
   st.bind_text(2, in.slug);
@@ -206,6 +183,9 @@ ON CONFLICT(source_id, slug) DO UPDATE SET
   st.bind_text(6, in.frontmatter_json.empty() ? "{}" : in.frontmatter_json);
   st.bind_text(7, hash);
   st.bind_text(8, now);
+  st.bind_text(9, sk);
+  st.bind_text(10, via);
+  st.bind_text(11, now);
   st.step_done();
   auto got = get_page(in.slug, in.source_id, true);
   if (!got) throw std::runtime_error("put_page failed to read back");
@@ -238,6 +218,75 @@ std::vector<Page> Brain::list_pages(int limit, const std::string& type) {
   st.bind_int(idx, limit);
   while (st.step()) out.push_back(row_to_page(st));
   return out;
+}
+
+void Brain::enqueue_embed_page(int64_t page_id) {
+  auto off = get_config_value("embed.auto");
+  if (off && (*off == "0" || *off == "false")) return;
+  if (resolve_api_key(config_, false).empty()) return;
+  json payload = {{"page_id", page_id}};
+  auto st = db_.prepare(
+      "INSERT INTO jobs(queue, type, status, payload_json, priority) VALUES('default','embed','waiting',?,50)");
+  st.bind_text(1, payload.dump());
+  st.step_done();
+}
+
+int Brain::drain_embed_jobs(int max_jobs) {
+  int done_chunks = 0;
+  for (int n = 0; n < max_jobs; ++n) {
+    auto st = db_.prepare(
+        "SELECT id, payload_json FROM jobs WHERE type='embed' AND status='waiting' "
+        "ORDER BY priority ASC, id ASC LIMIT 1");
+    if (!st.step()) break;
+    int64_t job_id = st.column_int(0);
+    auto payload = st.column_text(1);
+    int64_t page_id = 0;
+    try {
+      auto j = json::parse(payload);
+      page_id = j.at("page_id").get<int64_t>();
+    } catch (...) {
+      auto u = db_.prepare("UPDATE jobs SET status='failed', updated_at=? WHERE id=?");
+      u.bind_text(1, util::utc_now());
+      u.bind_int(2, job_id);
+      u.step_done();
+      continue;
+    }
+    {
+      auto u = db_.prepare("UPDATE jobs SET status='active', updated_at=? WHERE id=?");
+      u.bind_text(1, util::utc_now());
+      u.bind_int(2, job_id);
+      u.step_done();
+    }
+    auto chunks = get_chunks(page_id);
+    std::vector<Chunk> missing;
+    for (auto& c : chunks)
+      if (c.embedding.empty()) missing.push_back(c);
+    if (!missing.empty()) {
+      std::vector<std::string> texts;
+      for (auto& c : missing) texts.push_back(c.text);
+      auto er = ai::embed_texts(config_, texts);
+      if (!er.ok) {
+        auto u = db_.prepare(
+            "UPDATE jobs SET status='failed', result_json=?, updated_at=? WHERE id=?");
+        u.bind_text(1, json({{"error", er.error}}).dump());
+        u.bind_text(2, util::utc_now());
+        u.bind_int(3, job_id);
+        u.step_done();
+        continue;
+      }
+      for (size_t i = 0; i < missing.size() && i < er.vectors.size(); ++i) {
+        update_chunk_embedding(missing[i].id, er.vectors[i], er.model);
+        ++done_chunks;
+      }
+    }
+    auto u = db_.prepare(
+        "UPDATE jobs SET status='completed', result_json=?, updated_at=? WHERE id=?");
+    u.bind_text(1, json({{"chunks", done_chunks}}).dump());
+    u.bind_text(2, util::utc_now());
+    u.bind_int(3, job_id);
+    u.step_done();
+  }
+  return done_chunks;
 }
 
 bool Brain::soft_delete(const std::string& slug, const std::string& source_id) {
@@ -432,8 +481,14 @@ HealthReport Brain::health() {
   HealthReport h;
   h.db_path = util::path_to_utf8(util::brain_db_path(brain_id_));
   h.stats = stats();
-  auto st = db_.prepare("SELECT COALESCE(MAX(version),0) FROM schema_version");
-  if (st.step()) h.schema_version = static_cast<int>(st.column_int(0));
+  auto integ = storage::check_schema_integrity(db_);
+  h.schema_version = integ.schema_version;
+  if (!integ.ok) {
+    h.ok = false;
+    h.notes.push_back("schema DEGRADED (missing objects)");
+    for (auto& m : integ.missing) h.notes.push_back("  missing " + m);
+    h.notes.push_back("repair: reopen after upgrade (migration v3) or re-init brain");
+  }
   if (h.schema_version < 1) {
     h.ok = false;
     h.notes.push_back("schema not migrated");

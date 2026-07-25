@@ -18,6 +18,9 @@ struct Page {
   std::string created_at;
   std::string updated_at;
   std::optional<std::string> deleted_at;
+  std::string source_kind;
+  std::string ingested_via;
+  std::string ingested_at;
 };
 
 struct PageInput {
@@ -27,6 +30,8 @@ struct PageInput {
   std::string title;
   std::string body;
   std::string frontmatter_json = "{}";
+  std::string source_kind;
+  std::string ingested_via;
 };
 
 struct Chunk {

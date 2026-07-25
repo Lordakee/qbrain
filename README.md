@@ -20,15 +20,17 @@
 .\build\cl\qbrain.exe doctor
 ```
 
-### 接入 Claude Code / Cursor（与 gbrain 同用法）
+### 接入 Claude Code / Cursor（接近 gbrain）
 
 ```powershell
-# 只读记忆
+# 默认只读（比 gbrain 更安全：远程 put 不默认开放）
 claude mcp add qbrain -- "D:\Projects\Qbrain\build\cl\qbrain.exe" serve
 
-# 允许 agent 写入
+# 允许 agent 写入（显式）
 claude mcp add qbrain -- "D:\Projects\Qbrain\build\cl\qbrain.exe" serve --allow-write
 ```
+
+**Delta vs gbrain**: MCP 默认 **拒绝** `put_page`/`capture`；gbrain 的 `put_page` 默认可写。需要 Agent 记忆时加 `--allow-write`。写页后 embedding 入队，执行 `qbrain embed --drain`（或 `embed --all`）。
 
 数据目录：`%LOCALAPPDATA%\Qbrain\`
 

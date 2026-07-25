@@ -44,7 +44,7 @@ class Database {
     void bind_text(int idx, std::string_view v);
     void bind_blob(int idx, const void* data, int size);
     void bind_null(int idx);
-    bool step();  // true if ROW
+    bool step();
     void step_done();
 
     int64_t column_int(int i) const;
@@ -64,6 +64,17 @@ class Database {
   void check(int rc, std::string_view what) const;
 };
 
-void apply_migrations(Database& db, const std::string& schema_sql_path);
+// Apply migrations using embedded canonical schema (always).
+// Optional schema_sql_path is ignored if empty; if set, used only as override for v1 bootstrap.
+void apply_migrations(Database& db, const std::string& schema_sql_path = {});
+
+struct SchemaIntegrity {
+  bool ok = true;
+  int schema_version = 0;
+  std::vector<std::string> missing;
+};
+
+// Assert expected tables/indexes exist (detects legacy fallback-created DBs).
+SchemaIntegrity check_schema_integrity(Database& db);
 
 }  // namespace qbrain::storage

@@ -103,13 +103,31 @@ void register_builtin_ops() {
       r.text = "slug required";
       return r;
     }
+    // Provenance: remote MCP stamps mcp:put_page (gbrain-like)
+    if (ctx.remote) {
+      in.source_kind = "mcp:put_page";
+      in.ingested_via = "mcp";
+    } else {
+      in.source_kind = in.source_kind.empty() ? "put_page" : in.source_kind;
+      in.ingested_via = in.ingested_via.empty() ? "cli" : in.ingested_via;
+    }
     auto page = ctx.brain->put_page(in);
     auto chunks = ingest::chunk_markdown(page.title, page.body);
     ctx.brain->replace_chunks(page.id, chunks);
-    auto links = graph::extract_links(page.source_id, page.slug, page.body);
-    ctx.brain->replace_extracted_links(page.source_id, page.slug, links);
+    // Remote callers: skip auto-link (gbrain mitigation vs backlink poisoning)
+    size_t nlinks = 0;
+    if (!ctx.remote) {
+      auto links = graph::extract_links(page.source_id, page.slug, page.body);
+      ctx.brain->replace_extracted_links(page.source_id, page.slug, links);
+      nlinks = links.size();
+    }
+    ctx.brain->enqueue_embed_page(page.id);
     r.text = "put " + page.slug + " id=" + std::to_string(page.id);
-    json j = {{"id", page.id}, {"slug", page.slug}, {"chunks", chunks.size()}, {"links", links.size()}};
+    json j = {{"id", page.id},
+              {"slug", page.slug},
+              {"chunks", chunks.size()},
+              {"links", nlinks},
+              {"embed_enqueued", true}};
     r.json = j.dump(2);
     return r;
   }, true, "Create or update a page (localOnly unless MCP --allow-write)",
@@ -289,10 +307,12 @@ void register_builtin_ops() {
       return r;
     }
     auto page = ingest::capture_text(*ctx.brain, text, arg(ctx, "type", "note"));
+    // stamp provenance via re-put lightweight fields already set at capture; enqueue embed
+    ctx.brain->enqueue_embed_page(page.id);
     r.text = page.slug;
-    r.json = json({{"slug", page.slug}, {"id", page.id}}).dump(2);
+    r.json = json({{"slug", page.slug}, {"id", page.id}, {"embed_enqueued", true}}).dump(2);
     return r;
-  }, true, "Quick-capture text into inbox/ (localOnly unless MCP --allow-write)",
+  }, true, "Quick-capture text into inbox/ (CLI always; MCP needs --allow-write). gbrain capture is CLI-only — Qbrain extension.",
       R"({"type":"object","properties":{"text":{"type":"string"},"type":{"type":"string"}},"required":["text"]})");
 
   register_one(

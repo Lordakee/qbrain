@@ -1,5 +1,7 @@
 # VERDICT: PASS
 
+**SUPERSEDED (framing claim only)**: M2 originally said Content-Length framing; runtime was later switched to **NDJSON** (MCP SDK stdio). See `src/qbrain/mcp/jsonrpc.cpp`. Overall PASS for MCP still stands as of 2026-07-25 NDJSON fix.
+
 **Date**: 2026-07-25  
 **Scope**: Qbrain MCP stdio (`qbrain serve`) vs plan `04`/`05` and gbrain UX  
 **Binary**: `build/cl/qbrain.exe`  

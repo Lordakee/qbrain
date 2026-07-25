@@ -1,4 +1,5 @@
 #include "qbrain/storage/database.hpp"
+#include "qbrain/storage/schema_sql.hpp"
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
@@ -42,16 +43,25 @@ void apply_migrations(Database& db, const std::string& schema_sql_path) {
     if (st.step()) ver = static_cast<int>(st.column_int(0));
   }
 
-  // v1: full bootstrap from 001_init.sql (idempotent CREATE IF NOT EXISTS)
+  // v1: always use embedded canonical schema (single source of truth).
+  // Optional path override only if env/file explicitly provided and non-empty.
   if (ver < 1) {
-    std::string sql = read_file(schema_sql_path);
+    std::string sql;
+    if (!schema_sql_path.empty()) {
+      try {
+        sql = read_file(schema_sql_path);
+      } catch (...) {
+        sql = kCanonicalSchemaSql;
+      }
+    } else {
+      sql = kCanonicalSchemaSql;
+    }
     run_in_txn(db, sql);
-    // schema file already inserts version 1; ensure row exists
     db.exec("INSERT OR IGNORE INTO schema_version(version) VALUES (1);");
     ver = 1;
   }
 
-  // v2: additive indexes for embed-missing scans + source filters (upgrade path)
+  // v2: additive indexes
   if (ver < 2) {
     run_in_txn(db, R"SQL(
 CREATE INDEX IF NOT EXISTS idx_chunks_missing_emb
@@ -62,6 +72,77 @@ INSERT OR IGNORE INTO schema_version(version) VALUES (2);
 )SQL");
     ver = 2;
   }
+
+  // v3: repair indexes/FKs that may be missing on legacy fallback-created DBs.
+  // SQLite cannot ADD CONSTRAINT FK easily; we ensure indexes exist.
+  if (ver < 3) {
+    run_in_txn(db, R"SQL(
+CREATE INDEX IF NOT EXISTS idx_pages_type ON pages(type);
+CREATE INDEX IF NOT EXISTS idx_pages_updated ON pages(updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_pages_source ON pages(source_id);
+CREATE INDEX IF NOT EXISTS idx_chunks_page ON content_chunks(page_id);
+CREATE INDEX IF NOT EXISTS idx_links_from ON links(source_id, from_slug);
+CREATE INDEX IF NOT EXISTS idx_links_to ON links(source_id, to_slug);
+CREATE INDEX IF NOT EXISTS idx_jobs_claim ON jobs(queue, status, priority, created_at);
+INSERT OR IGNORE INTO schema_version(version) VALUES (3);
+)SQL");
+    ver = 3;
+  }
+
+  // v4: provenance columns for write path (N1)
+  if (ver < 4) {
+    run_in_txn(db, R"SQL(
+ALTER TABLE pages ADD COLUMN source_kind TEXT;
+ALTER TABLE pages ADD COLUMN ingested_via TEXT;
+ALTER TABLE pages ADD COLUMN ingested_at TEXT;
+INSERT OR IGNORE INTO schema_version(version) VALUES (4);
+)SQL");
+    ver = 4;
+  }
+}
+
+SchemaIntegrity check_schema_integrity(Database& db) {
+  SchemaIntegrity r;
+  {
+    auto st = db.prepare("SELECT COALESCE(MAX(version),0) FROM schema_version");
+    if (st.step()) r.schema_version = static_cast<int>(st.column_int(0));
+  }
+
+  auto has_table = [&](const char* name) {
+    auto st = db.prepare(
+        "SELECT 1 FROM sqlite_master WHERE type IN ('table','view') AND name=? LIMIT 1");
+    st.bind_text(1, name);
+    return st.step();
+  };
+  auto has_index = [&](const char* name) {
+    auto st = db.prepare(
+        "SELECT 1 FROM sqlite_master WHERE type='index' AND name=? LIMIT 1");
+    st.bind_text(1, name);
+    return st.step();
+  };
+
+  const char* tables[] = {"schema_version", "sources", "pages", "content_chunks",
+                          "links",          "tags",    "config", "jobs", "pages_fts"};
+  for (auto* t : tables) {
+    if (!has_table(t)) {
+      r.ok = false;
+      r.missing.push_back(std::string("table:") + t);
+    }
+  }
+  const char* indexes[] = {"idx_pages_type",  "idx_pages_updated", "idx_pages_source",
+                           "idx_chunks_page", "idx_links_from",    "idx_links_to",
+                           "idx_jobs_claim",  "idx_pages_source_slug"};
+  for (auto* i : indexes) {
+    if (!has_index(i)) {
+      r.ok = false;
+      r.missing.push_back(std::string("index:") + i);
+    }
+  }
+  if (r.schema_version < 3) {
+    r.ok = false;
+    r.missing.push_back("schema_version<3");
+  }
+  return r;
 }
 
 }  // namespace qbrain::storage

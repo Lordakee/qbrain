@@ -1,0 +1,26 @@
+STRICT MASTER PLAN HARD AUDIT. Do not chat. Read files and Write the audit report.
+
+Read:
+1. D:\Projects\Qbrain\docs\08-MASTER-PLAN-GBRAIN-PARITY.md
+2. D:\Projects\Qbrain\docs\01-ANALYSIS.md (if needed)
+3. D:\Projects\Qbrain\README.md
+
+Write to:
+D:\Projects\Qbrain\docs\reviews\CLAUDE_MASTER_PLAN_HARD_AUDIT.md
+
+Format EXACTLY:
+
+# VERDICT: PLAN_APPROVED | PLAN_REVISE
+
+## Summary
+## Answers to plan §7 questions (1-5)
+## P0 changes (must fix before any node starts)
+## P1 changes (should fix)
+## P2 optional
+## Node graph risk assessment
+## Security (MCP default write)
+## Feasibility of "all gbrain features" definition
+## Pass criteria for N0 complete
+
+Be strict. Prefer PLAN_APPROVED only if no P0. Reasoning effort max if applicable.
+Print AUDIT_DONE when written.

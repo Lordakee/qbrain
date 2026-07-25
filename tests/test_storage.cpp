@@ -1,4 +1,5 @@
 #include "qbrain/core/brain.hpp"
+#include "qbrain/storage/database.hpp"
 #include "qbrain/util/paths.hpp"
 #include <filesystem>
 #include <stdexcept>
@@ -18,8 +19,13 @@ void test_storage() {
   auto dbp = dir / "brain.db";
   fs::remove(dbp);
 
+  // Open from unrelated CWD simulation: only absolute db path, no schema file nearby.
   qbrain::Brain b("test");
   b.open_at(qbrain::util::path_to_utf8(dbp));
+
+  auto integ = qbrain::storage::check_schema_integrity(b.db());
+  QB_CHECK(integ.ok);
+  QB_CHECK(integ.schema_version >= 3);
 
   qbrain::PageInput in;
   in.slug = "notes/hello";
@@ -34,6 +40,9 @@ void test_storage() {
 
   auto st = b.stats();
   QB_CHECK(st.pages == 1);
+
+  auto h = b.health();
+  QB_CHECK(h.schema_version >= 3);
 
   b.close();
   fs::remove_all(dir);
