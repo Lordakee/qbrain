@@ -99,6 +99,36 @@ INSERT OR IGNORE INTO schema_version(version) VALUES (4);
 )SQL");
     ver = 4;
   }
+
+  // v5: page versions + facts (N2/N10)
+  if (ver < 5) {
+    run_in_txn(db, R"SQL(
+CREATE TABLE IF NOT EXISTS page_versions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  page_id INTEGER NOT NULL,
+  source_id TEXT NOT NULL DEFAULT 'default',
+  slug TEXT NOT NULL,
+  title TEXT NOT NULL DEFAULT '',
+  body TEXT NOT NULL DEFAULT '',
+  frontmatter_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY(page_id) REFERENCES pages(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_page_versions_page ON page_versions(page_id);
+CREATE TABLE IF NOT EXISTS facts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  page_id INTEGER,
+  entity_slug TEXT NOT NULL,
+  predicate TEXT NOT NULL DEFAULT 'mentions',
+  object_text TEXT NOT NULL DEFAULT '',
+  active INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_facts_entity ON facts(entity_slug);
+INSERT OR IGNORE INTO schema_version(version) VALUES (5);
+)SQL");
+    ver = 5;
+  }
 }
 
 SchemaIntegrity check_schema_integrity(Database& db) {

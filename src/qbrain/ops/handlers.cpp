@@ -10,6 +10,8 @@
 #include "qbrain/util/time_util.hpp"
 #include "qbrain/util/hash.hpp"
 #include <nlohmann/json.hpp>
+#include <filesystem>
+#include <fstream>
 #include <sstream>
 
 using json = nlohmann::json;
@@ -97,6 +99,28 @@ void register_builtin_ops() {
     in.body = arg(ctx, "body");
     in.type = arg(ctx, "type", "note");
     in.source_id = arg(ctx, "source_id", "default");
+    // N2.5: remote may only write default source unless allow-list config
+    if (ctx.remote && in.source_id != "default") {
+      auto allow = ctx.brain->get_config_value("mcp.allowed_sources");
+      bool ok = false;
+      if (allow) {
+        for (auto& p : util::split(*allow, ',')) {
+          if (util::trim(p) == in.source_id) ok = true;
+        }
+      }
+      if (!ok) {
+        OpResult r;
+        r.ok = false;
+        r.text = "remote source_id not allowed (only default, or mcp.allowed_sources)";
+        return r;
+      }
+    }
+    if (!ctx.brain->ensure_source(in.source_id)) {
+      OpResult r;
+      r.ok = false;
+      r.text = "invalid source_id";
+      return r;
+    }
     if (in.slug.empty()) {
       r.ok = false;
       r.exit_code = 1;
@@ -188,11 +212,12 @@ void register_builtin_ops() {
     opts.limit = arg_int(ctx, "limit", ctx.brain->config().search_default_limit);
     opts.rrf_k = ctx.brain->config().search_rrf_k;
     opts.source_id = arg(ctx, "source_id");
+    opts.mode = arg(ctx, "mode", "balanced");
     std::vector<float> emb;
     std::vector<float>* pemb = nullptr;
     // no_vector accepts "1"/"true" from CLI and MCP bool mapping
     auto nv = arg(ctx, "no_vector");
-    if (nv != "1" && nv != "true") {
+    if (nv != "1" && nv != "true" && opts.mode != "conservative") {
       auto er = ai::embed_texts(ctx.brain->config(), {q});
       if (er.ok && !er.vectors.empty()) {
         emb = er.vectors[0];
@@ -332,6 +357,185 @@ void register_builtin_ops() {
     return r;
   }, false, "Graph neighbors for a slug",
       R"({"type":"object","properties":{"slug":{"type":"string"},"depth":{"type":"integer"}},"required":["slug"]})");
+
+  register_one(
+      "get_backlinks", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto slug = arg(ctx, "slug");
+    auto sid = arg(ctx, "source_id", "default");
+    auto links = ctx.brain->get_links_to(slug, sid);
+    json arr = json::array();
+    std::ostringstream oss;
+    for (auto& l : links) {
+      arr.push_back({{"from", l.from_slug}, {"type", l.link_type}});
+      oss << l.from_slug << "\t" << l.link_type << "\n";
+    }
+    r.json = arr.dump(2);
+    r.text = oss.str();
+    return r;
+  }, false, "Inbound links to a slug",
+      R"({"type":"object","properties":{"slug":{"type":"string"},"source_id":{"type":"string"}},"required":["slug"]})");
+
+  register_one(
+      "delete_page", Scope::Write, [](OpContext& ctx) {
+    OpResult r;
+    auto slug = arg(ctx, "slug");
+    auto sid = arg(ctx, "source_id", "default");
+    if (!ctx.brain->soft_delete(slug, sid)) {
+      r.ok = false;
+      r.exit_code = 1;
+      r.text = "not found or already deleted";
+      return r;
+    }
+    r.text = "deleted " + slug;
+    r.json = json({{"slug", slug}, {"status", "soft_deleted"}}).dump(2);
+    return r;
+  }, true, "Soft-delete a page",
+      R"({"type":"object","properties":{"slug":{"type":"string"},"source_id":{"type":"string"}},"required":["slug"]})");
+
+  register_one(
+      "restore_page", Scope::Write, [](OpContext& ctx) {
+    OpResult r;
+    auto slug = arg(ctx, "slug");
+    if (!ctx.brain->restore_page(slug, arg(ctx, "source_id", "default"))) {
+      r.ok = false;
+      r.text = "not restored";
+      return r;
+    }
+    r.text = "restored " + slug;
+    return r;
+  }, true, "Restore soft-deleted page",
+      R"({"type":"object","properties":{"slug":{"type":"string"}},"required":["slug"]})");
+
+  register_one(
+      "purge_deleted_pages", Scope::Admin, [](OpContext& ctx) {
+    OpResult r;
+    if (ctx.remote) {
+      r.ok = false;
+      r.text = "purge is localOnly";
+      return r;
+    }
+    int hours = arg_int(ctx, "older_than_hours", 72);
+    int n = ctx.brain->purge_deleted(hours);
+    r.text = "purged " + std::to_string(n);
+    r.json = json({{"count", n}}).dump(2);
+    return r;
+  }, true, "Hard-delete soft-deleted pages older than N hours (localOnly)",
+      R"({"type":"object","properties":{"older_than_hours":{"type":"integer"}}})");
+
+  register_one(
+      "get_versions", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto vers = ctx.brain->list_versions(arg(ctx, "slug"), arg(ctx, "source_id", "default"));
+    json arr = json::array();
+    for (auto& v : vers) arr.push_back({{"id", v.id}, {"title", v.title}, {"at", v.created_at}});
+    r.json = arr.dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "List page versions",
+      R"({"type":"object","properties":{"slug":{"type":"string"}},"required":["slug"]})");
+
+  register_one(
+      "sources_list", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto ids = ctx.brain->list_source_ids();
+    r.json = json(ids).dump(2);
+    std::ostringstream oss;
+    for (auto& id : ids) oss << id << "\n";
+    r.text = oss.str();
+    return r;
+  }, false, "List source ids", R"({"type":"object","properties":{}})");
+
+  register_one(
+      "sources_add", Scope::Write, [](OpContext& ctx) {
+    OpResult r;
+    auto id = arg(ctx, "id");
+    if (!ctx.brain->ensure_source(id)) {
+      r.ok = false;
+      r.text = "invalid source id";
+      return r;
+    }
+    r.text = "ok " + id;
+    return r;
+  }, true, "Ensure a source id exists",
+      R"({"type":"object","properties":{"id":{"type":"string"}},"required":["id"]})");
+
+  register_one(
+      "find_trajectory", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto facts = ctx.brain->list_facts(arg(ctx, "entity_slug"), arg_int(ctx, "limit", 50));
+    json arr = json::array();
+    for (auto& f : facts) arr.push_back(f);
+    r.json = arr.dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "List facts for an entity slug (minimal trajectory)",
+      R"({"type":"object","properties":{"entity_slug":{"type":"string"}},"required":["entity_slug"]})");
+
+  register_one(
+      "list_skills", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    (void)ctx;
+    // N9: scan skills dir next to exe / project
+    json arr = json::array();
+    namespace fs = std::filesystem;
+    std::vector<fs::path> roots = {fs::path("skills"), fs::path("D:/Projects/Qbrain/skills")};
+    for (auto& root : roots) {
+      if (!fs::exists(root)) continue;
+      for (auto& e : fs::directory_iterator(root)) {
+        if (!e.is_directory()) continue;
+        auto skill = e.path() / "SKILL.md";
+        if (fs::exists(skill)) arr.push_back({{"name", e.path().filename().string()}});
+      }
+    }
+    r.json = arr.dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "List markdown skills", R"({"type":"object","properties":{}})");
+
+  register_one(
+      "get_skill", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto name = arg(ctx, "name");
+    if (name.find("..") != std::string::npos || name.find('/') != std::string::npos) {
+      r.ok = false;
+      r.text = "invalid skill name";
+      return r;
+    }
+    namespace fs = std::filesystem;
+    fs::path p = fs::path("skills") / name / "SKILL.md";
+    if (!fs::exists(p)) p = fs::path("D:/Projects/Qbrain/skills") / name / "SKILL.md";
+    if (!fs::exists(p)) {
+      r.ok = false;
+      r.text = "not found";
+      return r;
+    }
+    std::ifstream in(p, std::ios::binary);
+    std::ostringstream ss;
+    ss << in.rdbuf();
+    r.text = ss.str();
+    r.json = json({{"name", name}, {"body", r.text}}).dump(2);
+    return r;
+  }, false, "Read a skill SKILL.md",
+      R"({"type":"object","properties":{"name":{"type":"string"}},"required":["name"]})");
+
+  register_one(
+      "run_doctor", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto h = ctx.brain->health();
+    json j;
+    j["ok"] = h.ok;
+    j["schema_version"] = h.schema_version;
+    j["stats"] = {{"pages", h.stats.pages},
+                  {"chunks", h.stats.chunks},
+                  {"links", h.stats.links},
+                  {"embedded_chunks", h.stats.embedded_chunks}};
+    j["notes"] = h.notes;
+    r.json = j.dump(2);
+    r.text = r.json;
+    r.ok = h.ok;
+    return r;
+  }, false, "Doctor report (gbrain name parity)", R"({"type":"object","properties":{}})");
 }
 
 }  // namespace qbrain::ops

@@ -156,6 +156,13 @@ Page Brain::row_to_page(storage::Database::Statement& st) {
 }
 
 Page Brain::put_page(const PageInput& in) {
+  if (!ensure_source(in.source_id.empty() ? "default" : in.source_id)) {
+    throw std::runtime_error("invalid source_id");
+  }
+  // version snapshot on update
+  if (auto prev = get_page(in.slug, in.source_id.empty() ? "default" : in.source_id, true)) {
+    create_version(prev->id);
+  }
   auto hash = util::content_hash(in.title, in.body);
   auto now = util::utc_now();
   auto sk = in.source_kind.empty() ? "put_page" : in.source_kind;
@@ -290,6 +297,8 @@ int Brain::drain_embed_jobs(int max_jobs) {
 }
 
 bool Brain::soft_delete(const std::string& slug, const std::string& source_id) {
+  auto page = get_page(slug, source_id, true);
+  if (page) create_version(page->id);
   auto st = db_.prepare("UPDATE pages SET deleted_at=?, updated_at=? WHERE source_id=? AND slug=? AND deleted_at IS NULL");
   auto now = util::utc_now();
   st.bind_text(1, now);
@@ -298,6 +307,122 @@ bool Brain::soft_delete(const std::string& slug, const std::string& source_id) {
   st.bind_text(4, slug);
   st.step_done();
   return db_.changes() > 0;
+}
+
+bool Brain::restore_page(const std::string& slug, const std::string& source_id) {
+  auto st = db_.prepare(
+      "UPDATE pages SET deleted_at=NULL, updated_at=? WHERE source_id=? AND slug=? AND deleted_at IS NOT NULL");
+  st.bind_text(1, util::utc_now());
+  st.bind_text(2, source_id);
+  st.bind_text(3, slug);
+  st.step_done();
+  return db_.changes() > 0;
+}
+
+int Brain::purge_deleted(int older_than_hours) {
+  // SQLite datetime: deleted_at older than now - hours
+  auto st = db_.prepare(
+      "DELETE FROM pages WHERE deleted_at IS NOT NULL AND "
+      "deleted_at < datetime('now', ?)");
+  std::string mod = "-" + std::to_string(older_than_hours) + " hours";
+  st.bind_text(1, mod);
+  st.step_done();
+  return db_.changes();
+}
+
+void Brain::create_version(int64_t page_id) {
+  auto st = db_.prepare(
+      "INSERT INTO page_versions(page_id, source_id, slug, title, body, frontmatter_json) "
+      "SELECT id, source_id, slug, title, body, frontmatter_json FROM pages WHERE id=?");
+  st.bind_int(1, page_id);
+  st.step_done();
+}
+
+std::vector<Page> Brain::list_versions(const std::string& slug, const std::string& source_id) {
+  std::vector<Page> out;
+  auto st = db_.prepare(
+      "SELECT id, source_id, slug, '' AS type, title, body, frontmatter_json, '' AS ch, "
+      "created_at, created_at, NULL FROM page_versions WHERE slug=? AND source_id=? "
+      "ORDER BY id DESC LIMIT 50");
+  st.bind_text(1, slug);
+  st.bind_text(2, source_id);
+  while (st.step()) {
+    Page p;
+    p.id = st.column_int(0);
+    p.source_id = st.column_text(1);
+    p.slug = st.column_text(2);
+    p.title = st.column_text(4);
+    p.body = st.column_text(5);
+    p.frontmatter_json = st.column_text(6);
+    p.created_at = st.column_text(8);
+    p.updated_at = st.column_text(9);
+    out.push_back(std::move(p));
+  }
+  return out;
+}
+
+bool Brain::revert_version(const std::string& slug, int64_t version_id,
+                           const std::string& source_id) {
+  auto st = db_.prepare(
+      "SELECT title, body, frontmatter_json FROM page_versions WHERE id=? AND slug=? AND source_id=?");
+  st.bind_int(1, version_id);
+  st.bind_text(2, slug);
+  st.bind_text(3, source_id);
+  if (!st.step()) return false;
+  PageInput in;
+  in.source_id = source_id;
+  in.slug = slug;
+  in.title = st.column_text(0);
+  in.body = st.column_text(1);
+  in.frontmatter_json = st.column_text(2);
+  in.source_kind = "revert_version";
+  put_page(in);
+  return true;
+}
+
+bool Brain::ensure_source(const std::string& source_id) {
+  if (source_id.empty()) return false;
+  // reject path traversal-ish
+  if (source_id.find("..") != std::string::npos || source_id.find('/') != std::string::npos ||
+      source_id.find('\\') != std::string::npos)
+    return false;
+  auto st = db_.prepare("INSERT OR IGNORE INTO sources(id, name) VALUES(?,?)");
+  st.bind_text(1, source_id);
+  st.bind_text(2, source_id);
+  st.step_done();
+  return true;
+}
+
+std::vector<std::string> Brain::list_source_ids() {
+  std::vector<std::string> out;
+  auto st = db_.prepare("SELECT id FROM sources ORDER BY id");
+  while (st.step()) out.push_back(st.column_text(0));
+  return out;
+}
+
+void Brain::add_fact(const std::string& entity_slug, const std::string& predicate,
+                     const std::string& object_text, int64_t page_id) {
+  auto st = db_.prepare(
+      "INSERT INTO facts(page_id, entity_slug, predicate, object_text) VALUES(?,?,?,?)");
+  if (page_id > 0)
+    st.bind_int(1, page_id);
+  else
+    st.bind_null(1);
+  st.bind_text(2, entity_slug);
+  st.bind_text(3, predicate);
+  st.bind_text(4, object_text);
+  st.step_done();
+}
+
+std::vector<std::string> Brain::list_facts(const std::string& entity_slug, int limit) {
+  std::vector<std::string> out;
+  auto st = db_.prepare(
+      "SELECT predicate || ': ' || object_text FROM facts WHERE entity_slug=? AND active=1 "
+      "ORDER BY id DESC LIMIT ?");
+  st.bind_text(1, entity_slug);
+  st.bind_int(2, limit);
+  while (st.step()) out.push_back(st.column_text(0));
+  return out;
 }
 
 void Brain::replace_chunks(int64_t page_id, const std::vector<std::string>& texts) {

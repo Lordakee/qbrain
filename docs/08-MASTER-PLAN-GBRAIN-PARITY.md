@@ -1,8 +1,8 @@
 # Qbrain ↔ gbrain 全功能对齐 — 整体规划（Master Plan）
 
-**版本**: 1.1.0  
+**版本**: 1.2.0  
 **日期**: 2026-07-25  
-**状态**: REVISED after Claude Code N0 hard audit (`docs/reviews/CLAUDE_MASTER_PLAN_HARD_AUDIT.md` → PLAN_REVISE; all P0 adopted)  
+**状态**: N0–N11 MVP program **COMPLETE** (see `docs/reviews/CLAUDE_FINAL_PROJECT_HARD_AUDIT.md`)  
 **目标**: 纯 Windows 11 原生 C++ 下，Qbrain 达到 gbrain **能力对等**（非位级移植）。
 
 ---

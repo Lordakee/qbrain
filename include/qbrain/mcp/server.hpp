@@ -12,6 +12,9 @@ struct ServeOptions {
 // Blocks until stdin EOF / client disconnect. Returns process exit code.
 int run_stdio_server(Brain& brain, const ServeOptions& opts);
 
+// Loopback HTTP JSON-RPC (Bearer token required). Port default 7420.
+int run_http_server(Brain& brain, const ServeOptions& opts, const std::string& token, int port = 7420);
+
 // Single-request handler for tests (JSON-RPC request object as string → response body)
 std::string handle_rpc_body(Brain& brain, const ServeOptions& opts, const std::string& request_json);
 

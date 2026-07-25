@@ -96,17 +96,26 @@ target_link_libraries(qbrain_ops PUBLIC
   qbrain_core qbrain_search qbrain_graph qbrain_ingest qbrain_ai qbrain_util
 )
 
+qbrain_lib(service
+  src/qbrain/service/inbox_watch.cpp
+)
+target_link_libraries(qbrain_service PUBLIC qbrain_core qbrain_ingest qbrain_util)
+
 qbrain_lib(mcp
   src/qbrain/mcp/jsonrpc.cpp
   src/qbrain/mcp/server.cpp
+  src/qbrain/mcp/http_server.cpp
 )
 target_link_libraries(qbrain_mcp PUBLIC qbrain_ops qbrain_core qbrain_util)
+if(WIN32)
+  target_link_libraries(qbrain_mcp PUBLIC ws2_32)
+endif()
 
 qbrain_lib(cli
   src/qbrain/cli/app.cpp
   src/qbrain/cli/commands.cpp
 )
-target_link_libraries(qbrain_cli PUBLIC qbrain_mcp qbrain_ops qbrain_core qbrain_util)
+target_link_libraries(qbrain_cli PUBLIC qbrain_mcp qbrain_service qbrain_ops qbrain_core qbrain_util)
 
 add_executable(qbrain src/qbrain/main.cpp)
 target_link_libraries(qbrain PRIVATE qbrain_cli qbrain_mcp qbrain_ops qbrain_core qbrain_util)

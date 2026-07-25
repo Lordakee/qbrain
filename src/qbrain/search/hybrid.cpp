@@ -141,13 +141,52 @@ std::vector<SearchHit> vector_search(Brain& brain, const std::vector<float>& qem
 
 std::vector<SearchHit> hybrid_search(Brain& brain, const std::string& query,
                                      const std::vector<float>* qemb, const HybridOpts& opts) {
-  auto fts = fts_search(brain, query, opts.limit * 3, opts.source_id);
+  int cand = opts.limit * 3;
+  bool use_vec = opts.use_vector;
+  if (opts.mode == "conservative") {
+    use_vec = false;
+    cand = opts.limit * 2;
+  } else if (opts.mode == "tokenmax") {
+    cand = opts.limit * 5;
+  }
+  auto fts = fts_search(brain, query, cand, opts.source_id);
   std::vector<std::vector<SearchHit>> lists;
   lists.push_back(fts);
-  if (opts.use_vector && qemb && !qemb->empty()) {
-    lists.push_back(vector_search(brain, *qemb, opts.limit * 3, opts.source_id));
+  if (use_vec && qemb && !qemb->empty()) {
+    lists.push_back(vector_search(brain, *qemb, cand, opts.source_id));
   }
   auto fused = rrf_fusion(lists, opts.rrf_k);
+  // N3 post-fusion: title / backlink boosts (lightweight)
+  for (auto& h : fused) {
+    auto ql = util::to_lower(query);
+    auto tl = util::to_lower(h.title);
+    if (!tl.empty() && tl.find(ql) != std::string::npos) h.score *= 1.25;
+    else if (!ql.empty() && !tl.empty()) {
+      // token overlap
+      for (auto& tok : util::split(ql, ' ')) {
+        if (tok.size() > 2 && tl.find(tok) != std::string::npos) {
+          h.score *= 1.08;
+          break;
+        }
+      }
+    }
+    auto backs = brain.get_links_to(h.slug, opts.source_id.empty() ? "default" : opts.source_id);
+    if (!backs.empty()) h.score *= (1.0 + 0.05 * std::min<size_t>(backs.size(), 5));
+  }
+  std::sort(fused.begin(), fused.end(),
+            [](const SearchHit& a, const SearchHit& b) { return a.score > b.score; });
+  // autocut: drop long tail if score gap large
+  if (fused.size() >= 3) {
+    double top = fused[0].score;
+    size_t cut = fused.size();
+    for (size_t i = 1; i < fused.size(); ++i) {
+      if (top > 0 && fused[i].score < top * 0.35) {
+        cut = i;
+        break;
+      }
+    }
+    if (cut < fused.size() && cut >= 1) fused.resize(cut);
+  }
   if (static_cast<int>(fused.size()) > opts.limit)
     fused.resize(static_cast<size_t>(opts.limit));
   return fused;

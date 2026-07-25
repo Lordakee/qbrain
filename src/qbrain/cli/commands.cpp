@@ -4,6 +4,7 @@
 #include "qbrain/ingest/import.hpp"
 #include "qbrain/ai/embed.hpp"
 #include "qbrain/mcp/server.hpp"
+#include "qbrain/service/inbox_watch.hpp"
 #include "qbrain/util/paths.hpp"
 #include "qbrain/util/string_util.hpp"
 #include "qbrain/util/log.hpp"
@@ -18,6 +19,9 @@
 #define NOMINMAX
 #endif
 #include <windows.h>
+#else
+#include <unistd.h>
+#define Sleep(ms) usleep((ms) * 1000)
 #endif
 
 namespace qbrain::cli {
@@ -86,12 +90,17 @@ void print_help() {
       "  graph <slug> [--depth N]\n"
       "  delete <slug> [--source default]\n"
       "  embed --all | --slug s | --drain   (drain: process embed jobs queue)\n"
-      "  serve [--brain id] [--allow-write]   MCP stdio (for Claude Code / Cursor)\n"
+      "  serve [--brain id] [--allow-write] [--http] [--port N]\n"
+      "  inbox [--watch]                     process %LOCALAPPDATA%\\Qbrain\\inbox\n"
+      "  sync <notes-dir>                    import/sync a notes folder\n"
+      "  worker [--once]                     drain embed jobs + inbox\n"
+      "  dream [--apply]                     consolidate phase (facts)\n"
       "  version\n"
       "  help\n\n"
-      "MCP (like gbrain):\n"
+      "MCP:\n"
       "  claude mcp add qbrain -- qbrain serve\n"
-      "  claude mcp add qbrain -- qbrain serve --allow-write\n\n"
+      "  claude mcp add qbrain -- qbrain serve --allow-write\n"
+      "  HTTP: set QBRAIN_MCP_TOKEN then qbrain serve --http --port 7420\n\n"
       "Data: %LOCALAPPDATA%\\Qbrain\\\n";
 }
 
@@ -317,7 +326,82 @@ int cmd_serve(const std::vector<std::string>& args) {
     std::cerr << "open brain failed: " << e.what() << "\nRun: qbrain init\n";
     return 2;
   }
+  if (flag(args, "--http")) {
+    const char* tok = std::getenv("QBRAIN_MCP_TOKEN");
+    if (!tok || !*tok) {
+      std::cerr << "QBRAIN_MCP_TOKEN env required for --http (do not pass token on argv)\n";
+      return 2;
+    }
+    int port = 7420;
+    auto ps = opt(args, "--port");
+    if (!ps.empty()) port = std::stoi(ps);
+    return mcp::run_http_server(b, opts, tok, port);
+  }
   return mcp::run_stdio_server(b, opts);
+}
+
+int cmd_inbox(const std::vector<std::string>& args) {
+  return with_brain(args, [&](Brain& b) {
+    if (flag(args, "--watch")) {
+      std::cout << "watching " << qbrain::util::path_to_utf8(service::inbox_dir()) << " (Ctrl+C to stop)\n";
+      for (;;) {
+        int n = service::watch_inbox_once(b);
+        if (n) {
+          b.drain_embed_jobs(50);
+          std::cout << "imported pages~=" << n << "\n";
+        }
+        Sleep(2000);
+      }
+    }
+    int n = service::watch_inbox_once(b);
+    b.drain_embed_jobs(50);
+    std::cout << "inbox processed, pages=" << n << "\n";
+    return 0;
+  });
+}
+
+int cmd_sync(const std::vector<std::string>& args) {
+  return with_brain(args, [&](Brain& b) {
+    auto path = join_positional(args, {"--brain", "--once"});
+    if (path.empty()) {
+      std::cerr << "usage: qbrain sync <notes-dir>\n";
+      return 1;
+    }
+    auto r = ingest::import_path(b, path);
+    b.drain_embed_jobs(100);
+    std::cout << "sync pages=" << r.pages << " errors=" << r.errors << "\n";
+    return r.errors ? 1 : 0;
+  });
+}
+
+int cmd_worker(const std::vector<std::string>& args) {
+  return with_brain(args, [&](Brain& b) {
+    int cycles = flag(args, "--once") ? 1 : 1000000;
+    for (int i = 0; i < cycles; ++i) {
+      int n = b.drain_embed_jobs(20);
+      int inbox_n = service::watch_inbox_once(b);
+      if (n || inbox_n) std::cout << "worker embed_chunks=" << n << " inbox=" << inbox_n << "\n";
+      if (flag(args, "--once")) break;
+      Sleep(3000);
+    }
+    return 0;
+  });
+}
+
+int cmd_dream(const std::vector<std::string>& args) {
+  return with_brain(args, [&](Brain& b) {
+    bool dry = !flag(args, "--apply");
+    auto pages = b.list_pages(20);
+    std::cout << (dry ? "[dry-run] " : "") << "dream phase=consolidate candidates=" << pages.size()
+              << "\n";
+    for (auto& p : pages) {
+      // minimal: extract [[wikilinks]] already done on write; record a fact from title
+      if (!dry) b.add_fact(p.slug, "titled", p.title, p.id);
+      std::cout << "  " << p.slug << "\n";
+    }
+    if (dry) std::cout << "re-run with --apply to write facts\n";
+    return 0;
+  });
 }
 
 int cmd_delete(const std::vector<std::string>& args) {
@@ -420,6 +504,10 @@ int run(int argc, char** argv) {
     if (cmd == "delete") return cmd_delete(rest);
     if (cmd == "embed") return cmd_embed(rest);
     if (cmd == "serve") return cmd_serve(rest);
+    if (cmd == "inbox") return cmd_inbox(rest);
+    if (cmd == "sync") return cmd_sync(rest);
+    if (cmd == "worker") return cmd_worker(rest);
+    if (cmd == "dream") return cmd_dream(rest);
     std::cerr << "unknown command: " << cmd << "\n";
     print_help();
     return 1;

@@ -11,6 +11,7 @@ struct HybridOpts {
   int rrf_k = 60;
   bool use_vector = true;
   std::string source_id;  // empty = all
+  std::string mode;       // conservative | balanced | tokenmax (N3)
 };
 
 std::vector<SearchHit> fts_search(Brain& brain, const std::string& query, int limit,

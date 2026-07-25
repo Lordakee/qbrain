@@ -31,6 +31,14 @@ class Brain {
                                bool include_deleted = false);
   std::vector<Page> list_pages(int limit = 50, const std::string& type = "");
   bool soft_delete(const std::string& slug, const std::string& source_id = "default");
+  bool restore_page(const std::string& slug, const std::string& source_id = "default");
+  int purge_deleted(int older_than_hours = 72);
+  void create_version(int64_t page_id);
+  std::vector<Page> list_versions(const std::string& slug, const std::string& source_id = "default");
+  bool revert_version(const std::string& slug, int64_t version_id,
+                      const std::string& source_id = "default");
+  bool ensure_source(const std::string& source_id);
+  std::vector<std::string> list_source_ids();
 
   void replace_chunks(int64_t page_id, const std::vector<std::string>& texts);
   std::vector<Chunk> get_chunks(int64_t page_id);
@@ -51,6 +59,11 @@ class Brain {
                                    const std::string& source_id = "default");
   std::vector<Link> get_links_to(const std::string& slug,
                                  const std::string& source_id = "default");
+
+  // N10 facts (minimal)
+  void add_fact(const std::string& entity_slug, const std::string& predicate,
+                const std::string& object_text, int64_t page_id = 0);
+  std::vector<std::string> list_facts(const std::string& entity_slug, int limit = 50);
 
   BrainStats stats();
   HealthReport health();
