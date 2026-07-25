@@ -5,6 +5,8 @@
 #include "qbrain/util/time_util.hpp"
 #include "qbrain/search/vector.hpp"
 #include <nlohmann/json.hpp>
+#include <algorithm>
+#include <filesystem>
 #include <fstream>
 #include <stdexcept>
 
@@ -422,6 +424,84 @@ std::vector<std::string> Brain::list_facts(const std::string& entity_slug, int l
   st.bind_text(1, entity_slug);
   st.bind_int(2, limit);
   while (st.step()) out.push_back(st.column_text(0));
+  return out;
+}
+
+int Brain::extract_facts_from_page(const std::string& slug, const std::string& source_id) {
+  auto page = get_page(slug, source_id);
+  if (!page) return 0;
+  int n = 0;
+  // Heuristic: each outbound link becomes a mentions fact
+  for (auto& l : get_links_from(slug, source_id)) {
+    add_fact(slug, l.link_type.empty() ? "mentions" : l.link_type, l.to_slug, page->id);
+    ++n;
+  }
+  if (!page->title.empty()) {
+    add_fact(slug, "titled", page->title, page->id);
+    ++n;
+  }
+  return n;
+}
+
+void Brain::add_tag(const std::string& slug, const std::string& tag, const std::string& source_id) {
+  auto page = get_page(slug, source_id);
+  if (!page) throw std::runtime_error("page not found");
+  auto st = db_.prepare("INSERT OR IGNORE INTO tags(page_id, tag) VALUES(?,?)");
+  st.bind_int(1, page->id);
+  st.bind_text(2, tag);
+  st.step_done();
+}
+
+void Brain::remove_tag(const std::string& slug, const std::string& tag, const std::string& source_id) {
+  auto page = get_page(slug, source_id);
+  if (!page) return;
+  auto st = db_.prepare("DELETE FROM tags WHERE page_id=? AND tag=?");
+  st.bind_int(1, page->id);
+  st.bind_text(2, tag);
+  st.step_done();
+}
+
+std::vector<std::string> Brain::get_tags(const std::string& slug, const std::string& source_id) {
+  std::vector<std::string> out;
+  auto page = get_page(slug, source_id);
+  if (!page) return out;
+  auto st = db_.prepare("SELECT tag FROM tags WHERE page_id=? ORDER BY tag");
+  st.bind_int(1, page->id);
+  while (st.step()) out.push_back(st.column_text(0));
+  return out;
+}
+
+void Brain::remove_link(const std::string& from, const std::string& to, const std::string& source_id) {
+  auto st = db_.prepare("DELETE FROM links WHERE source_id=? AND from_slug=? AND to_slug=?");
+  st.bind_text(1, source_id);
+  st.bind_text(2, from);
+  st.bind_text(3, to);
+  st.step_done();
+}
+
+std::vector<std::string> Brain::find_orphans(int limit) {
+  std::vector<std::string> out;
+  auto st = db_.prepare(R"SQL(
+SELECT p.slug FROM pages p
+WHERE p.deleted_at IS NULL
+AND NOT EXISTS (SELECT 1 FROM links l WHERE l.to_slug=p.slug)
+AND NOT EXISTS (SELECT 1 FROM links l2 WHERE l2.from_slug=p.slug)
+ORDER BY p.updated_at DESC LIMIT ?
+)SQL");
+  st.bind_int(1, limit);
+  while (st.step()) out.push_back(st.column_text(0));
+  return out;
+}
+
+std::vector<std::string> Brain::list_brains() {
+  std::vector<std::string> out;
+  namespace fs = std::filesystem;
+  auto root = util::brains_root();
+  if (!fs::exists(root)) return out;
+  for (auto& e : fs::directory_iterator(root)) {
+    if (e.is_directory()) out.push_back(e.path().filename().string());
+  }
+  std::sort(out.begin(), out.end());
   return out;
 }
 

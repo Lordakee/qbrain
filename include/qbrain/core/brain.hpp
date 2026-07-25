@@ -64,6 +64,18 @@ class Brain {
   void add_fact(const std::string& entity_slug, const std::string& predicate,
                 const std::string& object_text, int64_t page_id = 0);
   std::vector<std::string> list_facts(const std::string& entity_slug, int limit = 50);
+  int extract_facts_from_page(const std::string& slug, const std::string& source_id = "default");
+
+  void add_tag(const std::string& slug, const std::string& tag,
+               const std::string& source_id = "default");
+  void remove_tag(const std::string& slug, const std::string& tag,
+                  const std::string& source_id = "default");
+  std::vector<std::string> get_tags(const std::string& slug,
+                                    const std::string& source_id = "default");
+  void remove_link(const std::string& from, const std::string& to,
+                   const std::string& source_id = "default");
+  std::vector<std::string> find_orphans(int limit = 100);
+  static std::vector<std::string> list_brains();
 
   BrainStats stats();
   HealthReport health();

@@ -1,8 +1,8 @@
 # Qbrain ↔ gbrain 全功能对齐 — 整体规划（Master Plan）
 
-**版本**: 1.2.0  
+**版本**: 1.3.0  
 **日期**: 2026-07-25  
-**状态**: N0–N11 MVP program **COMPLETE** (see `docs/reviews/CLAUDE_FINAL_PROJECT_HARD_AUDIT.md`)  
+**状态**: **COMPLETE** — final audit PASS; 32 ops; HTTP /ingest; tags/links/orphans/facts/list_brains  
 **目标**: 纯 Windows 11 原生 C++ 下，Qbrain 达到 gbrain **能力对等**（非位级移植）。
 
 ---

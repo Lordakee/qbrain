@@ -536,6 +536,166 @@ void register_builtin_ops() {
     r.ok = h.ok;
     return r;
   }, false, "Doctor report (gbrain name parity)", R"({"type":"object","properties":{}})");
+
+  // --- gbrain name aliases / remaining write ops ---
+  register_one(
+      "query", Scope::Read, [](OpContext& ctx) {
+    // alias search
+    if (ctx.args.count("query") == 0 && ctx.args.count("q")) ctx.args["query"] = ctx.args["q"];
+    OpContext c2 = ctx;
+    auto* op = global_registry().find("search");
+    return op ? op->handler(c2) : OpResult{false, 1, "search missing", ""};
+  }, false, "Alias of search (gbrain query)",
+      R"({"type":"object","properties":{"query":{"type":"string"}},"required":["query"]})");
+
+  register_one(
+      "add_link", Scope::Write, [](OpContext& ctx) {
+    OpResult r;
+    Link l;
+    l.from_slug = arg(ctx, "from");
+    l.to_slug = arg(ctx, "to");
+    l.link_type = arg(ctx, "link_type", "related");
+    l.link_source = "manual";
+    l.source_id = arg(ctx, "source_id", "default");
+    if (l.from_slug.empty() || l.to_slug.empty()) {
+      r.ok = false;
+      r.text = "from and to required";
+      return r;
+    }
+    ctx.brain->add_link(l);
+    r.text = "ok";
+    return r;
+  }, true, "Add a manual link",
+      R"({"type":"object","properties":{"from":{"type":"string"},"to":{"type":"string"},"link_type":{"type":"string"}},"required":["from","to"]})");
+
+  register_one(
+      "remove_link", Scope::Write, [](OpContext& ctx) {
+    OpResult r;
+    ctx.brain->remove_link(arg(ctx, "from"), arg(ctx, "to"), arg(ctx, "source_id", "default"));
+    r.text = "ok";
+    return r;
+  }, true, "Remove a link",
+      R"({"type":"object","properties":{"from":{"type":"string"},"to":{"type":"string"}},"required":["from","to"]})");
+
+  register_one(
+      "add_tag", Scope::Write, [](OpContext& ctx) {
+    OpResult r;
+    try {
+      ctx.brain->add_tag(arg(ctx, "slug"), arg(ctx, "tag"), arg(ctx, "source_id", "default"));
+      r.text = "ok";
+    } catch (const std::exception& e) {
+      r.ok = false;
+      r.text = e.what();
+    }
+    return r;
+  }, true, "Add tag to page",
+      R"({"type":"object","properties":{"slug":{"type":"string"},"tag":{"type":"string"}},"required":["slug","tag"]})");
+
+  register_one(
+      "remove_tag", Scope::Write, [](OpContext& ctx) {
+    OpResult r;
+    ctx.brain->remove_tag(arg(ctx, "slug"), arg(ctx, "tag"), arg(ctx, "source_id", "default"));
+    r.text = "ok";
+    return r;
+  }, true, "Remove tag",
+      R"({"type":"object","properties":{"slug":{"type":"string"},"tag":{"type":"string"}},"required":["slug","tag"]})");
+
+  register_one(
+      "get_tags", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto tags = ctx.brain->get_tags(arg(ctx, "slug"), arg(ctx, "source_id", "default"));
+    r.json = json(tags).dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "List tags on a page",
+      R"({"type":"object","properties":{"slug":{"type":"string"}},"required":["slug"]})");
+
+  register_one(
+      "find_orphans", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto o = ctx.brain->find_orphans(arg_int(ctx, "limit", 100));
+    r.json = json(o).dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "Pages with no inbound or outbound links",
+      R"({"type":"object","properties":{"limit":{"type":"integer"}}})");
+
+  register_one(
+      "extract_facts", Scope::Write, [](OpContext& ctx) {
+    OpResult r;
+    int n = ctx.brain->extract_facts_from_page(arg(ctx, "slug"), arg(ctx, "source_id", "default"));
+    r.text = "facts=" + std::to_string(n);
+    r.json = json({{"count", n}}).dump(2);
+    return r;
+  }, true, "Heuristic fact extraction from page links/title",
+      R"({"type":"object","properties":{"slug":{"type":"string"}},"required":["slug"]})");
+
+  register_one(
+      "list_brains", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    (void)ctx;
+    auto ids = Brain::list_brains();
+    r.json = json(ids).dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "List brain ids under %LOCALAPPDATA%\\Qbrain\\brains",
+      R"({"type":"object","properties":{}})");
+
+  register_one(
+      "whoami", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    r.json = json({{"remote", ctx.remote},
+                   {"allow_write", ctx.allow_write},
+                   {"brain", ctx.brain ? ctx.brain->brain_id() : ""},
+                   {"transport", ctx.remote ? "mcp" : "cli"}})
+                 .dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "Caller context", R"({"type":"object","properties":{}})");
+
+  register_one(
+      "get_chunks", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto page = ctx.brain->get_page(arg(ctx, "slug"), arg(ctx, "source_id", "default"));
+    if (!page) {
+      r.ok = false;
+      r.text = "not found";
+      return r;
+    }
+    auto chunks = ctx.brain->get_chunks(page->id);
+    json arr = json::array();
+    for (auto& c : chunks) {
+      arr.push_back({{"index", c.chunk_index},
+                     {"text", c.text.substr(0, 500)},
+                     {"embedded", !c.embedding.empty()},
+                     {"dim", c.dim}});
+    }
+    r.json = arr.dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "List chunks for a page",
+      R"({"type":"object","properties":{"slug":{"type":"string"}},"required":["slug"]})");
+
+  register_one(
+      "revert_version", Scope::Write, [](OpContext& ctx) {
+    OpResult r;
+    int64_t vid = 0;
+    try {
+      vid = std::stoll(arg(ctx, "version_id"));
+    } catch (...) {
+      r.ok = false;
+      r.text = "version_id required";
+      return r;
+    }
+    if (!ctx.brain->revert_version(arg(ctx, "slug"), vid, arg(ctx, "source_id", "default"))) {
+      r.ok = false;
+      r.text = "revert failed";
+      return r;
+    }
+    r.text = "reverted";
+    return r;
+  }, true, "Revert page to a version id",
+      R"({"type":"object","properties":{"slug":{"type":"string"},"version_id":{"type":"integer"}},"required":["slug","version_id"]})");
 }
 
 }  // namespace qbrain::ops

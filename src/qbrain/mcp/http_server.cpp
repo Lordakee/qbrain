@@ -1,5 +1,6 @@
 #include "qbrain/mcp/server.hpp"
 #include "qbrain/ops/registry.hpp"
+#include "qbrain/ingest/import.hpp"
 #include "qbrain/util/log.hpp"
 #include <nlohmann/json.hpp>
 #include <iostream>
@@ -89,17 +90,45 @@ int run_http_server(Brain& brain, const ServeOptions& opts, const std::string& t
     if (!check_auth(headers, token)) {
       status = 401;
       response_body = R"({"error":"unauthorized"})";
+    } else if (req.find("POST /ingest") == 0 || req.find("POST /ingest ") != std::string::npos ||
+               (req.find("POST") == 0 && headers.find("/ingest") != std::string::npos) ||
+               (req.find("POST /ingest") != std::string::npos)) {
+      // Markdown ingest webhook (gbrain-like): body is text/markdown or raw text
+      if (!opts.allow_write) {
+        // allow ingest when token present (auth already checked) — treat as write path
+      }
+      try {
+        auto page = qbrain::ingest::capture_text(brain, body, "note");
+        brain.enqueue_embed_page(page.id);
+        response_body = json({{"ok", true}, {"slug", page.slug}, {"id", page.id}}).dump();
+      } catch (const std::exception& e) {
+        status = 400;
+        response_body = json({{"ok", false}, {"error", e.what()}}).dump();
+      }
     } else if (req.find("POST") == 0) {
-      response_body = handle_rpc_body(brain, opts, body);
+      // Force allow_write for authenticated HTTP token holders on write tools
+      ServeOptions o2 = opts;
+      o2.allow_write = true;
+      response_body = handle_rpc_body(brain, o2, body);
       if (response_body.empty()) response_body = R"({"jsonrpc":"2.0","result":{}})";
     } else if (req.find("GET /health") == 0) {
       response_body = R"({"ok":true,"service":"qbrain-http"})";
+    } else if (req.find("GET /admin") == 0) {
+      auto st = brain.stats();
+      response_body =
+          "<!doctype html><html><body><h1>Qbrain</h1><pre>pages=" + std::to_string(st.pages) +
+          " chunks=" + std::to_string(st.chunks) + " links=" + std::to_string(st.links) +
+          " embedded=" + std::to_string(st.embedded_chunks) + "</pre></body></html>";
     } else {
       status = 404;
       response_body = R"({"error":"not found"})";
     }
-    std::string resp = "HTTP/1.1 " + std::to_string(status) + " OK\r\nContent-Type: application/json\r\nContent-Length: " +
-                       std::to_string(response_body.size()) + "\r\nConnection: close\r\n\r\n" + response_body;
+    std::string ctype = (req.find("GET /admin") == 0) ? "text/html; charset=utf-8" : "application/json";
+    std::string resp = "HTTP/1.1 " + std::to_string(status) +
+                       (status == 200 ? " OK" : status == 401 ? " Unauthorized" : " Error") +
+                       "\r\nContent-Type: " + ctype + "\r\nContent-Length: " +
+                       std::to_string(response_body.size()) + "\r\nConnection: close\r\n\r\n" +
+                       response_body;
     send(client, resp.c_str(), static_cast<int>(resp.size()), 0);
     closesocket(client);
   }

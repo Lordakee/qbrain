@@ -1,114 +1,115 @@
-# Ops Parity Ledger (gbrain → Qbrain)
+# Ops Parity Ledger
 
-Generated: 2026-07-25. Upstream names extracted from gbrain-upstream operations.ts (102 names with simple regex; full set may be higher).
-Status: implemented | planned-N*k* | out-of-scope
+Updated: 2026-07-25
+Qbrain implemented MCP/CLI ops: **32**
 
-| upstream_op | domain | status | qbrain_name | notes |
-|-------------|--------|--------|-------------|-------|
-| add_link | D5 | planned-N2 | add_link |  |
-| add_tag | D2 | planned-N1 | add_tag |  |
-| add_timeline_entry | D2 | planned-N1 | add_timeline_entry |  |
-| advisor | D19 | planned-N9 | advisor |  |
-| cancel_job | D14 | planned-N6 | cancel_job |  |
-| chronicle_backfill | D6 | planned-N4b | chronicle_backfill |  |
-| chronicle_day | D6 | planned-N4b | chronicle_day |  |
-| chronicle_last_seen | D6 | planned-N4b | chronicle_last_seen |  |
-| chronicle_on_this_day | D6 | planned-N4b | chronicle_on_this_day |  |
-| chronicle_since | D6 | planned-N4b | chronicle_since |  |
-| code_blast | D20 | planned-N10 | code_blast |  |
-| code_callees | D20 | planned-N10 | code_callees |  |
-| code_callers | D20 | planned-N10 | code_callers |  |
-| code_def | D20 | planned-N10 | code_def |  |
-| code_flow | D20 | planned-N10 | code_flow |  |
-| code_refs | D20 | planned-N10 | code_refs |  |
-| code_traversal_cache_clear | D20 | planned-N10 | code_traversal_cache_clear |  |
-| delete_page | D1 | planned-N2 | delete_page |  |
-| extract_facts | D22 | planned-N10 | extract_facts |  |
-| file_list | D2 | planned-N1 | file_list |  |
-| file_upload | D2 | planned-N1 | file_upload |  |
-| file_url | D2 | planned-N1 | file_url |  |
-| find_anomalies | D6 | planned-N4b | find_anomalies |  |
-| find_contradictions | D6 | planned-N4b | find_contradictions |  |
-| find_experts | D6 | planned-N4b | find_experts |  |
-| find_orphans | D5 | planned-N2 | find_orphans |  |
-| find_trajectory | D22 | planned-N10 | find_trajectory |  |
-| forget_fact | D22 | planned-N10 | forget_fact |  |
-| get_active_schema_pack | D1 | planned-N2 | get_active_schema_pack |  |
-| get_backlinks | D5 | planned-N2 | get_backlinks |  |
-| get_brain_identity | D16 | planned-N6 | get_brain_identity |  |
-| get_calibration_profile | D25 | planned-N11 | get_calibration_profile |  |
-| get_chunks | D3 | planned-N3 | get_chunks |  |
-| get_health | D16 | implemented | get_health | MVP |
-| get_ingest_log | D2 | planned-N1 | get_ingest_log |  |
-| get_job | D14 | planned-N6 | get_job |  |
-| get_job_progress | D14 | planned-N6 | get_job_progress |  |
-| get_links | D5 | implemented | get_links | MVP |
-| get_page | D1 | implemented | get_page | MVP |
-| get_raw_data | D25 | planned-N11 | get_raw_data |  |
-| get_recent_salience | D6 | planned-N4b | get_recent_salience |  |
-| get_recent_transcripts | D25 | planned-N11 | get_recent_transcripts |  |
-| get_skill | D19 | planned-N9 | get_skill |  |
-| get_stats | D16 | implemented | get_stats | MVP |
-| get_status_snapshot | D16 | planned-N6 | get_status_snapshot |  |
-| get_tags | D2 | planned-N1 | get_tags |  |
-| get_timeline | D2 | planned-N1 | get_timeline |  |
-| get_versions | D1 | planned-N2 | get_versions |  |
-| list_brain_skillpack | D19 | planned-N9 | list_brain_skillpack |  |
-| list_jobs | D14 | planned-N6 | list_jobs |  |
-| list_link_sources | D5 | planned-N2 | list_link_sources |  |
-| list_pages | D1 | implemented | list_pages | MVP |
-| list_schema_packs | D1 | planned-N2 | list_schema_packs |  |
-| list_skills | D19 | planned-N9 | list_skills |  |
-| log_ingest | D2 | planned-N1 | log_ingest |  |
-| ontology_conflicts | D6 | planned-N4b | ontology_conflicts |  |
-| ontology_dimensions | D6 | planned-N4b | ontology_dimensions |  |
-| ontology_get | D6 | planned-N4b | ontology_get |  |
-| ontology_propose | D6 | planned-N4b | ontology_propose |  |
-| pause_job | D14 | planned-N6 | pause_job |  |
-| purge_deleted_pages | D25 | planned-N11 | purge_deleted_pages |  |
-| put_page | D1 | implemented | put_page | MVP |
-| put_raw_data | D2 | planned-N1 | put_raw_data |  |
-| query | D3 | planned-N3 | query |  |
-| recall | D3 | planned-N3 | recall |  |
-| reload_schema_pack | D1 | planned-N2 | reload_schema_pack |  |
-| remove_link | D5 | planned-N2 | remove_link |  |
-| remove_tag | D2 | planned-N1 | remove_tag |  |
-| replay_job | D14 | planned-N6 | replay_job |  |
-| resolve_slugs | D25 | planned-N11 | resolve_slugs |  |
-| restore_page | D1 | planned-N2 | restore_page |  |
-| resume_job | D14 | planned-N6 | resume_job |  |
-| retry_job | D14 | planned-N6 | retry_job |  |
-| revert_version | D1 | planned-N2 | revert_version |  |
-| run_doctor | D16 | planned-N6 | run_doctor |  |
-| run_onboard | D11 | planned-N5 | run_onboard |  |
-| run_skillopt | D19 | planned-N9 | run_skillopt |  |
-| schema_apply_mutations | D1 | planned-N2 | schema_apply_mutations |  |
-| schema_explain_type | D1 | planned-N2 | schema_explain_type |  |
-| schema_graph | D5 | planned-N2 | schema_graph |  |
-| schema_lint | D1 | planned-N2 | schema_lint |  |
-| schema_review_orphans | D5 | planned-N2 | schema_review_orphans |  |
-| schema_stats | D1 | planned-N2 | schema_stats |  |
-| search | D3 | implemented | search | MVP |
-| search_by_image | D3 | planned-N3 | search_by_image |  |
-| send_job_message | D14 | planned-N6 | send_job_message |  |
-| sources_add | D18 | planned-N2.5 | sources_add |  |
-| sources_list | D18 | planned-N2.5 | sources_list |  |
-| sources_remove | D18 | planned-N2.5 | sources_remove |  |
-| sources_status | D18 | planned-N2.5 | sources_status |  |
-| submit_agent | D14 | planned-N6 | submit_agent |  |
-| submit_job | D14 | planned-N6 | submit_job |  |
-| sync_brain | D11 | planned-N5 | sync_brain |  |
-| takes_calibration | D22 | planned-N10 | takes_calibration |  |
-| takes_list | D22 | planned-N10 | takes_list |  |
-| takes_scorecard | D22 | planned-N10 | takes_scorecard |  |
-| takes_search | D3 | planned-N3 | takes_search |  |
-| think | D6 | implemented | think | MVP |
-| traverse_graph | D5 | planned-N2 | traverse_graph |  |
-| volunteer_chronicle | D6 | planned-N4b | volunteer_chronicle |  |
-| volunteer_context | D6 | planned-N4b | volunteer_context |  |
-| whoami | D16 | planned-N6 | whoami |  |
+| upstream_op | status | notes |
+|-------------|--------|-------|
+| add_link | **implemented** | |
+| add_tag | **implemented** | |
+| add_timeline_entry | out-of-scope-v1 | deferred |
+| advisor | out-of-scope-v1 | deferred |
+| cancel_job | out-of-scope-v1 | deferred |
+| chronicle_backfill | out-of-scope-v1 | deferred |
+| chronicle_day | out-of-scope-v1 | deferred |
+| chronicle_last_seen | out-of-scope-v1 | deferred |
+| chronicle_on_this_day | out-of-scope-v1 | deferred |
+| chronicle_since | out-of-scope-v1 | deferred |
+| code_blast | out-of-scope-v1 | deferred |
+| code_callees | out-of-scope-v1 | deferred |
+| code_callers | out-of-scope-v1 | deferred |
+| code_def | out-of-scope-v1 | deferred |
+| code_flow | out-of-scope-v1 | deferred |
+| code_refs | out-of-scope-v1 | deferred |
+| code_traversal_cache_clear | out-of-scope-v1 | deferred |
+| delete_page | **implemented** | |
+| extract_facts | **implemented** | |
+| file_list | out-of-scope-v1 | deferred |
+| file_upload | out-of-scope-v1 | deferred |
+| file_url | out-of-scope-v1 | deferred |
+| find_anomalies | out-of-scope-v1 | deferred |
+| find_contradictions | out-of-scope-v1 | deferred |
+| find_experts | out-of-scope-v1 | deferred |
+| find_orphans | **implemented** | |
+| find_trajectory | **implemented** | |
+| forget_fact | out-of-scope-v1 | deferred |
+| get_active_schema_pack | out-of-scope-v1 | deferred |
+| get_backlinks | **implemented** | |
+| get_brain_identity | out-of-scope-v1 | deferred |
+| get_calibration_profile | out-of-scope-v1 | deferred |
+| get_chunks | **implemented** | |
+| get_health | **implemented** | |
+| get_ingest_log | out-of-scope-v1 | deferred |
+| get_job | out-of-scope-v1 | deferred |
+| get_job_progress | out-of-scope-v1 | deferred |
+| get_links | **implemented** | |
+| get_page | **implemented** | |
+| get_raw_data | out-of-scope-v1 | deferred |
+| get_recent_salience | out-of-scope-v1 | deferred |
+| get_recent_transcripts | out-of-scope-v1 | deferred |
+| get_skill | **implemented** | |
+| get_stats | **implemented** | |
+| get_status_snapshot | out-of-scope-v1 | deferred |
+| get_tags | **implemented** | |
+| get_timeline | out-of-scope-v1 | deferred |
+| get_versions | **implemented** | |
+| list_brain_skillpack | out-of-scope-v1 | deferred |
+| list_jobs | out-of-scope-v1 | deferred |
+| list_link_sources | out-of-scope-v1 | deferred |
+| list_pages | **implemented** | |
+| list_schema_packs | out-of-scope-v1 | deferred |
+| list_skills | **implemented** | |
+| log_ingest | out-of-scope-v1 | deferred |
+| ontology_conflicts | out-of-scope-v1 | deferred |
+| ontology_dimensions | out-of-scope-v1 | deferred |
+| ontology_get | out-of-scope-v1 | deferred |
+| ontology_propose | out-of-scope-v1 | deferred |
+| pause_job | out-of-scope-v1 | deferred |
+| purge_deleted_pages | **implemented** | |
+| put_page | **implemented** | |
+| put_raw_data | out-of-scope-v1 | deferred |
+| query | **implemented** | |
+| recall | out-of-scope-v1 | deferred |
+| reload_schema_pack | out-of-scope-v1 | deferred |
+| remove_link | **implemented** | |
+| remove_tag | **implemented** | |
+| replay_job | out-of-scope-v1 | deferred |
+| resolve_slugs | out-of-scope-v1 | deferred |
+| restore_page | **implemented** | |
+| resume_job | out-of-scope-v1 | deferred |
+| retry_job | out-of-scope-v1 | deferred |
+| revert_version | **implemented** | |
+| run_doctor | **implemented** | |
+| run_onboard | out-of-scope-v1 | deferred |
+| run_skillopt | out-of-scope-v1 | deferred |
+| schema_apply_mutations | out-of-scope-v1 | deferred |
+| schema_explain_type | out-of-scope-v1 | deferred |
+| schema_graph | out-of-scope-v1 | deferred |
+| schema_lint | out-of-scope-v1 | deferred |
+| schema_review_orphans | out-of-scope-v1 | deferred |
+| schema_stats | out-of-scope-v1 | deferred |
+| search | **implemented** | |
+| search_by_image | out-of-scope-v1 | deferred |
+| send_job_message | out-of-scope-v1 | deferred |
+| sources_add | **implemented** | |
+| sources_list | **implemented** | |
+| sources_remove | out-of-scope-v1 | deferred |
+| sources_status | out-of-scope-v1 | deferred |
+| submit_agent | out-of-scope-v1 | deferred |
+| submit_job | out-of-scope-v1 | deferred |
+| sync_brain | out-of-scope-v1 | deferred |
+| takes_calibration | out-of-scope-v1 | deferred |
+| takes_list | out-of-scope-v1 | deferred |
+| takes_scorecard | out-of-scope-v1 | deferred |
+| takes_search | out-of-scope-v1 | deferred |
+| think | **implemented** | |
+| traverse_graph | out-of-scope-v1 | deferred |
+| volunteer_chronicle | out-of-scope-v1 | deferred |
+| volunteer_context | out-of-scope-v1 | deferred |
+| whoami | **implemented** | |
 
-## Qbrain-only extensions
-| op | status | notes |
-|----|--------|-------|
-| capture | implemented | CLI+MCP; gbrain is CLI-only (not an MCP op). Intentional extension when --allow-write. |
+## Qbrain extensions (not in gbrain ops list)
+| op | status |
+|----|--------|
+| capture | implemented |
+| list_brains | implemented |
