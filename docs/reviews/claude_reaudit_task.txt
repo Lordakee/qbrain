@@ -1,0 +1,33 @@
+STRICT RE-AUDIT after fixes. Do not chat. Execute tools and write the report file.
+
+Working directory: D:\Projects\Qbrain
+
+Previous FAIL audit: docs/reviews/CLAUDE_HARD_AUDIT.md listed P0/P1.
+
+Fixes that were applied (verify in code):
+1. P0-1: list_chunks_missing_embedding single SQL; embed --all uses it (brain.hpp/cpp, commands.cpp)
+2. P0-2: put_page and capture register with local_only=true (handlers.cpp)
+3. P1-1: save_file_config no longer writes api_key (brain.cpp)
+4. P1-2: replace_chunks wrapped in BEGIN/COMMIT/ROLLBACK
+5. P1-3: migrate.cpp supports v1 bootstrap + v2 additive indexes
+6. P1-4: fts_search/vector_search/hybrid honor source_id
+7. P1-5: fts_quote lowercases tokens
+8. P1-6: step_done drains unexpected rows
+
+You MUST:
+1. Grep/read the fixed files to confirm each fix exists
+2. Run: D:\Projects\Qbrain\build\cl\qbrain.exe doctor
+3. Run: D:\Projects\Qbrain\build\cl\qbrain_tests.exe
+4. Write final report to: D:\Projects\Qbrain\docs\reviews\CLAUDE_HARD_AUDIT_PASS.md
+
+If all P0 and P1 from previous audit are fixed and hard requirements still pass, VERDICT must be PASS.
+If any P0/P1 remains unfixed, VERDICT FAIL with remaining items.
+
+Format:
+# VERDICT: PASS | FAIL
+## Summary
+## P0/P1 Fix Verification table (ID | Status | Evidence path:line)
+## Hard Requirements table
+## Remaining P2 (non-blocking)
+## Runtime evidence
+## Conclusion

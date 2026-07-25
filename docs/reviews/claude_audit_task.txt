@@ -1,0 +1,53 @@
+STRICT HARD AUDIT — do not chat, do not ask questions, execute now.
+
+Working directory: D:\Projects\Qbrain
+
+You MUST:
+1. Read gbrain-upstream/README.md, CLAUDE.md (architecture section), src/core/operations.ts (first 200 lines + search for operation names), src/core/search/hybrid.ts (exports/structure), src/commands/think.ts, docs/ENGINES.md
+2. Read Qbrain docs/01-ANALYSIS.md, docs/02-DEVELOPMENT.md
+3. Read Qbrain include/qbrain/**/*.hpp and key src files: core/brain.cpp, search/hybrid.cpp, graph/extract.cpp, ops/handlers.cpp, cli/commands.cpp, schema/001_init.sql, CMakeLists.txt
+4. Run shell: D:\Projects\Qbrain\build\cl\qbrain.exe version
+5. Run shell: D:\Projects\Qbrain\build\cl\qbrain.exe doctor
+6. Write the full audit report to: D:\Projects\Qbrain\docs\reviews\CLAUDE_HARD_AUDIT.md
+
+Hard constraints (any fail = VERDICT FAIL):
+- Pure Windows 11 native (no WSL2/Docker required to run)
+- Implemented in C++
+- Has page CRUD, hybrid search path, graph links, think synthesis path
+
+Report format EXACTLY:
+
+# VERDICT: PASS | FAIL
+
+## Summary
+(2-5 sentences)
+
+## Hard Requirements
+| ID | Requirement | Status | Evidence |
+|----|-------------|--------|----------|
+| H1 | Win11 native no WSL | PASS/FAIL | ... |
+| H2 | C++ implementation | PASS/FAIL | ... |
+| H3 | Page CRUD | PASS/FAIL | ... |
+| H4 | Hybrid search | PASS/FAIL | ... |
+| H5 | Graph links | PASS/FAIL | ... |
+| H6 | Think path | PASS/FAIL | ... |
+| H7 | Docs consistency | PASS/FAIL | ... |
+| H8 | Runtime smoke | PASS/FAIL | ... |
+
+## Findings
+### P0 (blockers for PASS)
+### P1
+### P2
+
+## Required Fixes (ordered, with file paths)
+1. ...
+
+## Gap vs upstream gbrain (non-blocking if documented)
+...
+
+## Pass Criteria for next review
+- [ ] all P0 fixed
+- [ ] ...
+
+Be strict. If hybrid search is FTS-only without real vector path wired, mark H4 carefully. If think degrades without API key but code path exists, H6 can pass with note.
+After writing CLAUDE_HARD_AUDIT.md, print only: AUDIT_WRITTEN

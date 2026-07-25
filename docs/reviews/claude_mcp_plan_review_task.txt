@@ -1,0 +1,28 @@
+You are a strict architecture reviewer for Qbrain MCP (Windows-native C++).
+
+Read fully:
+- D:\Projects\Qbrain\docs\04-MCP-REQUIREMENTS.md
+- D:\Projects\Qbrain\docs\05-MCP-PLAN.md
+- D:\Projects\Qbrain\gbrain-upstream\src\mcp\server.ts (gbrain reference)
+- D:\Projects\Qbrain\include\qbrain\ops\registry.hpp
+- D:\Projects\Qbrain\docs\reviews\CLAUDE_HARD_AUDIT_PASS.md (prior security posture)
+
+Task: Review the MCP requirements + plan BEFORE implementation.
+
+Write report to: D:\Projects\Qbrain\docs\reviews\CLAUDE_MCP_PLAN_REVIEW.md
+
+Required format:
+
+# VERDICT: PLAN_APPROVED | PLAN_REVISE
+
+## Summary
+## Alignment with gbrain (usage + trust model)
+## Answers to requirements §9 questions (1-4)
+## Required plan changes (P0 must fix before code / P1 should fix / P2 optional)
+## Security review of --allow-write
+## Framing choice (Content-Length) approval or alternative
+## Tool set completeness for MVP agent memory
+## Pass criteria for implementation hard audit
+
+Be strict. If write-default-deny conflicts with "same as gbrain", propose concrete resolution.
+If PLAN_APPROVED, list non-blocking notes only.

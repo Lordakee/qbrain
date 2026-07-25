@@ -1,0 +1,36 @@
+FINAL HARD PASS/FAIL RE-AUDIT. Do not chat. Use tools. Write the file.
+
+Working directory: D:\Projects\Qbrain
+
+Context:
+- CLAUDE_HARD_AUDIT.md was FAIL with P0/P1; those were fixed.
+- CLAUDE_REVIEW_4.md found N2/N3 (P1) plus N1/N4/N5; those are now fixed:
+  * replace_extracted_links has BEGIN/COMMIT/ROLLBACK
+  * think --save calls replace_extracted_links
+  * doctor warns if embedded_chunks > 5000
+  * LIKE path escapes % _ with ESCAPE '\'
+  * frontmatter end delimiter is \n---\n
+  * delete CLI command wired to soft_delete
+
+Verify with Read/Grep:
+1. brain.cpp replace_extracted_links has BEGIN
+2. handlers.cpp think save has replace_extracted_links
+3. commands.cpp has cmd_delete and "delete" dispatch
+4. hybrid.cpp has ESCAPE and replace_all for % _
+5. markdown.cpp uses "\n---\n"
+6. Run: build\cl\qbrain_tests.exe
+7. Run: build\cl\qbrain.exe doctor
+
+Write ONLY to: D:\Projects\Qbrain\docs\reviews\CLAUDE_HARD_AUDIT_PASS.md
+
+If all previous P0/P1 and Review4 N2/N3 are fixed, and hard product constraints still hold, you MUST set:
+
+# VERDICT: PASS
+
+Include:
+## Summary
+## Fix verification table
+## Hard requirements
+## Remaining non-blocking (P2 / Phase2 only)
+## Runtime evidence
+## Conclusion: APPROVED for MVP
