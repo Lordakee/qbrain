@@ -64,12 +64,28 @@ qbrain_lib(graph
 )
 target_link_libraries(qbrain_graph PUBLIC qbrain_core qbrain_util)
 
+qbrain_lib(codeintel
+  src/qbrain/codeintel/scan.cpp
+)
+target_link_libraries(qbrain_codeintel PUBLIC qbrain_core qbrain_util)
+
 qbrain_lib(search
   src/qbrain/search/vector.cpp
   src/qbrain/search/rrf.cpp
   src/qbrain/search/hybrid.cpp
+  src/qbrain/search/rerank.cpp
 )
-target_link_libraries(qbrain_search PUBLIC qbrain_core qbrain_util)
+target_link_libraries(qbrain_search PUBLIC qbrain_core qbrain_util qbrain_ai)
+
+qbrain_lib(jobs
+  src/qbrain/jobs/minions.cpp
+)
+target_link_libraries(qbrain_jobs PUBLIC qbrain_core qbrain_ai qbrain_util)
+
+qbrain_lib(cycle
+  src/qbrain/cycle/dream.cpp
+)
+target_link_libraries(qbrain_cycle PUBLIC qbrain_core qbrain_jobs qbrain_util)
 
 qbrain_lib(ingest
   src/qbrain/ingest/chunker.cpp
@@ -88,18 +104,20 @@ if(WIN32)
   target_link_libraries(qbrain_ai PUBLIC winhttp)
 endif()
 
+qbrain_lib(service
+  src/qbrain/service/inbox_watch.cpp
+  src/qbrain/service/live_sync.cpp
+)
+target_link_libraries(qbrain_service PUBLIC qbrain_core qbrain_ingest qbrain_util)
+
 qbrain_lib(ops
   src/qbrain/ops/registry.cpp
   src/qbrain/ops/handlers.cpp
 )
 target_link_libraries(qbrain_ops PUBLIC
-  qbrain_core qbrain_search qbrain_graph qbrain_ingest qbrain_ai qbrain_util
+  qbrain_core qbrain_search qbrain_graph qbrain_ingest qbrain_ai qbrain_jobs qbrain_cycle
+  qbrain_service qbrain_util
 )
-
-qbrain_lib(service
-  src/qbrain/service/inbox_watch.cpp
-)
-target_link_libraries(qbrain_service PUBLIC qbrain_core qbrain_ingest qbrain_util)
 
 qbrain_lib(mcp
   src/qbrain/mcp/jsonrpc.cpp
@@ -132,9 +150,12 @@ add_executable(qbrain_tests
   tests/test_extract.cpp
   tests/test_storage.cpp
   tests/test_mcp.cpp
+  tests/test_rerank.cpp
+  tests/test_minions.cpp
+  tests/test_codeintel.cpp
 )
 target_link_libraries(qbrain_tests PRIVATE
-  qbrain_mcp qbrain_ops qbrain_search qbrain_graph qbrain_ingest qbrain_ai
+  qbrain_mcp qbrain_ops qbrain_search qbrain_jobs qbrain_cycle qbrain_graph qbrain_codeintel qbrain_ingest qbrain_ai
   qbrain_storage qbrain_core qbrain_util
 )
 if(WIN32)

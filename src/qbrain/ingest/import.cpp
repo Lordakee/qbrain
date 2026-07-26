@@ -59,6 +59,11 @@ ImportResult import_path(Brain& brain, const std::string& path) {
   fs::path p = util::utf8_to_path(path);
   if (!fs::exists(p)) {
     ++r.errors;
+    try {
+      brain.log_ingest("import", path,
+                       nlohmann::json({{"pages", 0}, {"errors", 1}, {"reason", "missing"}}).dump());
+    } catch (...) {
+    }
     return r;
   }
   if (fs::is_regular_file(p)) {
@@ -69,6 +74,14 @@ ImportResult import_path(Brain& brain, const std::string& path) {
       r.links += static_cast<int>(brain.get_links_from(page.slug).size());
     } catch (...) {
       ++r.errors;
+    }
+    try {
+      brain.log_ingest(
+          "import", path,
+          nlohmann::json({{"pages", r.pages}, {"files", r.files}, {"links", r.links},
+                          {"errors", r.errors}})
+              .dump());
+    } catch (...) {
     }
     return r;
   }
@@ -85,6 +98,14 @@ ImportResult import_path(Brain& brain, const std::string& path) {
     } catch (...) {
       ++r.errors;
     }
+  }
+  try {
+    brain.log_ingest(
+        "import", path,
+        nlohmann::json({{"pages", r.pages}, {"files", r.files}, {"links", r.links},
+                        {"errors", r.errors}})
+            .dump());
+  } catch (...) {
   }
   return r;
 }

@@ -12,6 +12,9 @@ struct HybridOpts {
   bool use_vector = true;
   std::string source_id;  // empty = all
   std::string mode;       // conservative | balanced | tokenmax (N3)
+  bool rerank = false;    // explicit override; tokenmax enables by default
+  bool rerank_llm = false;
+  const Config* config = nullptr;  // needed for LLM rerank; optional
 };
 
 std::vector<SearchHit> fts_search(Brain& brain, const std::string& query, int limit,

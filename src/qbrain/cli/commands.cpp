@@ -3,8 +3,11 @@
 #include "qbrain/ops/registry.hpp"
 #include "qbrain/ingest/import.hpp"
 #include "qbrain/ai/embed.hpp"
+#include "qbrain/cycle/dream.hpp"
+#include "qbrain/jobs/minions.hpp"
 #include "qbrain/mcp/server.hpp"
 #include "qbrain/service/inbox_watch.hpp"
+#include "qbrain/service/live_sync.hpp"
 #include "qbrain/util/paths.hpp"
 #include "qbrain/util/string_util.hpp"
 #include "qbrain/util/log.hpp"
@@ -58,7 +61,8 @@ std::string join_positional(const std::vector<std::string>& args,
       if (args[i] == f) {
         is_flag = true;
         if (f.rfind("--", 0) == 0 && f != "--json" && f != "--save" && f != "--stdin" &&
-            f != "--all" && f != "--help" && f != "--no-vector")
+            f != "--all" && f != "--help" && f != "--no-vector" && f != "--rerank" &&
+            f != "--rerank-llm" && f != "--apply" && f != "--once" && f != "--watch")
           ++i;
         break;
       }
@@ -78,23 +82,23 @@ void print_help() {
       "  qbrain <command> [args]\n\n"
       "Commands:\n"
       "  init [--brain id]              Create local brain (SQLite, no WSL)\n"
-      "  doctor                         Health check\n"
+      "  doctor [--remediate] [--json]   Health check; --remediate auto-fixes\n"
       "  config get|set <key> [value]   Configuration\n"
       "  put --slug s --title t [--file f] [--type note]\n"
       "  get <slug>\n"
       "  list [--limit N] [--type t]\n"
       "  capture \"text\" | --file f | --stdin\n"
       "  import <path>\n"
-      "  search \"query\" [--limit N] [--json] [--no-vector]\n"
+      "  search \"query\" [--limit N] [--json] [--no-vector] [--mode m] [--rerank]\n"
       "  think \"question\" [--json] [--save]\n"
       "  graph <slug> [--depth N]\n"
       "  delete <slug> [--source default]\n"
       "  embed --all | --slug s | --drain   (drain: process embed jobs queue)\n"
       "  serve [--brain id] [--allow-write] [--http] [--port N]\n"
       "  inbox [--watch]                     process %LOCALAPPDATA%\\Qbrain\\inbox\n"
-      "  sync <notes-dir>                    import/sync a notes folder\n"
-      "  worker [--once]                     drain embed jobs + inbox\n"
-      "  dream [--apply]                     consolidate phase (facts)\n"
+      "  sync <notes-dir> [--watch] [--once]  live-sync notes (mtime state)\n"
+      "  worker [--once]                     claim/complete minion jobs + inbox\n"
+      "  dream [--apply] [--phase p] [--json]  multi-phase cycle\n"
       "  version\n"
       "  help\n\n"
       "MCP:\n"
@@ -136,6 +140,21 @@ int cmd_doctor(const std::vector<std::string>& args) {
     ops::OpContext ctx;
     ctx.brain = &b;
     ctx.remote = false;
+    ctx.allow_write = true;
+    if (flag(args, "--remediate")) {
+      auto r = ops::global_registry().call("doctor_remediate", ctx);
+      if (flag(args, "--json"))
+        std::cout << r.json << "\n";
+      else
+        std::cout << r.text;
+      if (!r.ok) return 1;
+      auto h = ops::global_registry().call("get_health", ctx);
+      if (flag(args, "--json"))
+        std::cout << h.json << "\n";
+      else
+        std::cout << h.text;
+      return h.ok ? 0 : 1;
+    }
     auto r = ops::global_registry().call("get_health", ctx);
     if (flag(args, "--json"))
       std::cout << r.json << "\n";
@@ -278,9 +297,15 @@ int cmd_search(const std::vector<std::string>& args) {
   return with_brain(args, [&](Brain& b) {
     ops::OpContext ctx;
     ctx.brain = &b;
-    ctx.args["query"] = join_positional(args, {"--brain", "--limit", "--json", "--no-vector"});
+    ctx.args["query"] =
+        join_positional(args, {"--brain", "--limit", "--json", "--no-vector", "--mode", "--rerank",
+                               "--rerank-llm"});
     ctx.args["limit"] = opt(args, "--limit", std::to_string(b.config().search_default_limit));
     if (flag(args, "--no-vector")) ctx.args["no_vector"] = "1";
+    auto mode = opt(args, "--mode");
+    if (!mode.empty()) ctx.args["mode"] = mode;
+    if (flag(args, "--rerank")) ctx.args["rerank"] = "1";
+    if (flag(args, "--rerank-llm")) ctx.args["rerank_llm"] = "1";
     auto r = ops::global_registry().call("search", ctx);
     std::cout << (flag(args, "--json") ? r.json : r.text);
     return r.ok ? 0 : r.exit_code;
@@ -362,15 +387,29 @@ int cmd_inbox(const std::vector<std::string>& args) {
 
 int cmd_sync(const std::vector<std::string>& args) {
   return with_brain(args, [&](Brain& b) {
-    auto path = join_positional(args, {"--brain", "--once"});
+    auto path = join_positional(args, {"--brain", "--once", "--watch", "--interval", "--source"});
     if (path.empty()) {
-      std::cerr << "usage: qbrain sync <notes-dir>\n";
+      std::cerr << "usage: qbrain sync <notes-dir> [--watch] [--once] [--interval ms]\n";
       return 1;
     }
-    auto r = ingest::import_path(b, path);
+    auto source = opt(args, "--source", "default");
+    int interval = 2000;
+    try {
+      if (!opt(args, "--interval").empty()) interval = std::stoi(opt(args, "--interval"));
+    } catch (...) {
+    }
+    if (flag(args, "--watch")) {
+      int cycles = flag(args, "--once") ? 1 : 0;
+      int n = service::live_sync_watch(b, path, interval, cycles, source);
+      b.drain_embed_jobs(100);
+      std::cout << "live_sync_watch imported_pages_total=" << n << "\n";
+      return 0;
+    }
+    auto r = service::live_sync_once(b, path, source);
     b.drain_embed_jobs(100);
-    std::cout << "sync pages=" << r.pages << " errors=" << r.errors << "\n";
-    return r.errors ? 1 : 0;
+    std::cout << "live_sync scanned=" << r.scanned << " imported=" << r.imported_pages
+              << " skipped=" << r.skipped << " errors=" << r.errors << "\n";
+    return r.errors && !r.imported_pages ? 1 : 0;
   });
 }
 
@@ -378,9 +417,12 @@ int cmd_worker(const std::vector<std::string>& args) {
   return with_brain(args, [&](Brain& b) {
     int cycles = flag(args, "--once") ? 1 : 1000000;
     for (int i = 0; i < cycles; ++i) {
-      int n = b.drain_embed_jobs(20);
+      int n = jobs::drain_jobs(b, 20, "cli-worker");
+      int legacy = b.drain_embed_jobs(10);
       int inbox_n = service::watch_inbox_once(b);
-      if (n || inbox_n) std::cout << "worker embed_chunks=" << n << " inbox=" << inbox_n << "\n";
+      if (n || legacy || inbox_n)
+        std::cout << "worker jobs=" << n << " legacy_embed=" << legacy << " inbox=" << inbox_n
+                  << "\n";
       if (flag(args, "--once")) break;
       Sleep(3000);
     }
@@ -390,17 +432,18 @@ int cmd_worker(const std::vector<std::string>& args) {
 
 int cmd_dream(const std::vector<std::string>& args) {
   return with_brain(args, [&](Brain& b) {
-    bool dry = !flag(args, "--apply");
-    auto pages = b.list_pages(20);
-    std::cout << (dry ? "[dry-run] " : "") << "dream phase=consolidate candidates=" << pages.size()
-              << "\n";
-    for (auto& p : pages) {
-      // minimal: extract [[wikilinks]] already done on write; record a fact from title
-      if (!dry) b.add_fact(p.slug, "titled", p.title, p.id);
-      std::cout << "  " << p.slug << "\n";
+    cycle::DreamOpts opts;
+    opts.dry_run = !flag(args, "--apply");
+    opts.phase = opt(args, "--phase");
+    if (flag(args, "--json")) {
+      auto report = cycle::run_dream(b, opts);
+      std::cout << cycle::report_to_json(report) << "\n";
+      return report.status == "failed" ? 1 : 0;
     }
-    if (dry) std::cout << "re-run with --apply to write facts\n";
-    return 0;
+    auto report = cycle::run_dream(b, opts);
+    std::cout << cycle::report_to_text(report);
+    if (opts.dry_run) std::cout << "re-run with --apply to write\n";
+    return report.status == "failed" ? 1 : 0;
   });
 }
 

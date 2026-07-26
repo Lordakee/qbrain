@@ -21,9 +21,13 @@ $sources = @(
   "src\qbrain\core\brain.cpp",
   "src\qbrain\graph\extract.cpp",
   "src\qbrain\graph\traverse.cpp",
+  "src\qbrain\codeintel\scan.cpp",
   "src\qbrain\search\vector.cpp",
   "src\qbrain\search\rrf.cpp",
   "src\qbrain\search\hybrid.cpp",
+  "src\qbrain\search\rerank.cpp",
+  "src\qbrain\jobs\minions.cpp",
+  "src\qbrain\cycle\dream.cpp",
   "src\qbrain\ingest\chunker.cpp",
   "src\qbrain\ingest\markdown.cpp",
   "src\qbrain\ingest\import.cpp",
@@ -32,6 +36,11 @@ $sources = @(
   "src\qbrain\ai\chat.cpp",
   "src\qbrain\ops\registry.cpp",
   "src\qbrain\ops\handlers.cpp",
+  "src\qbrain\service\inbox_watch.cpp",
+  "src\qbrain\service\live_sync.cpp",
+  "src\qbrain\mcp\jsonrpc.cpp",
+  "src\qbrain\mcp\server.cpp",
+  "src\qbrain\mcp\http_server.cpp",
   "src\qbrain\cli\app.cpp",
   "src\qbrain\cli\commands.cpp",
   "src\qbrain\main.cpp"
@@ -48,14 +57,14 @@ cl /nologo /std:c++20 /EHsc /O2 /utf-8 /I"$inc" /I"$third" /I"$sqlite" /DUNICODE
 if errorlevel 1 exit /b 1
 cl /nologo /std:c++20 /EHsc /O2 /utf-8 /I"$inc" /I"$third" /I"$sqlite" /DUNICODE /D_UNICODE /DNOMINMAX /DWIN32_LEAN_AND_MEAN /DSQLITE_ENABLE_FTS5 /c $srcList
 if errorlevel 1 exit /b 1
-link /nologo /OUT:qbrain.exe /MANIFEST:NO *.obj winhttp.lib bcrypt.lib shell32.lib ole32.lib advapi32.lib
+rem Exclude test_*.obj so unit-test objects do not collide with main.
+link /nologo /OUT:qbrain.exe /MANIFEST:NO paths.obj hash.obj log.obj string_util.obj time_util.obj database.obj migrate.obj types.obj brain.obj extract.obj traverse.obj scan.obj vector.obj rrf.obj hybrid.obj rerank.obj minions.obj dream.obj chunker.obj markdown.obj import.obj http_client.obj embed.obj chat.obj registry.obj handlers.obj inbox_watch.obj live_sync.obj jsonrpc.obj server.obj http_server.obj app.obj commands.obj main.obj sqlite3.obj winhttp.lib bcrypt.lib shell32.lib ole32.lib advapi32.lib ws2_32.lib
 if errorlevel 1 exit /b 1
 echo BUILD_OK
 dir qbrain.exe
 "@
 
 $batPath = "C:\Users\ADMINI~1\AppData\Local\Temp\opencode\qbrain-cl.bat"
-# Write without breaking paths - use a simpler approach via cmd
 Set-Content -Path $batPath -Value $bat -Encoding ASCII
 cmd /c $batPath
 exit $LASTEXITCODE

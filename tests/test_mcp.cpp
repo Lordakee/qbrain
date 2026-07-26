@@ -91,6 +91,58 @@ void test_mcp() {
   auto pingj = json::parse(ping_resp);
   QB_CHECK(pingj.contains("result"));
 
+  // N12 MCP round-trip: submit_job → list_jobs → get_job → cancel_job → run_dream
+  opts.allow_write = true;
+  auto submit_req =
+      R"({"jsonrpc":"2.0","id":10,"method":"tools/call","params":{"name":"submit_job","arguments":{"type":"embed","payload_json":"{\"page_id\":1}"}}})";
+  auto submit_resp = qbrain::mcp::handle_rpc_body(b, opts, submit_req);
+  auto subj = json::parse(submit_resp);
+  QB_CHECK(subj["result"]["isError"] == false);
+  auto sub_text = subj["result"]["content"][0]["text"].get<std::string>();
+  QB_CHECK(sub_text.find("job") != std::string::npos);
+
+  auto list_jobs_req =
+      R"({"jsonrpc":"2.0","id":11,"method":"tools/call","params":{"name":"list_jobs","arguments":{"status":"waiting"}}})";
+  auto list_jobs_resp = qbrain::mcp::handle_rpc_body(b, opts, list_jobs_req);
+  auto ljj = json::parse(list_jobs_resp);
+  QB_CHECK(ljj["result"]["isError"] == false);
+  auto list_text = ljj["result"]["content"][0]["text"].get<std::string>();
+  QB_CHECK(list_text.find("embed") != std::string::npos || list_text.find("waiting") != std::string::npos ||
+           list_text.find("\"id\"") != std::string::npos);
+
+  // parse job id from submit json if present in text
+  int64_t jid = 0;
+  try {
+    // tools/call returns text; submit handler puts json in text field too when set
+    auto pos = sub_text.find_first_of("0123456789");
+    if (pos != std::string::npos) jid = std::stoll(sub_text.substr(pos));
+  } catch (...) {
+  }
+  if (jid > 0) {
+    auto get_req = std::string(
+                       R"({"jsonrpc":"2.0","id":12,"method":"tools/call","params":{"name":"get_job","arguments":{"id":")") +
+                   std::to_string(jid) + R"("}}})";
+    auto get_resp = qbrain::mcp::handle_rpc_body(b, opts, get_req);
+    auto gj = json::parse(get_resp);
+    QB_CHECK(gj["result"]["isError"] == false);
+
+    auto cancel_req = std::string(
+                          R"({"jsonrpc":"2.0","id":13,"method":"tools/call","params":{"name":"cancel_job","arguments":{"id":")") +
+                      std::to_string(jid) + R"("}}})";
+    auto cancel_resp = qbrain::mcp::handle_rpc_body(b, opts, cancel_req);
+    auto cj = json::parse(cancel_resp);
+    QB_CHECK(cj["result"]["isError"] == false);
+  }
+
+  auto dream_req =
+      R"({"jsonrpc":"2.0","id":14,"method":"tools/call","params":{"name":"run_dream","arguments":{"apply":false}}})";
+  auto dream_resp = qbrain::mcp::handle_rpc_body(b, opts, dream_req);
+  auto dj = json::parse(dream_resp);
+  QB_CHECK(dj["result"]["isError"] == false);
+  auto dtext = dj["result"]["content"][0]["text"].get<std::string>();
+  QB_CHECK(dtext.find("orphans") != std::string::npos || dtext.find("dry") != std::string::npos ||
+           dtext.find("phase") != std::string::npos);
+
   b.close();
   fs::remove_all(dir);
 }

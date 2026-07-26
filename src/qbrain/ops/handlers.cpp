@@ -1,11 +1,15 @@
 #include "qbrain/ops/registry.hpp"
 #include "qbrain/ai/chat.hpp"
 #include "qbrain/ai/embed.hpp"
+#include "qbrain/codeintel/scan.hpp"
+#include "qbrain/cycle/dream.hpp"
 #include "qbrain/graph/extract.hpp"
 #include "qbrain/graph/traverse.hpp"
 #include "qbrain/ingest/chunker.hpp"
 #include "qbrain/ingest/import.hpp"
+#include "qbrain/jobs/minions.hpp"
 #include "qbrain/search/hybrid.hpp"
+#include "qbrain/service/live_sync.hpp"
 #include "qbrain/util/string_util.hpp"
 #include "qbrain/util/time_util.hpp"
 #include "qbrain/util/hash.hpp"
@@ -213,6 +217,11 @@ void register_builtin_ops() {
     opts.rrf_k = ctx.brain->config().search_rrf_k;
     opts.source_id = arg(ctx, "source_id");
     opts.mode = arg(ctx, "mode", "balanced");
+    opts.config = &ctx.brain->config();
+    auto rr = arg(ctx, "rerank");
+    if (rr == "1" || rr == "true") opts.rerank = true;
+    auto rrl = arg(ctx, "rerank_llm");
+    if (rrl == "1" || rrl == "true") opts.rerank_llm = true;
     std::vector<float> emb;
     std::vector<float>* pemb = nullptr;
     // no_vector accepts "1"/"true" from CLI and MCP bool mapping
@@ -233,6 +242,7 @@ void register_builtin_ops() {
                      {"slug", h.slug},
                      {"title", h.title},
                      {"score", h.score},
+                     {"rerank_score", h.rerank_score},
                      {"snippet", h.snippet}});
       oss << i << ". " << h.slug << "  (" << h.score << ")\n   " << h.title << "\n   " << h.snippet
           << "\n";
@@ -241,8 +251,8 @@ void register_builtin_ops() {
     r.json = arr.dump(2);
     r.text = oss.str().empty() ? "(no results)\n" : oss.str();
     return r;
-  }, false, "Hybrid search (FTS + vector + RRF)",
-      R"({"type":"object","properties":{"query":{"type":"string"},"limit":{"type":"integer"},"no_vector":{"type":"boolean"},"source_id":{"type":"string"}},"required":["query"]})");
+  }, false, "Hybrid search (FTS + vector + RRF + optional rerank)",
+      R"({"type":"object","properties":{"query":{"type":"string"},"limit":{"type":"integer"},"no_vector":{"type":"boolean"},"source_id":{"type":"string"},"mode":{"type":"string"},"rerank":{"type":"boolean"},"rerank_llm":{"type":"boolean"}},"required":["query"]})");
 
   register_one(
       "think", Scope::Read, [](OpContext& ctx) {
@@ -459,6 +469,36 @@ void register_builtin_ops() {
     return r;
   }, true, "Ensure a source id exists",
       R"({"type":"object","properties":{"id":{"type":"string"}},"required":["id"]})");
+
+  register_one(
+      "sources_remove", Scope::Write, [](OpContext& ctx) {
+    OpResult r;
+    auto id = arg(ctx, "id");
+    bool force = arg(ctx, "force") == "1" || arg(ctx, "force") == "true";
+    if (!ctx.brain->remove_source(id, force)) {
+      r.ok = false;
+      r.text = "remove failed (nonempty? use force=true; cannot remove default)";
+      return r;
+    }
+    r.text = "removed " + id;
+    return r;
+  }, true, "Remove a source (blocks if pages unless force)",
+      R"({"type":"object","properties":{"id":{"type":"string"},"force":{"type":"boolean"}},"required":["id"]})");
+
+  register_one(
+      "sources_status", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto id = arg(ctx, "id", "default");
+    auto s = ctx.brain->source_status(id);
+    r.json = json({{"id", s.id},
+                   {"pages", s.pages},
+                   {"links", s.links},
+                   {"last_updated", s.last_updated}})
+                 .dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "Source page/link counts",
+      R"({"type":"object","properties":{"id":{"type":"string"}}})");
 
   register_one(
       "find_trajectory", Scope::Read, [](OpContext& ctx) {
@@ -696,6 +736,566 @@ void register_builtin_ops() {
     return r;
   }, true, "Revert page to a version id",
       R"({"type":"object","properties":{"slug":{"type":"string"},"version_id":{"type":"integer"}},"required":["slug","version_id"]})");
+
+  // N12 minions / jobs
+  register_one(
+      "submit_job", Scope::Write, [](OpContext& ctx) {
+    OpResult r;
+    auto type = arg(ctx, "type");
+    if (type.empty()) type = arg(ctx, "name");
+    if (type.empty()) {
+      r.ok = false;
+      r.text = "type required";
+      return r;
+    }
+    auto payload = arg(ctx, "payload_json", "{}");
+    auto queue = arg(ctx, "queue", "default");
+    int pri = arg_int(ctx, "priority", 100);
+    auto id = jobs::submit_job(*ctx.brain, type, payload, queue, pri);
+    r.json = json({{"id", id}, {"type", type}, {"status", "waiting"}}).dump(2);
+    r.text = "job " + std::to_string(id);
+    return r;
+  }, false, "Submit a minion job",
+      R"({"type":"object","properties":{"type":{"type":"string"},"name":{"type":"string"},"payload_json":{"type":"string"},"queue":{"type":"string"},"priority":{"type":"integer"}},"required":["type"]})");
+
+  register_one(
+      "list_jobs", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto status = arg(ctx, "status");
+    int limit = arg_int(ctx, "limit", 50);
+    auto list = jobs::list_jobs(*ctx.brain, status, limit);
+    json arr = json::array();
+    for (auto& j : list) {
+      arr.push_back({{"id", j.id},
+                     {"type", j.type},
+                     {"status", j.status},
+                     {"priority", j.priority},
+                     {"attempts", j.attempts},
+                     {"queue", j.queue}});
+    }
+    r.json = arr.dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "List jobs",
+      R"({"type":"object","properties":{"status":{"type":"string"},"limit":{"type":"integer"}}})");
+
+  register_one(
+      "get_job", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    int64_t id = 0;
+    try {
+      id = std::stoll(arg(ctx, "id"));
+    } catch (...) {
+      r.ok = false;
+      r.text = "id required";
+      return r;
+    }
+    auto j = jobs::get_job(*ctx.brain, id);
+    if (!j) {
+      r.ok = false;
+      r.text = "not found";
+      return r;
+    }
+    r.json = json({{"id", j->id},
+                   {"type", j->type},
+                   {"status", j->status},
+                   {"payload_json", j->payload_json},
+                   {"result_json", j->result_json},
+                   {"error_text", j->error_text},
+                   {"attempts", j->attempts},
+                   {"priority", j->priority}})
+                 .dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "Get job by id",
+      R"({"type":"object","properties":{"id":{"type":"integer"}},"required":["id"]})");
+
+  register_one(
+      "cancel_job", Scope::Write, [](OpContext& ctx) {
+    OpResult r;
+    int64_t id = 0;
+    try {
+      id = std::stoll(arg(ctx, "id"));
+    } catch (...) {
+      r.ok = false;
+      r.text = "id required";
+      return r;
+    }
+    if (!jobs::cancel_job(*ctx.brain, id)) {
+      r.ok = false;
+      r.text = "cancel failed";
+      return r;
+    }
+    r.text = "cancelled";
+    return r;
+  }, false, "Cancel a waiting/active job",
+      R"({"type":"object","properties":{"id":{"type":"integer"}},"required":["id"]})");
+
+  register_one(
+      "run_dream", Scope::Write, [](OpContext& ctx) {
+    OpResult r;
+    cycle::DreamOpts opts;
+    opts.dry_run = arg(ctx, "apply") != "1" && arg(ctx, "apply") != "true";
+    opts.phase = arg(ctx, "phase");
+    opts.page_limit = arg_int(ctx, "limit", 50);
+    auto report = cycle::run_dream(*ctx.brain, opts);
+    r.json = cycle::report_to_json(report);
+    r.text = cycle::report_to_text(report);
+    if (report.status == "failed") {
+      r.ok = false;
+      r.exit_code = 1;
+    }
+    return r;
+  }, true, "Run multi-phase dream cycle",
+      R"({"type":"object","properties":{"apply":{"type":"boolean"},"phase":{"type":"string"},"limit":{"type":"integer"}}})");
+
+  // N13
+  register_one(
+      "sync_brain", Scope::Write, [](OpContext& ctx) {
+    OpResult r;
+    auto path = arg(ctx, "path");
+    if (path.empty()) path = arg(ctx, "dir");
+    if (path.empty()) {
+      r.ok = false;
+      r.text = "path required";
+      return r;
+    }
+    auto source = arg(ctx, "source_id", "default");
+    auto once = service::live_sync_once(*ctx.brain, path, source);
+    r.json = json({{"scanned", once.scanned},
+                   {"imported_pages", once.imported_pages},
+                   {"skipped", once.skipped},
+                   {"errors", once.errors}})
+                 .dump(2);
+    r.text = r.json;
+    if (once.errors && !once.imported_pages) {
+      r.ok = false;
+      r.exit_code = 1;
+    }
+    return r;
+  }, true, "Live-sync a notes directory (mtime state)",
+      R"({"type":"object","properties":{"path":{"type":"string"},"dir":{"type":"string"},"source_id":{"type":"string"}},"required":["path"]})");
+
+  register_one(
+      "traverse_graph", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto slug = arg(ctx, "slug");
+    if (slug.empty()) {
+      r.ok = false;
+      r.text = "slug required";
+      return r;
+    }
+    int depth = arg_int(ctx, "depth", 1);
+    auto ns = graph::neighbors(*ctx.brain, slug, depth);
+    json arr = json::array();
+    std::ostringstream oss;
+    for (auto& n : ns) {
+      arr.push_back({{"slug", n.slug},
+                     {"link_type", n.link_type},
+                     {"direction", n.direction},
+                     {"depth", n.depth}});
+      oss << n.direction << " " << n.slug << " (" << n.link_type << ") d=" << n.depth << "\n";
+    }
+    r.json = arr.dump(2);
+    r.text = oss.str().empty() ? "(no neighbors)\n" : oss.str();
+    return r;
+  }, false, "BFS graph neighbors",
+      R"({"type":"object","properties":{"slug":{"type":"string"},"depth":{"type":"integer"}},"required":["slug"]})");
+
+  register_one(
+      "retry_job", Scope::Write, [](OpContext& ctx) {
+    OpResult r;
+    int64_t id = 0;
+    try {
+      id = std::stoll(arg(ctx, "id"));
+    } catch (...) {
+      r.ok = false;
+      r.text = "id required";
+      return r;
+    }
+    if (!jobs::retry_job(*ctx.brain, id)) {
+      r.ok = false;
+      r.text = "retry failed";
+      return r;
+    }
+    r.text = "retried " + std::to_string(id);
+    return r;
+  }, false, "Requeue failed/cancelled job to waiting",
+      R"({"type":"object","properties":{"id":{"type":"integer"}},"required":["id"]})");
+
+  register_one(
+      "pause_job", Scope::Write, [](OpContext& ctx) {
+    OpResult r;
+    int64_t id = 0;
+    try {
+      id = std::stoll(arg(ctx, "id"));
+    } catch (...) {
+      r.ok = false;
+      r.text = "id required";
+      return r;
+    }
+    if (!jobs::pause_job(*ctx.brain, id)) {
+      r.ok = false;
+      r.text = "pause failed (need waiting/active)";
+      return r;
+    }
+    auto j = jobs::get_job(*ctx.brain, id);
+    r.json = json({{"id", id}, {"status", j ? j->status : "paused"}}).dump(2);
+    r.text = "paused " + std::to_string(id);
+    return r;
+  }, false, "Pause waiting/active job",
+      R"({"type":"object","properties":{"id":{"type":"integer"}},"required":["id"]})");
+
+  register_one(
+      "resume_job", Scope::Write, [](OpContext& ctx) {
+    OpResult r;
+    int64_t id = 0;
+    try {
+      id = std::stoll(arg(ctx, "id"));
+    } catch (...) {
+      r.ok = false;
+      r.text = "id required";
+      return r;
+    }
+    if (!jobs::resume_job(*ctx.brain, id)) {
+      r.ok = false;
+      r.text = "resume failed (need paused)";
+      return r;
+    }
+    r.json = json({{"id", id}, {"status", "waiting"}}).dump(2);
+    r.text = "resumed " + std::to_string(id);
+    return r;
+  }, false, "Resume paused job to waiting",
+      R"({"type":"object","properties":{"id":{"type":"integer"}},"required":["id"]})");
+
+  register_one(
+      "get_job_progress", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    int64_t id = 0;
+    try {
+      id = std::stoll(arg(ctx, "id"));
+    } catch (...) {
+      r.ok = false;
+      r.text = "id required";
+      return r;
+    }
+    auto p = jobs::get_job_progress(*ctx.brain, id);
+    if (!p) {
+      r.ok = false;
+      r.text = "not found";
+      return r;
+    }
+    r.json = json({{"id", p->id},
+                   {"type", p->type},
+                   {"status", p->status},
+                   {"attempts", p->attempts},
+                   {"lock_until", p->lock_until},
+                   {"error_text", p->error_text}})
+                 .dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "Job progress (status/attempts/lock/error)",
+      R"({"type":"object","properties":{"id":{"type":"integer"}},"required":["id"]})");
+
+  register_one(
+      "get_status_snapshot", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto s = ctx.brain->status_snapshot();
+    json j = {{"schema_version", s.schema_version},
+              {"pages", s.pages},
+              {"chunks", s.chunks},
+              {"links", s.links},
+              {"embedded_chunks", s.embedded_chunks},
+              {"jobs",
+               {{"waiting", s.jobs_waiting},
+                {"active", s.jobs_active},
+                {"failed", s.jobs_failed},
+                {"paused", s.jobs_paused}}}};
+    r.json = j.dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "Pages/chunks/links/jobs counts + schema version",
+      R"({"type":"object","properties":{}})");
+
+  register_one(
+      "doctor_remediate", Scope::Write, [](OpContext& ctx) {
+    OpResult r;
+    auto rep = ctx.brain->remediate();
+    json j = {{"default_source", rep.default_source},
+              {"reclaimed", rep.reclaimed},
+              {"embed_jobs_enqueued", rep.embed_jobs_enqueued},
+              {"api_key_present", rep.api_key_present},
+              {"notes", rep.notes}};
+    r.json = j.dump(2);
+    std::ostringstream oss;
+    oss << "remediate: source=" << (rep.default_source ? "ok" : "fail")
+        << " reclaimed=" << rep.reclaimed
+        << " embed_enqueued=" << rep.embed_jobs_enqueued << "\n";
+    for (auto& n : rep.notes) oss << "  - " << n << "\n";
+    r.text = oss.str();
+    r.ok = rep.default_source;
+    return r;
+  }, true, "Doctor remediate: source, reclaim stalled, re-enqueue embeds",
+      R"({"type":"object","properties":{}})");
+
+  register_one(
+      "forget_fact", Scope::Write, [](OpContext& ctx) {
+    OpResult r;
+    auto slug = arg(ctx, "entity_slug");
+    if (slug.empty()) slug = arg(ctx, "slug");
+    if (slug.empty()) {
+      r.ok = false;
+      r.text = "entity_slug required";
+      return r;
+    }
+    int n = ctx.brain->forget_fact(slug, arg(ctx, "predicate"));
+    r.json = json({{"deactivated", n}}).dump(2);
+    r.text = "deactivated " + std::to_string(n);
+    return r;
+  }, false, "Soft-deactivate facts for entity",
+      R"({"type":"object","properties":{"entity_slug":{"type":"string"},"slug":{"type":"string"},"predicate":{"type":"string"}}})");
+
+  register_one(
+      "resolve_slugs", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    // comma-separated slugs → existing pages
+    auto raw = arg(ctx, "slugs");
+    if (raw.empty()) raw = arg(ctx, "slug");
+    auto parts = util::split(raw, ',');
+    json arr = json::array();
+    std::ostringstream oss;
+    for (auto p : parts) {
+      p = util::trim(p);
+      if (p.empty()) continue;
+      auto page = ctx.brain->get_page(p, arg(ctx, "source_id", "default"));
+      json item = {{"slug", p}, {"exists", page.has_value()}};
+      if (page) {
+        item["title"] = page->title;
+        item["type"] = page->type;
+      }
+      arr.push_back(item);
+      oss << p << "\t" << (page ? "ok" : "missing") << "\n";
+    }
+    r.json = arr.dump(2);
+    r.text = oss.str();
+    return r;
+  }, false, "Resolve slug existence",
+      R"({"type":"object","properties":{"slugs":{"type":"string"},"slug":{"type":"string"}}})");
+
+  register_one(
+      "recall", Scope::Read, [](OpContext& ctx) {
+    // Alias of search with conservative mode default (gbrain recall-ish)
+    OpContext c2 = ctx;
+    if (c2.args.find("mode") == c2.args.end()) c2.args["mode"] = "conservative";
+    if (c2.args.find("query") == c2.args.end() && c2.args.count("q"))
+      c2.args["query"] = c2.args["q"];
+    auto* op = global_registry().find("search");
+    return op ? op->handler(c2) : OpResult{false, 1, "search missing", ""};
+  }, false, "Recall (conservative search alias)",
+      R"({"type":"object","properties":{"query":{"type":"string"},"q":{"type":"string"},"limit":{"type":"integer"}},"required":["query"]})");
+
+  // N16 code-intel (regex/heuristic, no tree-sitter)
+  auto hits_to_result = [](const std::vector<codeintel::Hit>& hits) {
+    OpResult r;
+    json arr = json::array();
+    std::ostringstream oss;
+    for (auto& h : hits) {
+      arr.push_back({{"slug", h.slug},
+                     {"line", h.line},
+                     {"snippet", h.snippet},
+                     {"kind", h.kind}});
+      oss << h.slug << ":" << h.line << " [" << h.kind << "] " << h.snippet << "\n";
+    }
+    r.json = arr.dump(2);
+    r.text = oss.str().empty() ? "(no matches)\n" : oss.str();
+    return r;
+  };
+
+  register_one(
+      "code_def", Scope::Read, [hits_to_result](OpContext& ctx) {
+    auto symbol = arg(ctx, "symbol");
+    if (symbol.empty()) symbol = arg(ctx, "name");
+    if (symbol.empty()) {
+      OpResult r;
+      r.ok = false;
+      r.text = "symbol required";
+      return r;
+    }
+    int limit = arg_int(ctx, "limit", 50);
+    int page_limit = arg_int(ctx, "page_limit", 500);
+    auto hits = codeintel::find_defs(*ctx.brain, symbol, limit, page_limit);
+    return hits_to_result(hits);
+  }, false, "Find C++/TS-like symbol definitions in page bodies",
+      R"({"type":"object","properties":{"symbol":{"type":"string"},"name":{"type":"string"},"limit":{"type":"integer"},"page_limit":{"type":"integer"}},"required":["symbol"]})");
+
+  register_one(
+      "code_refs", Scope::Read, [hits_to_result](OpContext& ctx) {
+    auto symbol = arg(ctx, "symbol");
+    if (symbol.empty()) symbol = arg(ctx, "name");
+    if (symbol.empty()) {
+      OpResult r;
+      r.ok = false;
+      r.text = "symbol required";
+      return r;
+    }
+    int limit = arg_int(ctx, "limit", 50);
+    int page_limit = arg_int(ctx, "page_limit", 500);
+    auto hits = codeintel::find_refs(*ctx.brain, symbol, limit, page_limit);
+    return hits_to_result(hits);
+  }, false, "Find word-boundary symbol references in page bodies",
+      R"({"type":"object","properties":{"symbol":{"type":"string"},"name":{"type":"string"},"limit":{"type":"integer"},"page_limit":{"type":"integer"}},"required":["symbol"]})");
+
+  register_one(
+      "code_callers", Scope::Read, [hits_to_result](OpContext& ctx) {
+    auto symbol = arg(ctx, "symbol");
+    if (symbol.empty()) symbol = arg(ctx, "name");
+    if (symbol.empty()) {
+      OpResult r;
+      r.ok = false;
+      r.text = "symbol required";
+      return r;
+    }
+    int limit = arg_int(ctx, "limit", 50);
+    int page_limit = arg_int(ctx, "page_limit", 500);
+    auto hits = codeintel::find_callers(*ctx.brain, symbol, limit, page_limit);
+    return hits_to_result(hits);
+  }, false, "Find call-ish symbol( references in page bodies",
+      R"({"type":"object","properties":{"symbol":{"type":"string"},"name":{"type":"string"},"limit":{"type":"integer"},"page_limit":{"type":"integer"}},"required":["symbol"]})");
+
+  // N15: link sources, ingest log, chronicle, timeline
+  register_one(
+      "list_link_sources", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto rows = ctx.brain->list_link_sources();
+    json arr = json::array();
+    std::ostringstream oss;
+    for (auto& row : rows) {
+      arr.push_back({{"link_source", row.link_source}, {"count", row.count}});
+      oss << row.link_source << "\t" << row.count << "\n";
+    }
+    r.json = arr.dump(2);
+    r.text = oss.str();
+    return r;
+  }, false, "Distinct link_source values with counts",
+      R"({"type":"object","properties":{}})");
+
+  register_one(
+      "log_ingest", Scope::Write, [](OpContext& ctx) {
+    OpResult r;
+    auto path = arg(ctx, "path");
+    auto et = arg(ctx, "event_type", "import");
+    auto detail = arg(ctx, "detail_json", "{}");
+    int keep = arg_int(ctx, "keep_last", 100);
+    auto id = ctx.brain->log_ingest(et, path, detail, keep);
+    r.json = json({{"id", id}}).dump(2);
+    r.text = "logged " + std::to_string(id);
+    return r;
+  }, false, "Append ingest log event (keeps last N)",
+      R"({"type":"object","properties":{"path":{"type":"string"},"event_type":{"type":"string"},"detail_json":{"type":"string"},"keep_last":{"type":"integer"}}})");
+
+  register_one(
+      "get_ingest_log", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto rows = ctx.brain->get_ingest_log(arg_int(ctx, "limit", 50));
+    json arr = json::array();
+    for (auto& e : rows) {
+      arr.push_back({{"id", e.id},
+                     {"event_type", e.event_type},
+                     {"path", e.path},
+                     {"detail_json", e.detail_json},
+                     {"created_at", e.created_at}});
+    }
+    r.json = arr.dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "Recent ingest log events",
+      R"({"type":"object","properties":{"limit":{"type":"integer"}}})");
+
+  register_one(
+      "chronicle_day", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto day = arg(ctx, "day");
+    if (day.empty()) day = arg(ctx, "date");
+    if (day.empty()) day = util::utc_date();
+    auto hits = ctx.brain->chronicle_day(day, arg_int(ctx, "limit", 100));
+    json arr = json::array();
+    std::ostringstream oss;
+    for (auto& h : hits) {
+      arr.push_back({{"slug", h.slug},
+                     {"title", h.title},
+                     {"updated_at", h.updated_at},
+                     {"created_at", h.created_at},
+                     {"type", h.type}});
+      oss << h.slug << "\t" << h.title << "\t" << h.updated_at << "\n";
+    }
+    r.json = json({{"day", day.substr(0, 10)}, {"pages", arr}}).dump(2);
+    r.text = oss.str();
+    return r;
+  }, false, "Pages created/updated on a UTC day",
+      R"({"type":"object","properties":{"day":{"type":"string"},"date":{"type":"string"},"limit":{"type":"integer"}}})");
+
+  register_one(
+      "chronicle_since", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto since = arg(ctx, "since");
+    if (since.empty()) since = arg(ctx, "from");
+    if (since.empty()) {
+      r.ok = false;
+      r.text = "since required (ISO date/time)";
+      return r;
+    }
+    auto hits = ctx.brain->chronicle_since(since, arg_int(ctx, "limit", 100));
+    json arr = json::array();
+    std::ostringstream oss;
+    for (auto& h : hits) {
+      arr.push_back({{"slug", h.slug},
+                     {"title", h.title},
+                     {"updated_at", h.updated_at},
+                     {"created_at", h.created_at},
+                     {"type", h.type}});
+      oss << h.slug << "\t" << h.title << "\t" << h.updated_at << "\n";
+    }
+    r.json = json({{"since", since}, {"pages", arr}}).dump(2);
+    r.text = oss.str();
+    return r;
+  }, false, "Pages created/updated since ISO timestamp",
+      R"({"type":"object","properties":{"since":{"type":"string"},"from":{"type":"string"},"limit":{"type":"integer"}},"required":["since"]})");
+
+  register_one(
+      "add_timeline_entry", Scope::Write, [](OpContext& ctx) {
+    OpResult r;
+    PageInput in;
+    in.slug = arg(ctx, "slug");
+    if (in.slug.empty()) {
+      auto h = util::sha256_hex(arg(ctx, "body") + util::utc_now());
+      if (h.size() > 8) h = h.substr(0, 8);
+      in.slug = "timeline/" + util::utc_date() + "-" + h;
+    }
+    in.title = arg(ctx, "title");
+    in.body = arg(ctx, "body");
+    if (in.title.empty() && !in.body.empty()) {
+      auto nl = in.body.find('\n');
+      in.title = nl == std::string::npos ? in.body : in.body.substr(0, nl);
+      if (in.title.size() > 80) in.title = in.title.substr(0, 80);
+    }
+    if (in.body.empty() && in.title.empty()) {
+      r.ok = false;
+      r.text = "title or body required";
+      return r;
+    }
+    in.type = "timeline";
+    in.source_id = arg(ctx, "source_id", "default");
+    in.source_kind = "timeline";
+    in.ingested_via = "mcp";
+    auto page = ctx.brain->put_page(in);
+    auto chunks = ingest::chunk_markdown(page.title, page.body);
+    ctx.brain->replace_chunks(page.id, chunks);
+    ctx.brain->enqueue_embed_page(page.id);
+    r.json = json({{"slug", page.slug}, {"id", page.id}, {"type", page.type}}).dump(2);
+    r.text = "timeline " + page.slug;
+    return r;
+  }, false, "Create a type=timeline page (thin put_page)",
+      R"({"type":"object","properties":{"title":{"type":"string"},"body":{"type":"string"},"slug":{"type":"string"},"source_id":{"type":"string"}}})");
 }
 
 }  // namespace qbrain::ops

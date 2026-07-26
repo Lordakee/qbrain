@@ -92,7 +92,9 @@ CREATE TABLE IF NOT EXISTS jobs (
   attempts INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-  lock_until TEXT
+  lock_until TEXT,
+  lock_token TEXT,
+  error_text TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_jobs_claim ON jobs(queue, status, priority, created_at);

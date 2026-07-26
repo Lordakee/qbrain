@@ -43,6 +43,44 @@ void test_storage() {
 
   auto h = b.health();
   QB_CHECK(h.schema_version >= 3);
+  QB_CHECK(h.schema_version >= 7);
+
+  // N15: link sources
+  qbrain::Link link;
+  link.from_slug = "notes/hello";
+  link.to_slug = "other";
+  link.link_source = "markdown";
+  b.add_link(link);
+  link.to_slug = "manual-target";
+  link.link_source = "manual";
+  b.add_link(link);
+  auto sources = b.list_link_sources();
+  QB_CHECK(sources.size() >= 2);
+  bool saw_md = false, saw_manual = false;
+  for (auto& s : sources) {
+    if (s.link_source == "markdown" && s.count >= 1) saw_md = true;
+    if (s.link_source == "manual" && s.count >= 1) saw_manual = true;
+  }
+  QB_CHECK(saw_md && saw_manual);
+
+  // N15: ingest log
+  auto lid = b.log_ingest("import", "/tmp/notes", R"({"pages":1,"errors":0})", 50);
+  QB_CHECK(lid > 0);
+  auto log = b.get_ingest_log(10);
+  QB_CHECK(!log.empty());
+  QB_CHECK(log[0].path == "/tmp/notes");
+
+  // N15: chronicle
+  auto day = p.updated_at.substr(0, 10);
+  auto day_hits = b.chronicle_day(day, 50);
+  QB_CHECK(!day_hits.empty());
+  bool found = false;
+  for (auto& ch : day_hits) {
+    if (ch.slug == "notes/hello") found = true;
+  }
+  QB_CHECK(found);
+  auto since_hits = b.chronicle_since(day, 50);
+  QB_CHECK(!since_hits.empty());
 
   b.close();
   fs::remove_all(dir);

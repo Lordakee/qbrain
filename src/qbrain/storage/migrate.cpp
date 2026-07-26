@@ -129,6 +129,37 @@ INSERT OR IGNORE INTO schema_version(version) VALUES (5);
 )SQL");
     ver = 5;
   }
+
+    // v6: minions claim fields (N12). Columns may already exist on fresh v1 schema.
+  if (ver < 6) {
+    auto try_exec = [&](const char* sql) {
+      try {
+        db.exec(sql);
+      } catch (...) {
+      }
+    };
+    try_exec("ALTER TABLE jobs ADD COLUMN lock_token TEXT;");
+    try_exec("ALTER TABLE jobs ADD COLUMN error_text TEXT;");
+    try_exec("CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status, type);");
+    db.exec("INSERT OR IGNORE INTO schema_version(version) VALUES (6);");
+    ver = 6;
+  }
+
+  // v7: ingest_log for N15 chronicle/provenance (last-N events)
+  if (ver < 7) {
+    run_in_txn(db, R"SQL(
+CREATE TABLE IF NOT EXISTS ingest_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  event_type TEXT NOT NULL DEFAULT 'import',
+  path TEXT NOT NULL DEFAULT '',
+  detail_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_ingest_log_created ON ingest_log(created_at DESC);
+INSERT OR IGNORE INTO schema_version(version) VALUES (7);
+)SQL");
+    ver = 7;
+  }
 }
 
 SchemaIntegrity check_schema_integrity(Database& db) {

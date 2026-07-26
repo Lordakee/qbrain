@@ -39,6 +39,15 @@ class Brain {
                       const std::string& source_id = "default");
   bool ensure_source(const std::string& source_id);
   std::vector<std::string> list_source_ids();
+  // N13: remove empty source; fails if pages remain unless force.
+  bool remove_source(const std::string& source_id, bool force = false);
+  struct SourceStatus {
+    std::string id;
+    int64_t pages = 0;
+    int64_t links = 0;
+    std::string last_updated;
+  };
+  SourceStatus source_status(const std::string& source_id);
 
   void replace_chunks(int64_t page_id, const std::vector<std::string>& texts);
   std::vector<Chunk> get_chunks(int64_t page_id);
@@ -65,6 +74,8 @@ class Brain {
                 const std::string& object_text, int64_t page_id = 0);
   std::vector<std::string> list_facts(const std::string& entity_slug, int limit = 50);
   int extract_facts_from_page(const std::string& slug, const std::string& source_id = "default");
+  // Soft-deactivate matching active facts (predicate optional filter).
+  int forget_fact(const std::string& entity_slug, const std::string& predicate = "");
 
   void add_tag(const std::string& slug, const std::string& tag,
                const std::string& source_id = "default");
@@ -77,8 +88,60 @@ class Brain {
   std::vector<std::string> find_orphans(int limit = 100);
   static std::vector<std::string> list_brains();
 
+  // N15: link_source histogram
+  struct LinkSourceCount {
+    std::string link_source;
+    int64_t count = 0;
+  };
+  std::vector<LinkSourceCount> list_link_sources();
+
+  // N15: ingest event log (last N retained)
+  struct IngestLogEntry {
+    int64_t id = 0;
+    std::string event_type;
+    std::string path;
+    std::string detail_json;
+    std::string created_at;
+  };
+  int64_t log_ingest(const std::string& event_type, const std::string& path,
+                     const std::string& detail_json = "{}", int keep_last = 100);
+  std::vector<IngestLogEntry> get_ingest_log(int limit = 50);
+
+  // N15: chronicle — pages touched on UTC day or since ISO timestamp
+  struct ChronicleHit {
+    std::string slug;
+    std::string title;
+    std::string updated_at;
+    std::string created_at;
+    std::string type;
+  };
+  std::vector<ChronicleHit> chronicle_day(const std::string& day_utc, int limit = 100);
+  std::vector<ChronicleHit> chronicle_since(const std::string& since_iso, int limit = 100);
+
   BrainStats stats();
   HealthReport health();
+
+  struct StatusSnapshot {
+    int schema_version = 0;
+    int64_t pages = 0;
+    int64_t chunks = 0;
+    int64_t links = 0;
+    int64_t embedded_chunks = 0;
+    int64_t jobs_waiting = 0;
+    int64_t jobs_active = 0;
+    int64_t jobs_failed = 0;
+    int64_t jobs_paused = 0;
+  };
+  StatusSnapshot status_snapshot();
+
+  struct RemediateReport {
+    bool default_source = false;
+    int reclaimed = 0;
+    int embed_jobs_enqueued = 0;
+    bool api_key_present = false;
+    std::vector<std::string> notes;
+  };
+  RemediateReport remediate();
 
  private:
   std::string brain_id_;

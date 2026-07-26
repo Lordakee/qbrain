@@ -1,5 +1,6 @@
 #include "qbrain/core/brain.hpp"
 #include "qbrain/ai/embed.hpp"
+#include "qbrain/jobs/minions.hpp"
 #include "qbrain/util/hash.hpp"
 #include "qbrain/util/paths.hpp"
 #include "qbrain/util/time_util.hpp"
@@ -8,6 +9,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
+#include <set>
 #include <stdexcept>
 
 using json = nlohmann::json;
@@ -402,6 +404,47 @@ std::vector<std::string> Brain::list_source_ids() {
   return out;
 }
 
+bool Brain::remove_source(const std::string& source_id, bool force) {
+  if (source_id.empty() || source_id == "default") return false;
+  auto stc = db_.prepare("SELECT COUNT(*) FROM pages WHERE source_id=? AND deleted_at IS NULL");
+  stc.bind_text(1, source_id);
+  int64_t pages = 0;
+  if (stc.step()) pages = stc.column_int(0);
+  if (pages > 0 && !force) return false;
+  if (force && pages > 0) {
+    auto d = db_.prepare("UPDATE pages SET deleted_at=?, updated_at=? WHERE source_id=? AND deleted_at IS NULL");
+    auto now = util::utc_now();
+    d.bind_text(1, now);
+    d.bind_text(2, now);
+    d.bind_text(3, source_id);
+    d.step_done();
+  }
+  auto st = db_.prepare("DELETE FROM sources WHERE id=?");
+  st.bind_text(1, source_id);
+  st.step_done();
+  return db_.changes() > 0;
+}
+
+Brain::SourceStatus Brain::source_status(const std::string& source_id) {
+  SourceStatus s;
+  s.id = source_id;
+  {
+    auto st = db_.prepare(
+        "SELECT COUNT(*), COALESCE(MAX(updated_at),'') FROM pages WHERE source_id=? AND deleted_at IS NULL");
+    st.bind_text(1, source_id);
+    if (st.step()) {
+      s.pages = st.column_int(0);
+      s.last_updated = st.column_text(1);
+    }
+  }
+  {
+    auto st = db_.prepare("SELECT COUNT(*) FROM links WHERE source_id=?");
+    st.bind_text(1, source_id);
+    if (st.step()) s.links = st.column_int(0);
+  }
+  return s;
+}
+
 void Brain::add_fact(const std::string& entity_slug, const std::string& predicate,
                      const std::string& object_text, int64_t page_id) {
   auto st = db_.prepare(
@@ -441,6 +484,22 @@ int Brain::extract_facts_from_page(const std::string& slug, const std::string& s
     ++n;
   }
   return n;
+}
+
+int Brain::forget_fact(const std::string& entity_slug, const std::string& predicate) {
+  if (entity_slug.empty()) return 0;
+  if (predicate.empty()) {
+    auto st = db_.prepare("UPDATE facts SET active=0 WHERE entity_slug=? AND active=1");
+    st.bind_text(1, entity_slug);
+    st.step_done();
+  } else {
+    auto st = db_.prepare(
+        "UPDATE facts SET active=0 WHERE entity_slug=? AND predicate=? AND active=1");
+    st.bind_text(1, entity_slug);
+    st.bind_text(2, predicate);
+    st.step_done();
+  }
+  return db_.changes();
 }
 
 void Brain::add_tag(const std::string& slug, const std::string& tag, const std::string& source_id) {
@@ -668,6 +727,119 @@ std::vector<Link> Brain::get_links_to(const std::string& slug, const std::string
   return out;
 }
 
+std::vector<Brain::LinkSourceCount> Brain::list_link_sources() {
+  std::vector<LinkSourceCount> out;
+  auto st = db_.prepare(
+      "SELECT COALESCE(link_source,''), COUNT(*) FROM links "
+      "GROUP BY link_source ORDER BY COUNT(*) DESC, link_source ASC");
+  while (st.step()) {
+    LinkSourceCount c;
+    c.link_source = st.column_text(0);
+    c.count = st.column_int(1);
+    out.push_back(std::move(c));
+  }
+  return out;
+}
+
+int64_t Brain::log_ingest(const std::string& event_type, const std::string& path,
+                          const std::string& detail_json, int keep_last) {
+  auto st = db_.prepare(
+      "INSERT INTO ingest_log(event_type, path, detail_json, created_at) VALUES(?,?,?,?)");
+  st.bind_text(1, event_type.empty() ? "import" : event_type);
+  st.bind_text(2, path);
+  st.bind_text(3, detail_json.empty() ? "{}" : detail_json);
+  st.bind_text(4, util::utc_now());
+  st.step_done();
+  int64_t id = db_.last_insert_rowid();
+  if (keep_last > 0) {
+    auto pr = db_.prepare(
+        "DELETE FROM ingest_log WHERE id NOT IN ("
+        "SELECT id FROM (SELECT id FROM ingest_log ORDER BY id DESC LIMIT ?))");
+    pr.bind_int(1, keep_last);
+    pr.step_done();
+  }
+  return id;
+}
+
+std::vector<Brain::IngestLogEntry> Brain::get_ingest_log(int limit) {
+  std::vector<IngestLogEntry> out;
+  if (limit <= 0) limit = 50;
+  auto st = db_.prepare(
+      "SELECT id, event_type, path, detail_json, created_at FROM ingest_log "
+      "ORDER BY id DESC LIMIT ?");
+  st.bind_int(1, limit);
+  while (st.step()) {
+    IngestLogEntry e;
+    e.id = st.column_int(0);
+    e.event_type = st.column_text(1);
+    e.path = st.column_text(2);
+    e.detail_json = st.column_text(3);
+    e.created_at = st.column_text(4);
+    out.push_back(std::move(e));
+  }
+  return out;
+}
+
+static std::string normalize_iso_ts(std::string s) {
+  if (s.empty()) return s;
+  for (auto& c : s) {
+    if (c == 'T' || c == 't') c = ' ';
+  }
+  if (!s.empty() && (s.back() == 'Z' || s.back() == 'z')) s.pop_back();
+  // date-only → start of day
+  if (s.size() == 10) s += " 00:00:00";
+  return s;
+}
+
+std::vector<Brain::ChronicleHit> Brain::chronicle_day(const std::string& day_utc, int limit) {
+  std::vector<ChronicleHit> out;
+  if (day_utc.empty()) return out;
+  if (limit <= 0) limit = 100;
+  std::string day = day_utc.substr(0, 10);
+  auto st = db_.prepare(
+      "SELECT slug, title, updated_at, created_at, type FROM pages "
+      "WHERE deleted_at IS NULL AND ("
+      "  substr(updated_at,1,10)=? OR substr(created_at,1,10)=?) "
+      "ORDER BY updated_at DESC LIMIT ?");
+  st.bind_text(1, day);
+  st.bind_text(2, day);
+  st.bind_int(3, limit);
+  while (st.step()) {
+    ChronicleHit h;
+    h.slug = st.column_text(0);
+    h.title = st.column_text(1);
+    h.updated_at = st.column_text(2);
+    h.created_at = st.column_text(3);
+    h.type = st.column_text(4);
+    out.push_back(std::move(h));
+  }
+  return out;
+}
+
+std::vector<Brain::ChronicleHit> Brain::chronicle_since(const std::string& since_iso, int limit) {
+  std::vector<ChronicleHit> out;
+  if (since_iso.empty()) return out;
+  if (limit <= 0) limit = 100;
+  auto since = normalize_iso_ts(since_iso);
+  auto st = db_.prepare(
+      "SELECT slug, title, updated_at, created_at, type FROM pages "
+      "WHERE deleted_at IS NULL AND (updated_at >= ? OR created_at >= ?) "
+      "ORDER BY updated_at DESC LIMIT ?");
+  st.bind_text(1, since);
+  st.bind_text(2, since);
+  st.bind_int(3, limit);
+  while (st.step()) {
+    ChronicleHit h;
+    h.slug = st.column_text(0);
+    h.title = st.column_text(1);
+    h.updated_at = st.column_text(2);
+    h.created_at = st.column_text(3);
+    h.type = st.column_text(4);
+    out.push_back(std::move(h));
+  }
+  return out;
+}
+
 BrainStats Brain::stats() {
   BrainStats s;
   auto q = [&](const char* sql) {
@@ -708,6 +880,58 @@ HealthReport Brain::health() {
   auto key = resolve_api_key(config_, false);
   if (key.empty()) h.notes.push_back("no embedding API key (set OPENAI_API_KEY or qbrain config set embedding.api_key)");
   return h;
+}
+
+Brain::StatusSnapshot Brain::status_snapshot() {
+  StatusSnapshot s;
+  auto st_stats = stats();
+  s.pages = st_stats.pages;
+  s.chunks = st_stats.chunks;
+  s.links = st_stats.links;
+  s.embedded_chunks = st_stats.embedded_chunks;
+  auto integ = storage::check_schema_integrity(db_);
+  s.schema_version = integ.schema_version;
+  auto jc = jobs::count_jobs(*this);
+  s.jobs_waiting = jc.waiting;
+  s.jobs_active = jc.active;
+  s.jobs_failed = jc.failed;
+  s.jobs_paused = jc.paused;
+  return s;
+}
+
+Brain::RemediateReport Brain::remediate() {
+  RemediateReport r;
+  r.default_source = ensure_source("default");
+  if (!r.default_source) r.notes.push_back("ensure default source failed");
+  r.reclaimed = jobs::reclaim_stalled(*this, "default");
+  r.api_key_present = !resolve_api_key(config_, false).empty();
+  if (!r.api_key_present) {
+    r.notes.push_back("no embedding API key; skipped embed re-enqueue");
+    return r;
+  }
+  auto missing = list_chunks_missing_embedding(100000);
+  std::set<int64_t> page_ids;
+  for (auto& c : missing) page_ids.insert(c.page_id);
+  for (auto page_id : page_ids) {
+    auto exist = db_.prepare(
+        "SELECT 1 FROM jobs WHERE type='embed' AND status IN ('waiting','active','paused') "
+        "AND payload_json LIKE ? LIMIT 1");
+    std::string needle = "%\"page_id\":" + std::to_string(page_id) + "%";
+    exist.bind_text(1, needle);
+    if (exist.step()) continue;
+    json payload = {{"page_id", page_id}};
+    auto st = db_.prepare(
+        "INSERT INTO jobs(queue, type, status, payload_json, priority) "
+        "VALUES('default','embed','waiting',?,50)");
+    st.bind_text(1, payload.dump());
+    st.step_done();
+    ++r.embed_jobs_enqueued;
+  }
+  if (missing.empty())
+    r.notes.push_back("no chunks missing embeddings");
+  else if (r.embed_jobs_enqueued == 0)
+    r.notes.push_back("missing embeddings already have pending embed jobs");
+  return r;
 }
 
 }  // namespace qbrain

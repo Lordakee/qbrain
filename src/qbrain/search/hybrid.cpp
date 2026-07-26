@@ -1,4 +1,5 @@
 #include "qbrain/search/hybrid.hpp"
+#include "qbrain/search/rerank.hpp"
 #include "qbrain/search/rrf.hpp"
 #include "qbrain/search/vector.hpp"
 #include "qbrain/util/string_util.hpp"
@@ -175,6 +176,20 @@ std::vector<SearchHit> hybrid_search(Brain& brain, const std::string& query,
   }
   std::sort(fused.begin(), fused.end(),
             [](const SearchHit& a, const SearchHit& b) { return a.score > b.score; });
+
+  // N12: fail-open rerank (local always; optional LLM). tokenmax enables by default.
+  bool do_rerank = opts.rerank || opts.mode == "tokenmax";
+  if (do_rerank) {
+    RerankerOpts ro;
+    ro.enabled = true;
+    ro.top_n_in = std::min(30, static_cast<int>(fused.size()));
+    ro.use_llm = opts.rerank_llm || opts.mode == "tokenmax";
+    Config empty_cfg;
+    const Config& cfg = opts.config ? *opts.config : empty_cfg;
+    if (ro.use_llm && resolve_api_key(cfg, true).empty()) ro.use_llm = false;
+    fused = apply_reranker(cfg, query, std::move(fused), ro);
+  }
+
   // autocut: drop long tail if score gap large
   if (fused.size() >= 3) {
     double top = fused[0].score;

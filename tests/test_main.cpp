@@ -33,6 +33,10 @@ void test_chunker();
 void test_extract();
 void test_storage();
 void test_mcp();
+void test_rerank();
+void test_minions();
+void test_live_sync();
+void test_codeintel();
 
 int main() {
   int failed = 0;
@@ -46,6 +50,10 @@ int main() {
       {"extract", test_extract},
       {"storage", test_storage},
       {"mcp", test_mcp},
+      {"rerank", test_rerank},
+      {"minions", test_minions},
+      {"live_sync", test_live_sync},
+      {"codeintel", test_codeintel},
   };
   for (auto& t : tests) {
     try {
