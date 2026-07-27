@@ -840,6 +840,162 @@ std::vector<Brain::ChronicleHit> Brain::chronicle_since(const std::string& since
   return out;
 }
 
+std::vector<Brain::ChronicleHit> Brain::chronicle_on_this_day(const std::string& mmdd, int limit) {
+  std::vector<ChronicleHit> out;
+  std::string md = mmdd;
+  if (md.empty()) {
+    auto d = util::utc_date();
+    if (d.size() >= 10) md = d.substr(5, 5);  // MM-DD
+  }
+  if (md.size() == 5 && md[2] == '-') {
+    // ok
+  } else if (md.size() >= 10) {
+    md = md.substr(5, 5);
+  } else {
+    return out;
+  }
+  if (limit <= 0) limit = 100;
+  auto st = db_.prepare(
+      "SELECT slug, title, updated_at, created_at, type FROM pages "
+      "WHERE deleted_at IS NULL AND ("
+      "  substr(updated_at,6,5)=? OR substr(created_at,6,5)=?) "
+      "ORDER BY updated_at DESC LIMIT ?");
+  st.bind_text(1, md);
+  st.bind_text(2, md);
+  st.bind_int(3, limit);
+  while (st.step()) {
+    ChronicleHit h;
+    h.slug = st.column_text(0);
+    h.title = st.column_text(1);
+    h.updated_at = st.column_text(2);
+    h.created_at = st.column_text(3);
+    h.type = st.column_text(4);
+    out.push_back(std::move(h));
+  }
+  return out;
+}
+
+std::string Brain::chronicle_last_seen(const std::string& slug) {
+  if (!slug.empty()) {
+    auto st = db_.prepare(
+        "SELECT updated_at FROM pages WHERE slug=? AND deleted_at IS NULL "
+        "ORDER BY updated_at DESC LIMIT 1");
+    st.bind_text(1, slug);
+    if (st.step()) return st.column_text(0);
+    return {};
+  }
+  auto st = db_.prepare(
+      "SELECT updated_at FROM pages WHERE deleted_at IS NULL ORDER BY updated_at DESC LIMIT 1");
+  if (st.step()) return st.column_text(0);
+  return {};
+}
+
+int Brain::chronicle_backfill(int limit) {
+  if (limit <= 0) limit = 1000;
+  // Tag recent pages for chronicle visibility; ensure created_at present (already NOT NULL default)
+  auto pages = list_pages(limit);
+  int n = 0;
+  for (auto& p : pages) {
+    try {
+      add_tag(p.slug, "chronicle", p.source_id);
+      ++n;
+    } catch (...) {
+    }
+  }
+  return n;
+}
+
+int64_t Brain::put_take(const std::string& entity_slug, const std::string& body,
+                        const std::string& kind, double score) {
+  if (entity_slug.empty() || body.empty()) return 0;
+  auto st = db_.prepare(
+      "INSERT INTO takes(entity_slug, kind, body, score, created_at) VALUES(?,?,?,?,?)");
+  st.bind_text(1, entity_slug);
+  st.bind_text(2, kind.empty() ? "fact" : kind);
+  st.bind_text(3, body);
+  st.bind_double(4, score);
+  st.bind_text(5, util::utc_now());
+  st.step_done();
+  return db_.last_insert_rowid();
+}
+
+std::vector<Brain::Take> Brain::takes_list(const std::string& entity_slug, int limit) {
+  std::vector<Take> out;
+  if (limit <= 0) limit = 50;
+  if (entity_slug.empty()) {
+    auto st = db_.prepare(
+        "SELECT id, entity_slug, kind, body, score, created_at FROM takes "
+        "WHERE active=1 ORDER BY id DESC LIMIT ?");
+    st.bind_int(1, limit);
+    while (st.step()) {
+      Take t;
+      t.id = st.column_int(0);
+      t.entity_slug = st.column_text(1);
+      t.kind = st.column_text(2);
+      t.body = st.column_text(3);
+      t.score = st.column_double(4);
+      t.created_at = st.column_text(5);
+      out.push_back(std::move(t));
+    }
+  } else {
+    auto st = db_.prepare(
+        "SELECT id, entity_slug, kind, body, score, created_at FROM takes "
+        "WHERE active=1 AND entity_slug=? ORDER BY id DESC LIMIT ?");
+    st.bind_text(1, entity_slug);
+    st.bind_int(2, limit);
+    while (st.step()) {
+      Take t;
+      t.id = st.column_int(0);
+      t.entity_slug = st.column_text(1);
+      t.kind = st.column_text(2);
+      t.body = st.column_text(3);
+      t.score = st.column_double(4);
+      t.created_at = st.column_text(5);
+      out.push_back(std::move(t));
+    }
+  }
+  return out;
+}
+
+std::vector<Brain::Take> Brain::takes_search(const std::string& query, int limit) {
+  std::vector<Take> out;
+  if (query.empty()) return takes_list("", limit);
+  if (limit <= 0) limit = 50;
+  std::string like = "%" + query + "%";
+  auto st = db_.prepare(
+      "SELECT id, entity_slug, kind, body, score, created_at FROM takes "
+      "WHERE active=1 AND (body LIKE ? OR entity_slug LIKE ?) ORDER BY id DESC LIMIT ?");
+  st.bind_text(1, like);
+  st.bind_text(2, like);
+  st.bind_int(3, limit);
+  while (st.step()) {
+    Take t;
+    t.id = st.column_int(0);
+    t.entity_slug = st.column_text(1);
+    t.kind = st.column_text(2);
+    t.body = st.column_text(3);
+    t.score = st.column_double(4);
+    t.created_at = st.column_text(5);
+    out.push_back(std::move(t));
+  }
+  return out;
+}
+
+int Brain::takes_promote_facts(int limit) {
+  if (limit <= 0) limit = 100;
+  auto st = db_.prepare(
+      "SELECT entity_slug, predicate || ': ' || object_text FROM facts WHERE active=1 "
+      "ORDER BY id DESC LIMIT ?");
+  st.bind_int(1, limit);
+  int n = 0;
+  while (st.step()) {
+    auto slug = st.column_text(0);
+    auto body = st.column_text(1);
+    if (put_take(slug, body, "fact", 0.0) > 0) ++n;
+  }
+  return n;
+}
+
 BrainStats Brain::stats() {
   BrainStats s;
   auto q = [&](const char* sql) {

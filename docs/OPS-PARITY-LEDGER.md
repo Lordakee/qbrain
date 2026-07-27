@@ -1,7 +1,7 @@
 # Ops Parity Ledger
 
 Updated: 2026-07-26
-Qbrain implemented MCP/CLI ops: **62**
+Qbrain implemented MCP/CLI ops: **83**
 
 | upstream_op | status | notes |
 |-------------|--------|-------|
@@ -10,18 +10,18 @@ Qbrain implemented MCP/CLI ops: **62**
 | add_timeline_entry | **implemented** | N15 thin put_page type=timeline |
 | advisor | out-of-scope-v1 | deferred |
 | cancel_job | **implemented** | N12 minions |
-| chronicle_backfill | out-of-scope-v1 | deferred |
+| chronicle_backfill | **implemented** | N23 |
 | chronicle_day | **implemented** | N15 |
-| chronicle_last_seen | out-of-scope-v1 | deferred |
-| chronicle_on_this_day | out-of-scope-v1 | deferred |
+| chronicle_last_seen | **implemented** | N23 |
+| chronicle_on_this_day | **implemented** | N23 |
 | chronicle_since | **implemented** | N15 |
-| code_blast | out-of-scope-v1 | deferred |
-| code_callees | out-of-scope-v1 | deferred |
-| code_callers | out-of-scope-v1 | deferred |
-| code_def | out-of-scope-v1 | deferred |
-| code_flow | out-of-scope-v1 | deferred |
-| code_refs | out-of-scope-v1 | deferred |
-| code_traversal_cache_clear | out-of-scope-v1 | deferred |
+| code_blast | **implemented** | N22 |
+| code_callees | **implemented** | N22 |
+| code_callers | **implemented** | N16 |
+| code_def | **implemented** | N16 |
+| code_flow | **implemented** | N22 |
+| code_refs | **implemented** | N16 |
+| code_traversal_cache_clear | **implemented** | N22 |
 | delete_page | **implemented** | |
 | extract_facts | **implemented** | |
 | file_list | out-of-scope-v1 | deferred |
@@ -33,10 +33,10 @@ Qbrain implemented MCP/CLI ops: **62**
 | find_orphans | **implemented** | |
 | find_trajectory | **implemented** | |
 | forget_fact | **implemented** | N13 |
-| get_active_schema_pack | out-of-scope-v1 | deferred |
+| get_active_schema_pack | **implemented** | N20 |
 | get_backlinks | **implemented** | |
 | get_brain_identity | **implemented** | N17-N19 |
-| get_calibration_profile | out-of-scope-v1 | deferred |
+| get_calibration_profile | **implemented** | N21 |
 | get_chunks | **implemented** | |
 | get_health | **implemented** | |
 | get_ingest_log | **implemented** | N15 |
@@ -57,12 +57,12 @@ Qbrain implemented MCP/CLI ops: **62**
 | list_jobs | **implemented** | N12 |
 | list_link_sources | **implemented** | N15 |
 | list_pages | **implemented** | |
-| list_schema_packs | out-of-scope-v1 | deferred |
+| list_schema_packs | **implemented** | N20 |
 | list_skills | **implemented** | |
 | log_ingest | **implemented** | N15 |
 | ontology_conflicts | out-of-scope-v1 | deferred |
-| ontology_dimensions | out-of-scope-v1 | deferred |
-| ontology_get | out-of-scope-v1 | deferred |
+| ontology_dimensions | **implemented** | N20 |
+| ontology_get | **implemented** | N20 |
 | ontology_propose | out-of-scope-v1 | deferred |
 | pause_job | **implemented** | N14 |
 | purge_deleted_pages | **implemented** | |
@@ -70,7 +70,7 @@ Qbrain implemented MCP/CLI ops: **62**
 | put_raw_data | out-of-scope-v1 | deferred |
 | query | **implemented** | |
 | recall | **implemented** | N13 conservative search alias |
-| reload_schema_pack | out-of-scope-v1 | deferred |
+| reload_schema_pack | **implemented** | N20 |
 | remove_link | **implemented** | |
 | remove_tag | **implemented** | |
 | replay_job | **implemented** | N17-N19 |
@@ -88,7 +88,7 @@ Qbrain implemented MCP/CLI ops: **62**
 | schema_graph | out-of-scope-v1 | deferred |
 | schema_lint | out-of-scope-v1 | deferred |
 | schema_review_orphans | out-of-scope-v1 | deferred |
-| schema_stats | out-of-scope-v1 | deferred |
+| schema_stats | **implemented** | N20 |
 | search | **implemented** | |
 | search_by_image | out-of-scope-v1 | deferred |
 | send_job_message | **implemented** | N17-N19 |
@@ -99,10 +99,10 @@ Qbrain implemented MCP/CLI ops: **62**
 | submit_agent | out-of-scope-v1 | deferred |
 | submit_job | **implemented** | N12 minions |
 | sync_brain | **implemented** | N13 live-sync |
-| takes_calibration | out-of-scope-v1 | deferred |
-| takes_list | out-of-scope-v1 | deferred |
-| takes_scorecard | out-of-scope-v1 | deferred |
-| takes_search | out-of-scope-v1 | deferred |
+| takes_calibration | **implemented** | N21 |
+| takes_list | **implemented** | N21 |
+| takes_scorecard | **implemented** | N21 |
+| takes_search | **implemented** | N21 |
 | think | **implemented** | |
 | traverse_graph | **implemented** | N13 |
 | volunteer_chronicle | **implemented** | N17-N19 |
@@ -144,4 +144,8 @@ Qbrain implemented MCP/CLI ops: **62**
 - N18: find_anomalies/contradictions/experts
 - N19: get_brain_identity, volunteer_context/chronicle, get_timeline
 - Unit tests 12/12; Claude audits PASS
+
+## N20–N23
+- schema packs, takes v9, code callees/flow/blast, chronicle remaining
+- tests 13/13; Claude PASS
 

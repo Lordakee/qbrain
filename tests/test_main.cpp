@@ -39,6 +39,7 @@ void test_live_sync();
 void test_codeintel();
 void test_analytics();
 void test_n19();
+void test_n20_23();
 
 int main() {
   int failed = 0;
@@ -58,6 +59,7 @@ int main() {
       {"codeintel", test_codeintel},
       {"analytics", test_analytics},
       {"n19", test_n19},
+      {"n20_23", test_n20_23},
   };
   for (auto& t : tests) {
     try {

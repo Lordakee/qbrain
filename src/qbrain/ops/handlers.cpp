@@ -4,6 +4,7 @@
 #include "qbrain/codeintel/scan.hpp"
 #include "qbrain/cycle/dream.hpp"
 #include "qbrain/graph/analytics.hpp"
+#include "qbrain/schema/packs.hpp"
 #include "qbrain/graph/extract.hpp"
 #include "qbrain/graph/traverse.hpp"
 #include "qbrain/ingest/chunker.hpp"
@@ -1495,6 +1496,261 @@ void register_builtin_ops() {
     return r;
   }, false, "Volunteer recent chronicle pages",
       R"({"type":"object","properties":{"since":{"type":"string"},"limit":{"type":"integer"}}})");
+
+  // N20 schema packs
+  register_one(
+      "list_schema_packs", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto packs = schema::list_packs(*ctx.brain);
+    json arr = json::array();
+    for (auto& p : packs)
+      arr.push_back({{"id", p.id}, {"path", p.path}, {"active", p.active}});
+    r.json = arr.dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "List schema packs", R"({"type":"object","properties":{}})");
+
+  register_one(
+      "get_active_schema_pack", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto id = schema::active_pack_id(*ctx.brain);
+    auto raw = schema::load_pack_json(*ctx.brain, id);
+    try {
+      r.json = json({{"id", id}, {"pack", json::parse(raw)}}).dump(2);
+    } catch (...) {
+      r.json = json({{"id", id}, {"raw", raw}}).dump(2);
+    }
+    r.text = r.json;
+    return r;
+  }, false, "Active schema pack", R"({"type":"object","properties":{}})");
+
+  register_one(
+      "reload_schema_pack", Scope::Write, [](OpContext& ctx) {
+    OpResult r;
+    auto id = arg(ctx, "id", schema::active_pack_id(*ctx.brain));
+    schema::ensure_default_pack();
+    if (!schema::set_active_pack(*ctx.brain, id)) {
+      r.ok = false;
+      r.text = "pack not found";
+      return r;
+    }
+    r.text = "active " + id;
+    r.json = json({{"id", id}}).dump(2);
+    return r;
+  }, false, "Set active schema pack",
+      R"({"type":"object","properties":{"id":{"type":"string"}}})");
+
+  register_one(
+      "schema_stats", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto st = ctx.brain->db().prepare(
+        "SELECT type, COUNT(*) FROM pages WHERE deleted_at IS NULL GROUP BY type ORDER BY COUNT(*) DESC");
+    json arr = json::array();
+    while (st.step()) arr.push_back({{"type", st.column_text(0)}, {"count", st.column_int(1)}});
+    r.json = arr.dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "Page counts by type", R"({"type":"object","properties":{}})");
+
+  register_one(
+      "ontology_get", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    r.json = schema::load_pack_json(*ctx.brain, arg(ctx, "id"));
+    r.text = r.json;
+    return r;
+  }, false, "Ontology/pack JSON", R"({"type":"object","properties":{"id":{"type":"string"}}})");
+
+  register_one(
+      "ontology_dimensions", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    try {
+      auto j = json::parse(schema::load_pack_json(*ctx.brain, arg(ctx, "id")));
+      r.json = j.value("dimensions", json::array()).dump(2);
+    } catch (...) {
+      r.json = "[]";
+    }
+    r.text = r.json;
+    return r;
+  }, false, "Ontology dimensions from pack",
+      R"({"type":"object","properties":{"id":{"type":"string"}}})");
+
+  // N21 takes
+  register_one(
+      "takes_list", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto rows = ctx.brain->takes_list(arg(ctx, "entity_slug"), arg_int(ctx, "limit", 50));
+    json arr = json::array();
+    for (auto& t : rows)
+      arr.push_back({{"id", t.id},
+                     {"entity_slug", t.entity_slug},
+                     {"kind", t.kind},
+                     {"body", t.body},
+                     {"score", t.score}});
+    r.json = arr.dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "List takes",
+      R"({"type":"object","properties":{"entity_slug":{"type":"string"},"limit":{"type":"integer"}}})");
+
+  register_one(
+      "takes_search", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto q = arg(ctx, "query");
+    if (q.empty()) q = arg(ctx, "q");
+    auto rows = ctx.brain->takes_search(q, arg_int(ctx, "limit", 50));
+    json arr = json::array();
+    for (auto& t : rows)
+      arr.push_back({{"id", t.id}, {"entity_slug", t.entity_slug}, {"body", t.body}});
+    r.json = arr.dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "Search takes by body/slug",
+      R"({"type":"object","properties":{"query":{"type":"string"},"limit":{"type":"integer"}}})");
+
+  register_one(
+      "takes_scorecard", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto st = ctx.brain->db().prepare(
+        "SELECT kind, COUNT(*), COALESCE(AVG(score),0) FROM takes WHERE active=1 GROUP BY kind");
+    json arr = json::array();
+    while (st.step())
+      arr.push_back({{"kind", st.column_text(0)},
+                     {"count", st.column_int(1)},
+                     {"avg_score", st.column_double(2)}});
+    r.json = arr.dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "Takes aggregate scorecard", R"({"type":"object","properties":{}})");
+
+  register_one(
+      "takes_calibration", Scope::Write, [](OpContext& ctx) {
+    OpResult r;
+    int n = ctx.brain->takes_promote_facts(arg_int(ctx, "limit", 50));
+    r.json = json({{"promoted_from_facts", n}}).dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "Promote facts into takes (stub calibration)",
+      R"({"type":"object","properties":{"limit":{"type":"integer"}}})");
+
+  register_one(
+      "get_calibration_profile", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    r.json = json({{"version", 1},
+                   {"note", "stub profile"},
+                   {"active_pack", schema::active_pack_id(*ctx.brain)}})
+                 .dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "Calibration profile stub", R"({"type":"object","properties":{}})");
+
+  // N22 code intel extensions
+  register_one(
+      "code_callees", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto symbol = arg(ctx, "symbol");
+    if (symbol.empty()) symbol = arg(ctx, "name");
+    if (symbol.empty()) {
+      r.ok = false;
+      r.text = "symbol required";
+      return r;
+    }
+    auto hits = codeintel::find_callees(*ctx.brain, symbol, arg_int(ctx, "limit", 50),
+                                        arg_int(ctx, "page_limit", 500));
+    json arr = json::array();
+    for (auto& h : hits)
+      arr.push_back({{"slug", h.slug}, {"line", h.line}, {"snippet", h.snippet}, {"kind", h.kind}});
+    r.json = arr.dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "Heuristic callees of a symbol",
+      R"({"type":"object","properties":{"symbol":{"type":"string"},"limit":{"type":"integer"}}})");
+
+  register_one(
+      "code_flow", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto symbol = arg(ctx, "symbol");
+    if (symbol.empty()) symbol = arg(ctx, "name");
+    if (symbol.empty()) {
+      r.ok = false;
+      r.text = "symbol required";
+      return r;
+    }
+    auto hits = codeintel::find_flow(*ctx.brain, symbol, arg_int(ctx, "depth", 2),
+                                     arg_int(ctx, "limit", 50), arg_int(ctx, "page_limit", 500));
+    json arr = json::array();
+    for (auto& h : hits)
+      arr.push_back({{"slug", h.slug}, {"line", h.line}, {"snippet", h.snippet}, {"kind", h.kind}});
+    r.json = arr.dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "Depth-limited call flow",
+      R"({"type":"object","properties":{"symbol":{"type":"string"},"depth":{"type":"integer"}}})");
+
+  register_one(
+      "code_blast", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto symbol = arg(ctx, "symbol");
+    if (symbol.empty()) symbol = arg(ctx, "name");
+    if (symbol.empty()) {
+      r.ok = false;
+      r.text = "symbol required";
+      return r;
+    }
+    auto hits = codeintel::find_blast(*ctx.brain, symbol, arg_int(ctx, "limit", 80),
+                                      arg_int(ctx, "page_limit", 500));
+    json arr = json::array();
+    for (auto& h : hits)
+      arr.push_back({{"slug", h.slug}, {"line", h.line}, {"snippet", h.snippet}, {"kind", h.kind}});
+    r.json = arr.dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "Union neighborhood around symbol",
+      R"({"type":"object","properties":{"symbol":{"type":"string"},"limit":{"type":"integer"}}})");
+
+  register_one(
+      "code_traversal_cache_clear", Scope::Admin, [](OpContext& ctx) {
+    (void)ctx;
+    codeintel::clear_traversal_cache();
+    OpResult r;
+    r.text = "ok";
+    return r;
+  }, false, "No-op cache clear (stateless scanners)", R"({"type":"object","properties":{}})");
+
+  // N23 chronicle remaining
+  register_one(
+      "chronicle_on_this_day", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto md = arg(ctx, "date");
+    if (md.empty()) md = arg(ctx, "mmdd");
+    auto hits = ctx.brain->chronicle_on_this_day(md, arg_int(ctx, "limit", 100));
+    json arr = json::array();
+    for (auto& h : hits)
+      arr.push_back({{"slug", h.slug}, {"title", h.title}, {"updated_at", h.updated_at}});
+    r.json = arr.dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "Pages matching MM-DD any year",
+      R"({"type":"object","properties":{"date":{"type":"string"},"mmdd":{"type":"string"},"limit":{"type":"integer"}}})");
+
+  register_one(
+      "chronicle_last_seen", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto ts = ctx.brain->chronicle_last_seen(arg(ctx, "slug"));
+    r.json = json({{"last_seen", ts}, {"slug", arg(ctx, "slug")}}).dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "Last updated_at for slug or brain",
+      R"({"type":"object","properties":{"slug":{"type":"string"}}})");
+
+  register_one(
+      "chronicle_backfill", Scope::Write, [](OpContext& ctx) {
+    OpResult r;
+    int n = ctx.brain->chronicle_backfill(arg_int(ctx, "limit", 1000));
+    r.json = json({{"tagged", n}}).dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "Tag recent pages chronicle",
+      R"({"type":"object","properties":{"limit":{"type":"integer"}}})");
 }
 
 }  // namespace qbrain::ops

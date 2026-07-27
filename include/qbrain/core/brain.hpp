@@ -117,6 +117,25 @@ class Brain {
   };
   std::vector<ChronicleHit> chronicle_day(const std::string& day_utc, int limit = 100);
   std::vector<ChronicleHit> chronicle_since(const std::string& since_iso, int limit = 100);
+  // N23
+  std::vector<ChronicleHit> chronicle_on_this_day(const std::string& mmdd, int limit = 100);
+  std::string chronicle_last_seen(const std::string& slug = {});
+  int chronicle_backfill(int limit = 1000);
+
+  // N21 takes
+  struct Take {
+    int64_t id = 0;
+    std::string entity_slug;
+    std::string kind;
+    std::string body;
+    double score = 0;
+    std::string created_at;
+  };
+  int64_t put_take(const std::string& entity_slug, const std::string& body,
+                   const std::string& kind = "fact", double score = 0);
+  std::vector<Take> takes_list(const std::string& entity_slug = "", int limit = 50);
+  std::vector<Take> takes_search(const std::string& query, int limit = 50);
+  int takes_promote_facts(int limit = 100);
 
   BrainStats stats();
   HealthReport health();

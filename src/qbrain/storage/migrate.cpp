@@ -176,6 +176,25 @@ INSERT OR IGNORE INTO schema_version(version) VALUES (8);
 )SQL");
     ver = 8;
   }
+
+  // v9: takes (N21)
+  if (ver < 9) {
+    run_in_txn(db, R"SQL(
+CREATE TABLE IF NOT EXISTS takes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  entity_slug TEXT NOT NULL,
+  kind TEXT NOT NULL DEFAULT 'fact',
+  body TEXT NOT NULL DEFAULT '',
+  score REAL NOT NULL DEFAULT 0,
+  active INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_takes_entity ON takes(entity_slug, active);
+CREATE INDEX IF NOT EXISTS idx_takes_body ON takes(body);
+INSERT OR IGNORE INTO schema_version(version) VALUES (9);
+)SQL");
+    ver = 9;
+  }
 }
 
 SchemaIntegrity check_schema_integrity(Database& db) {

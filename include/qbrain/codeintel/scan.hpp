@@ -24,4 +24,15 @@ std::vector<Hit> find_refs(Brain& brain, const std::string& symbol, int limit = 
 std::vector<Hit> find_callers(Brain& brain, const std::string& symbol, int limit = 50,
                               int page_limit = 500);
 
+// N22: symbols called inside definition bodies of `symbol`.
+std::vector<Hit> find_callees(Brain& brain, const std::string& symbol, int limit = 50,
+                              int page_limit = 500);
+// Depth-limited def → callee names as hits (kind=flow).
+std::vector<Hit> find_flow(Brain& brain, const std::string& symbol, int depth = 2,
+                           int limit = 50, int page_limit = 500);
+// Union of def+refs+callers+callees.
+std::vector<Hit> find_blast(Brain& brain, const std::string& symbol, int limit = 80,
+                            int page_limit = 500);
+void clear_traversal_cache();
+
 }  // namespace qbrain::codeintel

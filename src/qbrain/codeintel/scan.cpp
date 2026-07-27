@@ -5,6 +5,7 @@
 #include <functional>
 #include <regex>
 #include <string_view>
+#include <unordered_set>
 
 namespace qbrain::codeintel {
 namespace {
@@ -204,6 +205,107 @@ std::vector<Hit> find_refs(Brain& brain, const std::string& symbol, int limit, i
 std::vector<Hit> find_callers(Brain& brain, const std::string& symbol, int limit,
                               int page_limit) {
   return scan(brain, symbol, limit, page_limit, Mode::Call);
+}
+
+namespace {
+
+// Extract identifier tokens that appear with '(' on a line (callee candidates).
+std::vector<std::string> call_tokens_on_line(const std::string& line) {
+  std::vector<std::string> out;
+  static const std::regex re(R"(\b([A-Za-z_][A-Za-z0-9_]*)\s*\()", std::regex::ECMAScript);
+  auto begin = std::sregex_iterator(line.begin(), line.end(), re);
+  auto end = std::sregex_iterator();
+  for (auto it = begin; it != end; ++it) {
+    auto name = (*it)[1].str();
+    if (!is_control_kw(name)) out.push_back(name);
+  }
+  return out;
+}
+
+}  // namespace
+
+std::vector<Hit> find_callees(Brain& brain, const std::string& symbol, int limit,
+                              int page_limit) {
+  std::vector<Hit> out;
+  if (symbol.empty()) return out;
+  auto defs = find_defs(brain, symbol, 20, page_limit);
+  // Also scan pages that contain the def symbol for nearby call tokens
+  auto pages = brain.list_pages(page_limit <= 0 ? 500 : page_limit, "");
+  for (auto& p : pages) {
+    if (static_cast<int>(out.size()) >= limit) break;
+    bool in_scope = false;
+    for (auto& d : defs)
+      if (d.slug == p.slug) in_scope = true;
+    if (!in_scope && p.body.find(symbol) == std::string::npos) continue;
+    for_each_line(p.body, [&](int line_no, const std::string& line) -> bool {
+      if (static_cast<int>(out.size()) >= limit) return false;
+      // Prefer lines after a def of symbol, or any line in pages that define it
+      bool near_def = looks_like_def(line, symbol);
+      if (near_def) in_scope = true;
+      if (!in_scope && !defs.empty()) return true;
+      for (auto& tok : call_tokens_on_line(line)) {
+        if (tok == symbol) continue;
+        Hit h;
+        h.slug = p.slug;
+        h.line = line_no;
+        h.snippet = trim_snippet(line);
+        h.kind = "callee:" + tok;
+        out.push_back(std::move(h));
+        if (static_cast<int>(out.size()) >= limit) return false;
+      }
+      return true;
+    });
+  }
+  return out;
+}
+
+std::vector<Hit> find_flow(Brain& brain, const std::string& symbol, int depth, int limit,
+                           int page_limit) {
+  std::vector<Hit> out;
+  if (symbol.empty() || depth < 1) return out;
+  std::vector<std::string> frontier = {symbol};
+  std::unordered_set<std::string> seen;
+  seen.insert(symbol);
+  for (int d = 0; d < depth && static_cast<int>(out.size()) < limit; ++d) {
+    std::vector<std::string> next;
+    for (auto& sym : frontier) {
+      auto callees = find_callees(brain, sym, limit, page_limit);
+      for (auto& c : callees) {
+        if (static_cast<int>(out.size()) >= limit) break;
+        // kind is callee:Name
+        std::string name = c.kind;
+        if (name.rfind("callee:", 0) == 0) name = name.substr(7);
+        c.kind = "flow:d" + std::to_string(d + 1) + ":" + name;
+        out.push_back(c);
+        if (!seen.count(name)) {
+          seen.insert(name);
+          next.push_back(name);
+        }
+      }
+    }
+    frontier = std::move(next);
+  }
+  return out;
+}
+
+std::vector<Hit> find_blast(Brain& brain, const std::string& symbol, int limit, int page_limit) {
+  std::vector<Hit> out;
+  auto add = [&](std::vector<Hit> part) {
+    for (auto& h : part) {
+      if (static_cast<int>(out.size()) >= limit) break;
+      out.push_back(std::move(h));
+    }
+  };
+  add(find_defs(brain, symbol, limit, page_limit));
+  add(find_refs(brain, symbol, limit, page_limit));
+  add(find_callers(brain, symbol, limit, page_limit));
+  add(find_callees(brain, symbol, limit, page_limit));
+  if (static_cast<int>(out.size()) > limit) out.resize(static_cast<size_t>(limit));
+  return out;
+}
+
+void clear_traversal_cache() {
+  // Stateless scanners — no cache to clear (API parity no-op).
 }
 
 }  // namespace qbrain::codeintel
