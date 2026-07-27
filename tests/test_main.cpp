@@ -40,6 +40,7 @@ void test_codeintel();
 void test_analytics();
 void test_n19();
 void test_n20_23();
+void test_n24_25();
 
 int main() {
   int failed = 0;
@@ -60,6 +61,7 @@ int main() {
       {"analytics", test_analytics},
       {"n19", test_n19},
       {"n20_23", test_n20_23},
+      {"n24_25", test_n24_25},
   };
   for (auto& t : tests) {
     try {

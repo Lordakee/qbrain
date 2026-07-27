@@ -5,6 +5,8 @@
 #include "qbrain/cycle/dream.hpp"
 #include "qbrain/graph/analytics.hpp"
 #include "qbrain/schema/packs.hpp"
+#include "qbrain/schema/lint.hpp"
+#include "qbrain/files/store.hpp"
 #include "qbrain/graph/extract.hpp"
 #include "qbrain/graph/traverse.hpp"
 #include "qbrain/ingest/chunker.hpp"
@@ -1750,6 +1752,143 @@ void register_builtin_ops() {
     r.text = r.json;
     return r;
   }, false, "Tag recent pages chronicle",
+      R"({"type":"object","properties":{"limit":{"type":"integer"}}})");
+
+  // N24 files
+  register_one(
+      "file_upload", Scope::Write, [](OpContext& ctx) {
+    OpResult r;
+    auto path = arg(ctx, "path");
+    if (path.empty()) path = arg(ctx, "src");
+    if (path.empty()) {
+      r.ok = false;
+      r.text = "path required";
+      return r;
+    }
+    auto id = files::upload(*ctx.brain, path, arg(ctx, "name"));
+    if (id <= 0) {
+      r.ok = false;
+      r.text = "upload failed";
+      return r;
+    }
+    r.json = json({{"id", id}, {"url", files::file_url(*ctx.brain, id)}}).dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "Upload local file into brain files dir",
+      R"({"type":"object","properties":{"path":{"type":"string"},"name":{"type":"string"}},"required":["path"]})");
+
+  register_one(
+      "file_list", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto rows = files::list_files(*ctx.brain, arg_int(ctx, "limit", 100));
+    json arr = json::array();
+    for (auto& e : rows)
+      arr.push_back({{"id", e.id},
+                     {"name", e.name},
+                     {"path", e.path},
+                     {"size", e.size},
+                     {"mime", e.mime}});
+    r.json = arr.dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "List attached files",
+      R"({"type":"object","properties":{"limit":{"type":"integer"}}})");
+
+  register_one(
+      "file_url", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    std::string url;
+    auto id_s = arg(ctx, "id");
+    if (!id_s.empty()) {
+      try {
+        url = files::file_url(*ctx.brain, std::stoll(id_s));
+      } catch (...) {
+      }
+    }
+    if (url.empty()) url = files::file_url_by_name(*ctx.brain, arg(ctx, "name"));
+    if (url.empty()) {
+      r.ok = false;
+      r.text = "not found";
+      return r;
+    }
+    r.json = json({{"url", url}}).dump(2);
+    r.text = url;
+    return r;
+  }, false, "file:// URL for attachment",
+      R"({"type":"object","properties":{"id":{"type":"integer"},"name":{"type":"string"}}})");
+
+  // N25 schema/ontology deep
+  register_one(
+      "schema_lint", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto rows = schema::schema_lint(*ctx.brain, arg_int(ctx, "limit", 100));
+    json arr = json::array();
+    for (auto& i : rows)
+      arr.push_back({{"code", i.code}, {"slug", i.slug}, {"detail", i.detail}});
+    r.json = arr.dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "Lint pages for schema issues",
+      R"({"type":"object","properties":{"limit":{"type":"integer"}}})");
+
+  register_one(
+      "schema_graph", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto nodes = schema::schema_graph(*ctx.brain);
+    json arr = json::array();
+    for (auto& n : nodes)
+      arr.push_back({{"id", n.id}, {"kind", n.kind}, {"count", n.count}});
+    r.json = arr.dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "Type graph nodes", R"({"type":"object","properties":{}})");
+
+  register_one(
+      "schema_explain_type", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto t = arg(ctx, "type");
+    if (t.empty()) {
+      r.ok = false;
+      r.text = "type required";
+      return r;
+    }
+    r.text = schema::schema_explain_type(*ctx.brain, t);
+    r.json = json({{"type", t}, {"explain", r.text}}).dump(2);
+    return r;
+  }, false, "Explain a page type",
+      R"({"type":"object","properties":{"type":{"type":"string"}},"required":["type"]})");
+
+  register_one(
+      "schema_review_orphans", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto o = ctx.brain->find_orphans(arg_int(ctx, "limit", 100));
+    r.json = json(o).dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "Orphan pages (schema review)",
+      R"({"type":"object","properties":{"limit":{"type":"integer"}}})");
+
+  register_one(
+      "ontology_propose", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto p = schema::ontology_propose(*ctx.brain, arg_int(ctx, "limit", 20));
+    r.json = json(p).dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "Propose types missing from pack",
+      R"({"type":"object","properties":{"limit":{"type":"integer"}}})");
+
+  register_one(
+      "ontology_conflicts", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto rows = schema::ontology_conflicts(*ctx.brain, arg_int(ctx, "limit", 50));
+    json arr = json::array();
+    for (auto& i : rows)
+      arr.push_back({{"code", i.code}, {"slug", i.slug}, {"detail", i.detail}});
+    r.json = arr.dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "Types used but not in pack",
       R"({"type":"object","properties":{"limit":{"type":"integer"}}})");
 }
 

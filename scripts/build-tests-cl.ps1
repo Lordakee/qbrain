@@ -25,13 +25,14 @@ $tests = @(
   "tests\test_codeintel.cpp",
   "tests\test_analytics.cpp",
   "tests\test_n19.cpp",
-  "tests\test_n20_23.cpp"
+  "tests\test_n20_23.cpp",
+  "tests\test_n24_25.cpp"
 ) | ForEach-Object { Join-Path $Root $_ }
 
 $testList = ($tests | ForEach-Object { "`"$_`"" }) -join " "
 $prodObjs = @(
   "paths","hash","log","string_util","time_util","database","migrate","types","brain",
-  "extract","traverse","analytics","scan","packs","vector","rrf","hybrid","rerank","minions","dream",
+  "extract","traverse","analytics","scan","packs","lint","store","vector","rrf","hybrid","rerank","minions","dream",
   "chunker","markdown","import","http_client","embed","chat","registry","handlers",
   "inbox_watch","live_sync","jsonrpc","server","http_server","sqlite3"
 ) | ForEach-Object { "$_.obj" }
@@ -43,7 +44,7 @@ call "$vcvars" x64
 cd /d "$Out"
 cl /nologo /std:c++20 /EHsc /O2 /utf-8 /I"$inc" /I"$third" /I"$sqlite" /DUNICODE /D_UNICODE /DNOMINMAX /DWIN32_LEAN_AND_MEAN /DSQLITE_ENABLE_FTS5 /c $testList
 if errorlevel 1 exit /b 1
-link /nologo /OUT:qbrain_tests.exe /MANIFEST:NO $objList test_main.obj test_rrf.obj test_vector.obj test_chunker.obj test_extract.obj test_storage.obj test_mcp.obj test_rerank.obj test_minions.obj test_live_sync.obj test_codeintel.obj test_analytics.obj test_n19.obj test_n20_23.obj winhttp.lib bcrypt.lib shell32.lib ole32.lib advapi32.lib ws2_32.lib
+link /nologo /OUT:qbrain_tests.exe /MANIFEST:NO $objList test_main.obj test_rrf.obj test_vector.obj test_chunker.obj test_extract.obj test_storage.obj test_mcp.obj test_rerank.obj test_minions.obj test_live_sync.obj test_codeintel.obj test_analytics.obj test_n19.obj test_n20_23.obj test_n24_25.obj winhttp.lib bcrypt.lib shell32.lib ole32.lib advapi32.lib ws2_32.lib
 if errorlevel 1 exit /b 1
 echo TESTS_BUILD_OK
 qbrain_tests.exe

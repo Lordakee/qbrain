@@ -195,6 +195,23 @@ INSERT OR IGNORE INTO schema_version(version) VALUES (9);
 )SQL");
     ver = 9;
   }
+
+  // v10: file_index (N24)
+  if (ver < 10) {
+    run_in_txn(db, R"SQL(
+CREATE TABLE IF NOT EXISTS file_index (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  path TEXT NOT NULL,
+  size INTEGER NOT NULL DEFAULT 0,
+  mime TEXT NOT NULL DEFAULT 'application/octet-stream',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_file_index_name ON file_index(name);
+INSERT OR IGNORE INTO schema_version(version) VALUES (10);
+)SQL");
+    ver = 10;
+  }
 }
 
 SchemaIntegrity check_schema_integrity(Database& db) {

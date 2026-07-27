@@ -24,6 +24,8 @@ $sources = @(
   "src\qbrain\graph\analytics.cpp",
   "src\qbrain\codeintel\scan.cpp",
   "src\qbrain\schema\packs.cpp",
+  "src\qbrain\schema\lint.cpp",
+  "src\qbrain\files\store.cpp",
   "src\qbrain\search\vector.cpp",
   "src\qbrain\search\rrf.cpp",
   "src\qbrain\search\hybrid.cpp",
@@ -60,7 +62,7 @@ if errorlevel 1 exit /b 1
 cl /nologo /std:c++20 /EHsc /O2 /utf-8 /I"$inc" /I"$third" /I"$sqlite" /DUNICODE /D_UNICODE /DNOMINMAX /DWIN32_LEAN_AND_MEAN /DSQLITE_ENABLE_FTS5 /c $srcList
 if errorlevel 1 exit /b 1
 rem Exclude test_*.obj so unit-test objects do not collide with main.
-link /nologo /OUT:qbrain.exe /MANIFEST:NO paths.obj hash.obj log.obj string_util.obj time_util.obj database.obj migrate.obj types.obj brain.obj extract.obj traverse.obj analytics.obj scan.obj packs.obj vector.obj rrf.obj hybrid.obj rerank.obj minions.obj dream.obj chunker.obj markdown.obj import.obj http_client.obj embed.obj chat.obj registry.obj handlers.obj inbox_watch.obj live_sync.obj jsonrpc.obj server.obj http_server.obj app.obj commands.obj main.obj sqlite3.obj winhttp.lib bcrypt.lib shell32.lib ole32.lib advapi32.lib ws2_32.lib
+link /nologo /OUT:qbrain.exe /MANIFEST:NO paths.obj hash.obj log.obj string_util.obj time_util.obj database.obj migrate.obj types.obj brain.obj extract.obj traverse.obj analytics.obj scan.obj packs.obj lint.obj store.obj vector.obj rrf.obj hybrid.obj rerank.obj minions.obj dream.obj chunker.obj markdown.obj import.obj http_client.obj embed.obj chat.obj registry.obj handlers.obj inbox_watch.obj live_sync.obj jsonrpc.obj server.obj http_server.obj app.obj commands.obj main.obj sqlite3.obj winhttp.lib bcrypt.lib shell32.lib ole32.lib advapi32.lib ws2_32.lib
 if errorlevel 1 exit /b 1
 echo BUILD_OK
 dir qbrain.exe

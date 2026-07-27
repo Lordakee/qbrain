@@ -1,7 +1,7 @@
 # Ops Parity Ledger
 
 Updated: 2026-07-26
-Qbrain implemented MCP/CLI ops: **83**
+Qbrain implemented MCP/CLI ops: **92**
 
 | upstream_op | status | notes |
 |-------------|--------|-------|
@@ -24,9 +24,9 @@ Qbrain implemented MCP/CLI ops: **83**
 | code_traversal_cache_clear | **implemented** | N22 |
 | delete_page | **implemented** | |
 | extract_facts | **implemented** | |
-| file_list | out-of-scope-v1 | deferred |
-| file_upload | out-of-scope-v1 | deferred |
-| file_url | out-of-scope-v1 | deferred |
+| file_list | **implemented** | N24-N25 |
+| file_upload | **implemented** | N24-N25 |
+| file_url | **implemented** | N24-N25 |
 | find_anomalies | **implemented** | N18 graph heuristics |
 | find_contradictions | **implemented** | N18 fact predicate heuristics |
 | find_experts | **implemented** | N18 inbound link rank |
@@ -60,10 +60,10 @@ Qbrain implemented MCP/CLI ops: **83**
 | list_schema_packs | **implemented** | N20 |
 | list_skills | **implemented** | |
 | log_ingest | **implemented** | N15 |
-| ontology_conflicts | out-of-scope-v1 | deferred |
+| ontology_conflicts | **implemented** | N24-N25 |
 | ontology_dimensions | **implemented** | N20 |
 | ontology_get | **implemented** | N20 |
-| ontology_propose | out-of-scope-v1 | deferred |
+| ontology_propose | **implemented** | N24-N25 |
 | pause_job | **implemented** | N14 |
 | purge_deleted_pages | **implemented** | |
 | put_page | **implemented** | |
@@ -84,10 +84,10 @@ Qbrain implemented MCP/CLI ops: **83**
 | run_onboard | out-of-scope-v1 | deferred |
 | run_skillopt | out-of-scope-v1 | deferred |
 | schema_apply_mutations | out-of-scope-v1 | deferred |
-| schema_explain_type | out-of-scope-v1 | deferred |
-| schema_graph | out-of-scope-v1 | deferred |
-| schema_lint | out-of-scope-v1 | deferred |
-| schema_review_orphans | out-of-scope-v1 | deferred |
+| schema_explain_type | **implemented** | N24-N25 |
+| schema_graph | **implemented** | N24-N25 |
+| schema_lint | **implemented** | N24-N25 |
+| schema_review_orphans | **implemented** | N24-N25 |
 | schema_stats | **implemented** | N20 |
 | search | **implemented** | |
 | search_by_image | out-of-scope-v1 | deferred |
@@ -148,4 +148,7 @@ Qbrain implemented MCP/CLI ops: **83**
 ## N20–N23
 - schema packs, takes v9, code callees/flow/blast, chronicle remaining
 - tests 13/13; Claude PASS
+
+## N24–N25
+- files v10; schema lint/graph; ontology propose/conflicts; tests 14/14
 
