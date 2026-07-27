@@ -2105,6 +2105,28 @@ void register_builtin_ops() {
     return r;
   }, false, "Image search stub via filename stem",
       R"({"type":"object","properties":{"path":{"type":"string"},"name":{"type":"string"},"limit":{"type":"integer"}}})");
+
+  // N28 schema_apply_mutations
+  register_one(
+      "schema_apply_mutations", Scope::Write, [](OpContext& ctx) {
+    OpResult r;
+    auto raw = arg(ctx, "mutations");
+    if (raw.empty()) raw = arg(ctx, "mutations_json");
+    if (raw.empty()) raw = "[]";
+    int applied = 0;
+    auto err = schema::apply_mutations(*ctx.brain, raw, &applied);
+    if (!err.empty()) {
+      r.ok = false;
+      r.text = err;
+      return r;
+    }
+    r.json = json({{"applied", applied},
+                   {"active_pack", schema::active_pack_id(*ctx.brain)}})
+                 .dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "Apply safe pack mutations (add_type/add_dimension)",
+      R"({"type":"object","properties":{"mutations":{"type":"string"},"mutations_json":{"type":"string"}}})");
 }
 
 }  // namespace qbrain::ops

@@ -1,7 +1,7 @@
 # Ops Parity Ledger
 
 Updated: 2026-07-26
-Qbrain implemented MCP/CLI ops: **102**
+Qbrain implemented MCP/CLI ops: **103**
 
 | upstream_op | status | notes |
 |-------------|--------|-------|
@@ -83,7 +83,7 @@ Qbrain implemented MCP/CLI ops: **102**
 | doctor_remediate | **implemented** | N14 CLI doctor --remediate |
 | run_onboard | **implemented** | N26-N27 |
 | run_skillopt | **implemented** | N26-N27 |
-| schema_apply_mutations | out-of-scope-v1 | deferred |
+| schema_apply_mutations | **implemented** | N28 |
 | schema_explain_type | **implemented** | N24-N25 |
 | schema_graph | **implemented** | N24-N25 |
 | schema_lint | **implemented** | N24-N25 |
@@ -152,4 +152,8 @@ Qbrain implemented MCP/CLI ops: **102**
 ## N24–N25
 - files v10; schema lint/graph; ontology propose/conflicts; tests 14/14
 
+## N28
+- schema_apply_mutations (add_type/add_dimension only)
+- out-of-scope remaining: **1**
+- unit tests 15/15
 

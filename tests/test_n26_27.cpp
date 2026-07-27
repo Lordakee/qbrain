@@ -59,6 +59,13 @@ void test_n26_27() {
   auto snap = b.status_snapshot();
   QB_CHECK(snap.schema_version >= 11);
 
+  // N28 schema_apply_mutations
+  ctx.args = {{"mutations", R"([{"op":"add_type","type":"n28_type"}])"}};
+  auto mut = qbrain::ops::global_registry().call("schema_apply_mutations", ctx);
+  QB_CHECK(mut.ok);
+  auto pack = qbrain::ops::global_registry().call("ontology_get", ctx);
+  QB_CHECK(pack.json.find("n28_type") != std::string::npos);
+
   b.close();
   fs::remove_all(dir);
 }

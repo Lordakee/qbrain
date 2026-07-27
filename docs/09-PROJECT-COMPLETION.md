@@ -54,3 +54,14 @@ MCP: `qbrain serve --allow-write`
 - Schema: **v7**
 - Binary: `build\cl\qbrain.exe`
 
+
+## Wave N26–N28 (2026-07-27)
+
+| Node | Focus | Audit |
+|------|-------|-------|
+| N26 | agent/advisor/onboard/skillopt | PASS |
+| N27 | raw_data v11, transcripts, salience, image stub | PASS |
+| N28 | schema_apply_mutations | PASS |
+
+**Ledger**: all previously out-of-scope upstream ops marked implemented at usable/stub level.
+Unit tests: **15/15** PASS. Schema **v11**.
