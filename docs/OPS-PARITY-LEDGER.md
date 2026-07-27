@@ -154,6 +154,7 @@ Qbrain implemented MCP/CLI ops: **103**
 
 ## N28
 - schema_apply_mutations (add_type/add_dimension only)
-- out-of-scope remaining: **1**
+- out-of-scope table rows: **0**
 - unit tests 15/15
+
 
