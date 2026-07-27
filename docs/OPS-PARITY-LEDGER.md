@@ -1,14 +1,14 @@
 # Ops Parity Ledger
 
 Updated: 2026-07-26
-Qbrain implemented MCP/CLI ops: **92**
+Qbrain implemented MCP/CLI ops: **102**
 
 | upstream_op | status | notes |
 |-------------|--------|-------|
 | add_link | **implemented** | |
 | add_tag | **implemented** | |
 | add_timeline_entry | **implemented** | N15 thin put_page type=timeline |
-| advisor | out-of-scope-v1 | deferred |
+| advisor | **implemented** | N26-N27 |
 | cancel_job | **implemented** | N12 minions |
 | chronicle_backfill | **implemented** | N23 |
 | chronicle_day | **implemented** | N15 |
@@ -44,16 +44,16 @@ Qbrain implemented MCP/CLI ops: **92**
 | get_job_progress | **implemented** | N14 |
 | get_links | **implemented** | |
 | get_page | **implemented** | |
-| get_raw_data | out-of-scope-v1 | deferred |
-| get_recent_salience | out-of-scope-v1 | deferred |
-| get_recent_transcripts | out-of-scope-v1 | deferred |
+| get_raw_data | **implemented** | N26-N27 |
+| get_recent_salience | **implemented** | N26-N27 |
+| get_recent_transcripts | **implemented** | N26-N27 |
 | get_skill | **implemented** | |
 | get_stats | **implemented** | |
 | get_status_snapshot | **implemented** | N14 |
 | get_tags | **implemented** | |
 | get_timeline | **implemented** | N17-N19 |
 | get_versions | **implemented** | |
-| list_brain_skillpack | out-of-scope-v1 | deferred |
+| list_brain_skillpack | **implemented** | N26-N27 |
 | list_jobs | **implemented** | N12 |
 | list_link_sources | **implemented** | N15 |
 | list_pages | **implemented** | |
@@ -67,7 +67,7 @@ Qbrain implemented MCP/CLI ops: **92**
 | pause_job | **implemented** | N14 |
 | purge_deleted_pages | **implemented** | |
 | put_page | **implemented** | |
-| put_raw_data | out-of-scope-v1 | deferred |
+| put_raw_data | **implemented** | N26-N27 |
 | query | **implemented** | |
 | recall | **implemented** | N13 conservative search alias |
 | reload_schema_pack | **implemented** | N20 |
@@ -81,8 +81,8 @@ Qbrain implemented MCP/CLI ops: **92**
 | revert_version | **implemented** | |
 | run_doctor | **implemented** | |
 | doctor_remediate | **implemented** | N14 CLI doctor --remediate |
-| run_onboard | out-of-scope-v1 | deferred |
-| run_skillopt | out-of-scope-v1 | deferred |
+| run_onboard | **implemented** | N26-N27 |
+| run_skillopt | **implemented** | N26-N27 |
 | schema_apply_mutations | out-of-scope-v1 | deferred |
 | schema_explain_type | **implemented** | N24-N25 |
 | schema_graph | **implemented** | N24-N25 |
@@ -90,13 +90,13 @@ Qbrain implemented MCP/CLI ops: **92**
 | schema_review_orphans | **implemented** | N24-N25 |
 | schema_stats | **implemented** | N20 |
 | search | **implemented** | |
-| search_by_image | out-of-scope-v1 | deferred |
+| search_by_image | **implemented** | N26-N27 |
 | send_job_message | **implemented** | N17-N19 |
 | sources_add | **implemented** | |
 | sources_list | **implemented** | |
 | sources_remove | **implemented** | N13 |
 | sources_status | **implemented** | N13 |
-| submit_agent | out-of-scope-v1 | deferred |
+| submit_agent | **implemented** | N26-N27 |
 | submit_job | **implemented** | N12 minions |
 | sync_brain | **implemented** | N13 live-sync |
 | takes_calibration | **implemented** | N21 |
@@ -151,4 +151,5 @@ Qbrain implemented MCP/CLI ops: **92**
 
 ## N24–N25
 - files v10; schema lint/graph; ontology propose/conflicts; tests 14/14
+
 

@@ -41,6 +41,7 @@ void test_analytics();
 void test_n19();
 void test_n20_23();
 void test_n24_25();
+void test_n26_27();
 
 int main() {
   int failed = 0;
@@ -62,6 +63,7 @@ int main() {
       {"n19", test_n19},
       {"n20_23", test_n20_23},
       {"n24_25", test_n24_25},
+      {"n26_27", test_n26_27},
   };
   for (auto& t : tests) {
     try {

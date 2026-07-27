@@ -137,6 +137,13 @@ class Brain {
   std::vector<Take> takes_search(const std::string& query, int limit = 50);
   int takes_promote_facts(int limit = 100);
 
+  // N27 raw data
+  bool put_raw_data(const std::string& key, const std::string& content_text,
+                    const std::string& meta_json = "{}");
+  std::optional<std::pair<std::string, std::string>> get_raw_data(const std::string& key);
+  std::vector<std::pair<std::string, std::string>> list_raw_prefix(const std::string& prefix,
+                                                                   int limit = 50);
+
   BrainStats stats();
   HealthReport health();
 

@@ -212,6 +212,22 @@ INSERT OR IGNORE INTO schema_version(version) VALUES (10);
 )SQL");
     ver = 10;
   }
+
+  // v11: raw_data (N27)
+  if (ver < 11) {
+    run_in_txn(db, R"SQL(
+CREATE TABLE IF NOT EXISTS raw_data (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  key TEXT NOT NULL UNIQUE,
+  content_text TEXT NOT NULL DEFAULT '',
+  meta_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_raw_data_key ON raw_data(key);
+INSERT OR IGNORE INTO schema_version(version) VALUES (11);
+)SQL");
+    ver = 11;
+  }
 }
 
 SchemaIntegrity check_schema_integrity(Database& db) {

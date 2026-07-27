@@ -996,6 +996,40 @@ int Brain::takes_promote_facts(int limit) {
   return n;
 }
 
+bool Brain::put_raw_data(const std::string& key, const std::string& content_text,
+                         const std::string& meta_json) {
+  if (key.empty()) return false;
+  auto st = db_.prepare(
+      "INSERT INTO raw_data(key, content_text, meta_json, created_at) VALUES(?,?,?,?) "
+      "ON CONFLICT(key) DO UPDATE SET content_text=excluded.content_text, "
+      "meta_json=excluded.meta_json, created_at=excluded.created_at");
+  st.bind_text(1, key);
+  st.bind_text(2, content_text);
+  st.bind_text(3, meta_json.empty() ? "{}" : meta_json);
+  st.bind_text(4, util::utc_now());
+  st.step_done();
+  return true;
+}
+
+std::optional<std::pair<std::string, std::string>> Brain::get_raw_data(const std::string& key) {
+  auto st = db_.prepare("SELECT content_text, meta_json FROM raw_data WHERE key=?");
+  st.bind_text(1, key);
+  if (!st.step()) return std::nullopt;
+  return std::make_pair(st.column_text(0), st.column_text(1));
+}
+
+std::vector<std::pair<std::string, std::string>> Brain::list_raw_prefix(const std::string& prefix,
+                                                                        int limit) {
+  std::vector<std::pair<std::string, std::string>> out;
+  if (limit <= 0) limit = 50;
+  auto st = db_.prepare(
+      "SELECT key, content_text FROM raw_data WHERE key LIKE ? ORDER BY id DESC LIMIT ?");
+  st.bind_text(1, prefix + "%");
+  st.bind_int(2, limit);
+  while (st.step()) out.emplace_back(st.column_text(0), st.column_text(1));
+  return out;
+}
+
 BrainStats Brain::stats() {
   BrainStats s;
   auto q = [&](const char* sql) {

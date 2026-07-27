@@ -1890,6 +1890,221 @@ void register_builtin_ops() {
     return r;
   }, false, "Types used but not in pack",
       R"({"type":"object","properties":{"limit":{"type":"integer"}}})");
+
+  // N26 agent / advisor / onboard / skillopt
+  register_one(
+      "submit_agent", Scope::Write, [](OpContext& ctx) {
+    OpResult r;
+    auto prompt = arg(ctx, "prompt");
+    if (prompt.empty()) prompt = arg(ctx, "task");
+    if (prompt.empty()) {
+      r.ok = false;
+      r.text = "prompt required";
+      return r;
+    }
+    json payload = {{"prompt", prompt},
+                    {"model", arg(ctx, "model")},
+                    {"source", arg(ctx, "source_id", "default")}};
+    auto id = jobs::submit_job(*ctx.brain, "agent", payload.dump(), "default",
+                               arg_int(ctx, "priority", 50));
+    r.json = json({{"id", id}, {"type", "agent"}, {"status", "waiting"}}).dump(2);
+    r.text = "agent job " + std::to_string(id);
+    return r;
+  }, false, "Enqueue agent job",
+      R"({"type":"object","properties":{"prompt":{"type":"string"},"task":{"type":"string"},"priority":{"type":"integer"}}})");
+
+  register_one(
+      "advisor", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto q = arg(ctx, "question");
+    if (q.empty()) q = arg(ctx, "query");
+    if (q.empty()) {
+      r.ok = false;
+      r.text = "question required";
+      return r;
+    }
+    search::HybridOpts opts;
+    opts.limit = arg_int(ctx, "limit", 5);
+    opts.use_vector = false;
+    opts.mode = "conservative";
+    opts.config = &ctx.brain->config();
+    auto hits = search::hybrid_search(*ctx.brain, q, nullptr, opts);
+    json evidence = json::array();
+    std::ostringstream ctx_txt;
+    for (auto& h : hits) {
+      evidence.push_back({{"slug", h.slug}, {"title", h.title}, {"snippet", h.snippet}});
+      ctx_txt << "- " << h.slug << ": " << h.title << "\n";
+    }
+    std::string advice = "Based on " + std::to_string(hits.size()) + " notes:\n" + ctx_txt.str();
+    // optional chat enrichment fail-open
+    auto cr = ai::chat_complete(ctx.brain->config(),
+                                {{"system", "You are a brief advisor using only provided notes."},
+                                 {"user", "Question: " + q + "\nNotes:\n" + ctx_txt.str()}},
+                                0.2);
+    if (cr.ok && !cr.content.empty()) advice = cr.content;
+    r.json = json({{"advice", advice}, {"evidence", evidence}, {"llm", cr.ok}}).dump(2);
+    r.text = advice;
+    return r;
+  }, false, "Advise from search (+ optional LLM)",
+      R"({"type":"object","properties":{"question":{"type":"string"},"query":{"type":"string"},"limit":{"type":"integer"}}})");
+
+  register_one(
+      "run_onboard", Scope::Write, [](OpContext& ctx) {
+    OpResult r;
+    schema::ensure_default_pack();
+    ctx.brain->ensure_source("default");
+    auto rem = ctx.brain->remediate();
+    PageInput in;
+    in.slug = "meta/welcome";
+    in.title = "Welcome to Qbrain";
+    in.body = "# Welcome\n\nYour brain is ready. Use capture, search, think, dream.\n";
+    in.type = "note";
+    in.source_kind = "onboard";
+    auto page = ctx.brain->put_page(in);
+    r.json = json({{"welcome_slug", page.slug},
+                   {"remediate", {{"default_source", rem.default_source},
+                                  {"reclaimed", rem.reclaimed}}}})
+                 .dump(2);
+    r.text = "onboarded " + page.slug;
+    return r;
+  }, true, "Initialize pack/source/welcome page", R"({"type":"object","properties":{}})");
+
+  register_one(
+      "run_skillopt", Scope::Write, [](OpContext& ctx) {
+    OpResult r;
+    (void)ctx;
+    // Report-only: list skills and note no mutation
+    json arr = json::array();
+    namespace fs = std::filesystem;
+    for (auto& root : {fs::path("skills"), fs::path("D:/Projects/Qbrain/skills")}) {
+      if (!fs::exists(root)) continue;
+      for (auto& e : fs::directory_iterator(root)) {
+        if (!e.is_directory()) continue;
+        if (fs::exists(e.path() / "SKILL.md"))
+          arr.push_back({{"name", e.path().filename().string()}, {"mutate", false}});
+      }
+    }
+    r.json = json({{"skills", arr}, {"mode", "no-mutate"}, {"note", "review only"}}).dump(2);
+    r.text = r.json;
+    return r;
+  }, true, "SkillOpt report-only stub", R"({"type":"object","properties":{}})");
+
+  register_one(
+      "list_brain_skillpack", Scope::Read, [](OpContext& ctx) {
+    OpContext c2 = ctx;
+    auto* op = global_registry().find("list_skills");
+    return op ? op->handler(c2) : OpResult{false, 1, "list_skills missing", ""};
+  }, false, "Alias list_skills", R"({"type":"object","properties":{}})");
+
+  // N27 raw / transcripts / salience / image
+  register_one(
+      "put_raw_data", Scope::Write, [](OpContext& ctx) {
+    OpResult r;
+    auto key = arg(ctx, "key");
+    if (key.empty()) {
+      r.ok = false;
+      r.text = "key required";
+      return r;
+    }
+    if (!ctx.brain->put_raw_data(key, arg(ctx, "content"), arg(ctx, "meta_json", "{}"))) {
+      r.ok = false;
+      r.text = "put failed";
+      return r;
+    }
+    r.text = "ok " + key;
+    r.json = json({{"key", key}}).dump(2);
+    return r;
+  }, false, "Store raw key/value text",
+      R"({"type":"object","properties":{"key":{"type":"string"},"content":{"type":"string"},"meta_json":{"type":"string"}},"required":["key"]})");
+
+  register_one(
+      "get_raw_data", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto key = arg(ctx, "key");
+    auto v = ctx.brain->get_raw_data(key);
+    if (!v) {
+      r.ok = false;
+      r.text = "not found";
+      return r;
+    }
+    r.json = json({{"key", key}, {"content", v->first}, {"meta_json", v->second}}).dump(2);
+    r.text = v->first;
+    return r;
+  }, false, "Get raw data by key",
+      R"({"type":"object","properties":{"key":{"type":"string"}},"required":["key"]})");
+
+  register_one(
+      "get_recent_transcripts", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    int limit = arg_int(ctx, "limit", 20);
+    json arr = json::array();
+    auto pages = ctx.brain->list_pages(limit, "transcript");
+    for (auto& p : pages)
+      arr.push_back({{"slug", p.slug}, {"title", p.title}, {"updated_at", p.updated_at}});
+    // also raw keys transcript/
+    for (auto& kv : ctx.brain->list_raw_prefix("transcript/", limit))
+      arr.push_back({{"key", kv.first}, {"preview", kv.second.substr(0, 200)}});
+    r.json = arr.dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "Recent transcript pages/raw keys",
+      R"({"type":"object","properties":{"limit":{"type":"integer"}}})");
+
+  register_one(
+      "get_recent_salience", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    int limit = arg_int(ctx, "limit", 20);
+    // score = inbound links approx via SQL
+    auto st = ctx.brain->db().prepare(
+        "SELECT p.slug, p.title, p.updated_at, "
+        "(SELECT COUNT(*) FROM links l WHERE l.to_slug=p.slug) AS inbound "
+        "FROM pages p WHERE p.deleted_at IS NULL "
+        "ORDER BY inbound DESC, p.updated_at DESC LIMIT ?");
+    st.bind_int(1, limit);
+    json arr = json::array();
+    while (st.step())
+      arr.push_back({{"slug", st.column_text(0)},
+                     {"title", st.column_text(1)},
+                     {"updated_at", st.column_text(2)},
+                     {"salience", st.column_int(3)}});
+    r.json = arr.dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "Pages by inbound-link salience",
+      R"({"type":"object","properties":{"limit":{"type":"integer"}}})");
+
+  register_one(
+      "search_by_image", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto path = arg(ctx, "path");
+    auto name = arg(ctx, "name");
+    if (path.empty() && name.empty()) {
+      r.ok = false;
+      r.text = "path or name required";
+      return r;
+    }
+    // Heuristic: upload optional, match file_index by basename stem in page titles/slugs
+    std::string stem = name;
+    if (!path.empty()) {
+      namespace fs = std::filesystem;
+      stem = util::path_to_utf8(fs::path(path).stem());
+      // best-effort index
+      files::upload(*ctx.brain, path, name);
+    }
+    search::HybridOpts opts;
+    opts.limit = arg_int(ctx, "limit", 10);
+    opts.use_vector = false;
+    opts.config = &ctx.brain->config();
+    auto hits = search::hybrid_search(*ctx.brain, stem, nullptr, opts);
+    json arr = json::array();
+    for (auto& h : hits)
+      arr.push_back({{"slug", h.slug}, {"title", h.title}, {"score", h.score}});
+    r.json = json({{"query_stem", stem}, {"results", arr}, {"note", "filename heuristic, no vision model"}})
+                 .dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "Image search stub via filename stem",
+      R"({"type":"object","properties":{"path":{"type":"string"},"name":{"type":"string"},"limit":{"type":"integer"}}})");
 }
 
 }  // namespace qbrain::ops
