@@ -120,7 +120,7 @@ Qbrain implemented MCP/CLI ops: **103**
 - N12: rerank fail-open, minions claim/complete, multi-phase dream
 - N13: live_sync mtime state, sources_remove/status, sync_brain, traverse_graph, retry_job, forget_fact, resolve_slugs, recall
 - N15: list_link_sources, log_ingest/get_ingest_log (schema v7), chronicle_day/since, add_timeline_entry
-- Remaining out-of-scope-v1: full chronicle suite, full code-intel tree-sitter, ontology packs, takes/calibration, multi-modal search, OAuth remote — explicit deferral
+- Depth note: many ops are usable/heuristic stubs (not full gbrain PG/LLM/tree-sitter parity).
 
 ## Project completion criterion (usable parity)
 - D1–D25 master plan usable gates: **met** (N0–N11 + N12–N13 extensions)
