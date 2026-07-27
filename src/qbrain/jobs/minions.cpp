@@ -183,6 +183,44 @@ bool retry_job(Brain& brain, int64_t job_id) {
   return brain.db().changes() > 0;
 }
 
+int64_t replay_job(Brain& brain, int64_t job_id) {
+  auto job = get_job(brain, job_id);
+  if (!job) return 0;
+  // Clone to new waiting job (original retained for audit).
+  return submit_job(brain, job->type, job->payload_json, job->queue, job->priority);
+}
+
+int64_t send_job_message(Brain& brain, int64_t job_id, const std::string& sender,
+                         const std::string& payload_json) {
+  if (!get_job(brain, job_id)) return 0;
+  auto st = brain.db().prepare(
+      "INSERT INTO job_messages(job_id, sender, payload_json) VALUES(?,?,?)");
+  st.bind_int(1, job_id);
+  st.bind_text(2, sender.empty() ? "system" : sender);
+  st.bind_text(3, payload_json.empty() ? "{}" : payload_json);
+  st.step_done();
+  return brain.db().last_insert_rowid();
+}
+
+std::vector<JobMessage> list_job_messages(Brain& brain, int64_t job_id, int limit) {
+  std::vector<JobMessage> out;
+  auto st = brain.db().prepare(
+      "SELECT id, job_id, sender, payload_json, created_at FROM job_messages "
+      "WHERE job_id=? ORDER BY id DESC LIMIT ?");
+  st.bind_int(1, job_id);
+  st.bind_int(2, limit);
+  while (st.step()) {
+    JobMessage m;
+    m.id = st.column_int(0);
+    m.job_id = st.column_int(1);
+    m.sender = st.column_text(2);
+    m.payload_json = st.column_text(3);
+    m.created_at = st.column_text(4);
+    out.push_back(std::move(m));
+  }
+  return out;
+}
+
 bool pause_job(Brain& brain, int64_t job_id) {
   auto st = brain.db().prepare(
       "UPDATE jobs SET status='paused', lock_token=NULL, lock_until=NULL, updated_at=? "

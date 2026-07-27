@@ -3,6 +3,7 @@
 #include "qbrain/ai/embed.hpp"
 #include "qbrain/codeintel/scan.hpp"
 #include "qbrain/cycle/dream.hpp"
+#include "qbrain/graph/analytics.hpp"
 #include "qbrain/graph/extract.hpp"
 #include "qbrain/graph/traverse.hpp"
 #include "qbrain/ingest/chunker.hpp"
@@ -13,6 +14,7 @@
 #include "qbrain/util/string_util.hpp"
 #include "qbrain/util/time_util.hpp"
 #include "qbrain/util/hash.hpp"
+#include "qbrain/util/paths.hpp"
 #include <nlohmann/json.hpp>
 #include <filesystem>
 #include <fstream>
@@ -661,6 +663,54 @@ void register_builtin_ops() {
       R"({"type":"object","properties":{"limit":{"type":"integer"}}})");
 
   register_one(
+      "find_anomalies", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto rows = graph::find_anomalies(*ctx.brain, arg_int(ctx, "limit", 100));
+    json arr = json::array();
+    std::ostringstream oss;
+    for (auto& a : rows) {
+      arr.push_back({{"kind", a.kind}, {"slug", a.slug}, {"detail", a.detail}});
+      oss << a.kind << "\t" << a.slug << "\t" << a.detail << "\n";
+    }
+    r.json = arr.dump(2);
+    r.text = oss.str().empty() ? "[]\n" : oss.str();
+    return r;
+  }, false, "Graph anomalies: missing/deleted link targets, high out-degree",
+      R"({"type":"object","properties":{"limit":{"type":"integer"}}})");
+
+  register_one(
+      "find_contradictions", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto rows = graph::find_contradictions(*ctx.brain, arg_int(ctx, "limit", 100));
+    json arr = json::array();
+    std::ostringstream oss;
+    for (auto& c : rows) {
+      arr.push_back({{"kind", c.kind}, {"slug", c.slug}, {"detail", c.detail}});
+      oss << c.kind << "\t" << c.slug << "\t" << c.detail << "\n";
+    }
+    r.json = arr.dump(2);
+    r.text = oss.str().empty() ? "[]\n" : oss.str();
+    return r;
+  }, false, "Heuristic fact contradictions (conflicting predicates / dual objects)",
+      R"({"type":"object","properties":{"limit":{"type":"integer"}}})");
+
+  register_one(
+      "find_experts", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto rows = graph::find_experts(*ctx.brain, arg_int(ctx, "limit", 50));
+    json arr = json::array();
+    std::ostringstream oss;
+    for (auto& e : rows) {
+      arr.push_back({{"slug", e.slug}, {"inbound_count", e.inbound_count}});
+      oss << e.slug << "\t" << e.inbound_count << "\n";
+    }
+    r.json = arr.dump(2);
+    r.text = oss.str().empty() ? "[]\n" : oss.str();
+    return r;
+  }, false, "Pages ranked by inbound link count (expertise heuristic)",
+      R"({"type":"object","properties":{"limit":{"type":"integer"}}})");
+
+  register_one(
       "extract_facts", Scope::Write, [](OpContext& ctx) {
     OpResult r;
     int n = ctx.brain->extract_facts_from_page(arg(ctx, "slug"), arg(ctx, "source_id", "default"));
@@ -1296,6 +1346,155 @@ void register_builtin_ops() {
     return r;
   }, false, "Create a type=timeline page (thin put_page)",
       R"({"type":"object","properties":{"title":{"type":"string"},"body":{"type":"string"},"slug":{"type":"string"},"source_id":{"type":"string"}}})");
+
+  // N17 job replay + messages
+  register_one(
+      "replay_job", Scope::Write, [](OpContext& ctx) {
+    OpResult r;
+    int64_t id = 0;
+    try {
+      id = std::stoll(arg(ctx, "id"));
+    } catch (...) {
+      r.ok = false;
+      r.text = "id required";
+      return r;
+    }
+    auto nid = jobs::replay_job(*ctx.brain, id);
+    if (nid <= 0) {
+      r.ok = false;
+      r.text = "replay failed";
+      return r;
+    }
+    r.json = json({{"original_id", id}, {"new_id", nid}, {"status", "waiting"}}).dump(2);
+    r.text = "replayed " + std::to_string(id) + " -> " + std::to_string(nid);
+    return r;
+  }, false, "Clone job to a new waiting job",
+      R"({"type":"object","properties":{"id":{"type":"integer"}},"required":["id"]})");
+
+  register_one(
+      "send_job_message", Scope::Write, [](OpContext& ctx) {
+    OpResult r;
+    int64_t id = 0;
+    try {
+      id = std::stoll(arg(ctx, "id"));
+    } catch (...) {
+      try {
+        id = std::stoll(arg(ctx, "job_id"));
+      } catch (...) {
+        r.ok = false;
+        r.text = "id required";
+        return r;
+      }
+    }
+    auto mid = jobs::send_job_message(*ctx.brain, id, arg(ctx, "sender", "system"),
+                                      arg(ctx, "payload_json", "{}"));
+    if (mid <= 0) {
+      r.ok = false;
+      r.text = "send failed";
+      return r;
+    }
+    r.json = json({{"message_id", mid}, {"job_id", id}}).dump(2);
+    r.text = "message " + std::to_string(mid);
+    return r;
+  }, false, "Append a message to a job inbox",
+      R"({"type":"object","properties":{"id":{"type":"integer"},"job_id":{"type":"integer"},"sender":{"type":"string"},"payload_json":{"type":"string"}}})");
+
+  // N19 identity / context / timeline
+  register_one(
+      "get_brain_identity", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto snap = ctx.brain->status_snapshot();
+    auto st = ctx.brain->stats();
+    r.json = json({{"brain_id", ctx.brain->brain_id()},
+                   {"db_path", util::path_to_utf8(util::brain_db_path(ctx.brain->brain_id()))},
+                   {"schema_version", snap.schema_version},
+                   {"pages", st.pages},
+                   {"chunks", st.chunks},
+                   {"links", st.links},
+                   {"embedded_chunks", st.embedded_chunks}})
+                 .dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "Brain identity and stats", R"({"type":"object","properties":{}})");
+
+  register_one(
+      "volunteer_context", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto q = arg(ctx, "query");
+    if (q.empty()) q = arg(ctx, "q");
+    int limit = arg_int(ctx, "limit", 8);
+    json arr = json::array();
+    if (!q.empty()) {
+      search::HybridOpts opts;
+      opts.limit = limit;
+      opts.use_vector = false;
+      opts.mode = "conservative";
+      opts.config = &ctx.brain->config();
+      auto hits = search::hybrid_search(*ctx.brain, q, nullptr, opts);
+      for (auto& h : hits) {
+        arr.push_back({{"slug", h.slug},
+                       {"title", h.title},
+                       {"snippet", h.snippet},
+                       {"score", h.score}});
+      }
+    } else {
+      auto pages = ctx.brain->list_pages(limit);
+      for (auto& p : pages) {
+        arr.push_back({{"slug", p.slug},
+                       {"title", p.title},
+                       {"type", p.type},
+                       {"updated_at", p.updated_at}});
+      }
+    }
+    r.json = arr.dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "Volunteer recent or search context",
+      R"({"type":"object","properties":{"query":{"type":"string"},"q":{"type":"string"},"limit":{"type":"integer"}}})");
+
+  register_one(
+      "get_timeline", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    int limit = arg_int(ctx, "limit", 50);
+    auto pages = ctx.brain->list_pages(limit, "timeline");
+    json arr = json::array();
+    for (auto& p : pages) {
+      arr.push_back({{"slug", p.slug},
+                     {"title", p.title},
+                     {"updated_at", p.updated_at},
+                     {"created_at", p.created_at}});
+    }
+    r.json = arr.dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "List timeline-type pages",
+      R"({"type":"object","properties":{"limit":{"type":"integer"}}})");
+
+  register_one(
+      "volunteer_chronicle", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    int limit = arg_int(ctx, "limit", 50);
+    auto since = arg(ctx, "since");
+    std::vector<Brain::ChronicleHit> hits;
+    if (!since.empty()) {
+      hits = ctx.brain->chronicle_since(since, limit);
+    } else {
+      auto day = util::utc_date();
+      hits = ctx.brain->chronicle_day(day, limit);
+      if (hits.empty()) hits = ctx.brain->chronicle_since("2000-01-01", limit);
+    }
+    json arr = json::array();
+    for (auto& h : hits) {
+      arr.push_back({{"slug", h.slug},
+                     {"title", h.title},
+                     {"updated_at", h.updated_at},
+                     {"type", h.type}});
+    }
+    r.json = arr.dump(2);
+    r.text = r.json;
+    return r;
+  }, false, "Volunteer recent chronicle pages",
+      R"({"type":"object","properties":{"since":{"type":"string"},"limit":{"type":"integer"}}})");
 }
 
 }  // namespace qbrain::ops

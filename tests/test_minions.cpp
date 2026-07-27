@@ -84,6 +84,21 @@ void test_minions() {
   QB_CHECK(!qbrain::jobs::pause_job(b, id3));
   QB_CHECK(!qbrain::jobs::resume_job(b, job->id));
 
+  // N17 replay + messages
+  auto id4 = qbrain::jobs::submit_job(b, "embed", R"({"page_id":9})");
+  auto mid = qbrain::jobs::send_job_message(b, id4, "test", R"({"hello":1})");
+  QB_CHECK(mid > 0);
+  auto msgs = qbrain::jobs::list_job_messages(b, id4, 10);
+  QB_CHECK(!msgs.empty());
+  QB_CHECK(msgs[0].sender == "test");
+  auto nid = qbrain::jobs::replay_job(b, id4);
+  QB_CHECK(nid > 0);
+  QB_CHECK(nid != id4);
+  auto nj = qbrain::jobs::get_job(b, nid);
+  QB_CHECK(nj.has_value());
+  QB_CHECK(nj->status == "waiting");
+  QB_CHECK(nj->type == "embed");
+
   auto counts = qbrain::jobs::count_jobs(b);
   QB_CHECK(counts.paused >= 0);
   QB_CHECK(counts.waiting + counts.active + counts.failed + counts.paused + counts.completed +

@@ -1,7 +1,7 @@
 # Ops Parity Ledger
 
 Updated: 2026-07-26
-Qbrain implemented MCP/CLI ops: **59**
+Qbrain implemented MCP/CLI ops: **62**
 
 | upstream_op | status | notes |
 |-------------|--------|-------|
@@ -27,15 +27,15 @@ Qbrain implemented MCP/CLI ops: **59**
 | file_list | out-of-scope-v1 | deferred |
 | file_upload | out-of-scope-v1 | deferred |
 | file_url | out-of-scope-v1 | deferred |
-| find_anomalies | out-of-scope-v1 | deferred |
-| find_contradictions | out-of-scope-v1 | deferred |
-| find_experts | out-of-scope-v1 | deferred |
+| find_anomalies | **implemented** | N18 graph heuristics |
+| find_contradictions | **implemented** | N18 fact predicate heuristics |
+| find_experts | **implemented** | N18 inbound link rank |
 | find_orphans | **implemented** | |
 | find_trajectory | **implemented** | |
 | forget_fact | **implemented** | N13 |
 | get_active_schema_pack | out-of-scope-v1 | deferred |
 | get_backlinks | **implemented** | |
-| get_brain_identity | out-of-scope-v1 | deferred |
+| get_brain_identity | **implemented** | N17-N19 |
 | get_calibration_profile | out-of-scope-v1 | deferred |
 | get_chunks | **implemented** | |
 | get_health | **implemented** | |
@@ -51,7 +51,7 @@ Qbrain implemented MCP/CLI ops: **59**
 | get_stats | **implemented** | |
 | get_status_snapshot | **implemented** | N14 |
 | get_tags | **implemented** | |
-| get_timeline | out-of-scope-v1 | deferred |
+| get_timeline | **implemented** | N17-N19 |
 | get_versions | **implemented** | |
 | list_brain_skillpack | out-of-scope-v1 | deferred |
 | list_jobs | **implemented** | N12 |
@@ -73,7 +73,7 @@ Qbrain implemented MCP/CLI ops: **59**
 | reload_schema_pack | out-of-scope-v1 | deferred |
 | remove_link | **implemented** | |
 | remove_tag | **implemented** | |
-| replay_job | out-of-scope-v1 | deferred |
+| replay_job | **implemented** | N17-N19 |
 | resolve_slugs | **implemented** | N13 |
 | restore_page | **implemented** | |
 | resume_job | **implemented** | N14 |
@@ -91,7 +91,7 @@ Qbrain implemented MCP/CLI ops: **59**
 | schema_stats | out-of-scope-v1 | deferred |
 | search | **implemented** | |
 | search_by_image | out-of-scope-v1 | deferred |
-| send_job_message | out-of-scope-v1 | deferred |
+| send_job_message | **implemented** | N17-N19 |
 | sources_add | **implemented** | |
 | sources_list | **implemented** | |
 | sources_remove | **implemented** | N13 |
@@ -105,8 +105,8 @@ Qbrain implemented MCP/CLI ops: **59**
 | takes_search | out-of-scope-v1 | deferred |
 | think | **implemented** | |
 | traverse_graph | **implemented** | N13 |
-| volunteer_chronicle | out-of-scope-v1 | deferred |
-| volunteer_context | out-of-scope-v1 | deferred |
+| volunteer_chronicle | **implemented** | N17-N19 |
+| volunteer_context | **implemented** | N17-N19 |
 | whoami | **implemented** | |
 
 ## Qbrain extensions (not in gbrain ops list)
@@ -132,4 +132,16 @@ Qbrain implemented MCP/CLI ops: **59**
 - N16: code_def/code_refs/code_callers (regex, no tree-sitter)
 - Unit tests: 10/10 PASS
 - Claude hard audits: N14/N15/N16 PASS
+
+## N18 notes
+- find_anomalies: link_to_missing_page, link_to_deleted_page, high_out_degree (>20)
+- find_contradictions: same predicate different object_text; conflicting predicate pairs
+- find_experts: pages ranked by inbound link count
+- API: `qbrain::graph::{find_anomalies,find_contradictions,find_experts}`
+
+## N17–N19
+- N17: replay_job, send_job_message, schema v8 job_messages
+- N18: find_anomalies/contradictions/experts
+- N19: get_brain_identity, volunteer_context/chronicle, get_timeline
+- Unit tests 12/12; Claude audits PASS
 

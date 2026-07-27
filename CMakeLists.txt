@@ -61,6 +61,7 @@ target_link_libraries(qbrain_core PUBLIC qbrain_storage qbrain_util)
 qbrain_lib(graph
   src/qbrain/graph/extract.cpp
   src/qbrain/graph/traverse.cpp
+  src/qbrain/graph/analytics.cpp
 )
 target_link_libraries(qbrain_graph PUBLIC qbrain_core qbrain_util)
 
@@ -153,6 +154,7 @@ add_executable(qbrain_tests
   tests/test_rerank.cpp
   tests/test_minions.cpp
   tests/test_codeintel.cpp
+  tests/test_analytics.cpp
 )
 target_link_libraries(qbrain_tests PRIVATE
   qbrain_mcp qbrain_ops qbrain_search qbrain_jobs qbrain_cycle qbrain_graph qbrain_codeintel qbrain_ingest qbrain_ai

@@ -160,6 +160,22 @@ INSERT OR IGNORE INTO schema_version(version) VALUES (7);
 )SQL");
     ver = 7;
   }
+
+  // v8: job_messages for N17
+  if (ver < 8) {
+    run_in_txn(db, R"SQL(
+CREATE TABLE IF NOT EXISTS job_messages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  job_id INTEGER NOT NULL,
+  sender TEXT NOT NULL DEFAULT 'system',
+  payload_json TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_job_messages_job ON job_messages(job_id, id);
+INSERT OR IGNORE INTO schema_version(version) VALUES (8);
+)SQL");
+    ver = 8;
+  }
 }
 
 SchemaIntegrity check_schema_integrity(Database& db) {

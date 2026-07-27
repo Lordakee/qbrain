@@ -39,6 +39,20 @@ bool cancel_job(Brain& brain, int64_t job_id);
 // Requeue failed/cancelled/dead → waiting (N13).
 bool retry_job(Brain& brain, int64_t job_id);
 
+// N17: clone job to a new waiting row (keeps original). Returns new id or 0.
+int64_t replay_job(Brain& brain, int64_t job_id);
+
+struct JobMessage {
+  int64_t id = 0;
+  int64_t job_id = 0;
+  std::string sender;
+  std::string payload_json;
+  std::string created_at;
+};
+int64_t send_job_message(Brain& brain, int64_t job_id, const std::string& sender,
+                         const std::string& payload_json);
+std::vector<JobMessage> list_job_messages(Brain& brain, int64_t job_id, int limit = 50);
+
 // N14: waiting|active → paused (clears lock); paused → waiting.
 bool pause_job(Brain& brain, int64_t job_id);
 bool resume_job(Brain& brain, int64_t job_id);
