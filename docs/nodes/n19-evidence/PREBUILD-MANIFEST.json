@@ -1,0 +1,833 @@
+{
+    "format_version":  1,
+    "node":  "N19",
+    "state":  "prepared-not-verified",
+    "prepared_utc":  "2026-08-04T09:30:18.8416186+00:00",
+    "pre_corrective_schema_gate":  {
+                                       "path":  "docs/nodes/n19-evidence/PRE-CORRECTIVE-SCHEMA-GATE.json",
+                                       "gate_file_sha256":  "2638f4c02a501cf295f8b2ab575e894d051159479b8f6a8beadca28d6544ea3a",
+                                       "gate":  "pre-corrective-schema-v12",
+                                       "state":  "passed",
+                                       "started_utc":  "2026-08-04T08:50:12.4331908+00:00",
+                                       "completed_utc":  "2026-08-04T08:50:13.0139314+00:00",
+                                       "command":  "build\\cl\\qbrain.exe doctor --brain n19-pre-corrective-gate --json",
+                                       "execution_path":  [
+                                                              "qbrain doctor",
+                                                              "Brain::health",
+                                                              "storage::check_schema_integrity"
+                                                          ],
+                                       "approved_plan_sha256":  "d03201c31a6a4051b2cc6d5b82e5ced7ae8c4b0982bc65223e251870d01c1d3a",
+                                       "audited_draft_plan_sha256":  "f1cffc57a0e3d1c7447eb8c0cacfa130a3afeb05f85cdceaba26406fc69f958e",
+                                       "plan_audit_sha256":  "e5c603efbfecb5603a0fd068dd2a0b39e7a75abac5fd116634adc397d9b7e470",
+                                       "qbrain_sha256":  "04460d5ae88d4e1c285cb4f7b4a05df548bfd830772a053b9555f2d45990e7b4",
+                                       "git_head":  "5ced8ccb511672536d0f9767a2bc1777baf561ab",
+                                       "pre_corrective_input_manifest_sha256":  "dbe67c9bfbb31baaa4ae2c19dbac40bb11c9e82c662cd2c73ed930f8e5528cfa",
+                                       "pre_corrective_input_count":  20,
+                                       "result":  {
+                                                      "exit_code":  0,
+                                                      "ok":  true,
+                                                      "schema_version":  12,
+                                                      "stderr_empty":  true
+                                                  },
+                                       "isolation":  {
+                                                         "localappdata_overridden":  true,
+                                                         "production_localappdata_not_used":  true,
+                                                         "config_persisted":  false,
+                                                         "temporary_root_removed":  true
+                                                     },
+                                       "ordering":  {
+                                                        "unchanged_input_count":  18,
+                                                        "corrective_input_count":  2,
+                                                        "corrective_inputs":  [
+                                                                                  {
+                                                                                      "path":  "scripts/n19-verify.ps1",
+                                                                                      "gate_sha256":  "832cd2711c8c4b00dfb992e657a16a43b4224244111ab78d2c18756060312e8c",
+                                                                                      "current_sha256":  "cd6f37cfcb5b4e40ed4af2bec46776814d868905b5d246dc1f511d5fd4ec2e8a",
+                                                                                      "current_bytes":  90414,
+                                                                                      "current_last_write_utc":  "2026-08-04T09:20:20.7511984Z"
+                                                                                  },
+                                                                                  {
+                                                                                      "path":  "tests/test_n19.cpp",
+                                                                                      "gate_sha256":  "1d8cdc8504f812148ba770e595334b1fce6c2fdbec73a5b2903c642902b22b6a",
+                                                                                      "current_sha256":  "27023d52d3c637b081747d1e66c2a86c84a21c0628fb413d6301af8e00e6d8e9",
+                                                                                      "current_bytes":  58903,
+                                                                                      "current_last_write_utc":  "2026-08-04T09:05:29.5273994Z"
+                                                                                  }
+                                                                              ],
+                                                        "gate_completed_before_all_corrective_inputs":  true
+                                                    },
+                                       "protected_model_configuration_changed":  false,
+                                       "commit_or_push_executed":  false
+                                   },
+    "governance":  {
+                       "plan_sha256":  "d03201c31a6a4051b2cc6d5b82e5ced7ae8c4b0982bc65223e251870d01c1d3a",
+                       "plan_audit_sha256":  "e5c603efbfecb5603a0fd068dd2a0b39e7a75abac5fd116634adc397d9b7e470",
+                       "plan_status":  "approved",
+                       "outcome_audit":  "pending",
+                       "plan_audit_verdict":  "PASS",
+                       "plan_auditor":  "Claude Code"
+                   },
+    "dependency_contracts":  [
+                                 {
+                                     "node":  "N1",
+                                     "plan_audit_sha256":  "9fd6df77ad905463f34e6873c2220849003679a64c869e5fb1eaffba470f95e6",
+                                     "outcome_audit_sha256":  "93f112c13d01864aa701683e2a4dbb3726a763d90b7a113c07dc543af4d31141"
+                                 },
+                                 {
+                                     "node":  "N2",
+                                     "plan_audit_sha256":  "c34fede88989a9847dd3cad0bf719b6476c28bbfb124cb094d4afbe24d90fb85",
+                                     "outcome_audit_sha256":  "e9dc809dcdb73c0757708f81d53daf2fc89394c12cf953e86c0e9de5923a3413"
+                                 },
+                                 {
+                                     "node":  "N2.5",
+                                     "plan_audit_sha256":  "bd0cf1b5f4dddb9af40168a89d1a87be84d5a4eb2f99872d3389880523617953",
+                                     "outcome_audit_sha256":  "dd6e404ab7583af8c6cbecd86179baba3401a1d5ef10f559b2067229a208c8ff"
+                                 },
+                                 {
+                                     "node":  "N3",
+                                     "plan_audit_sha256":  "ab99d7c2d0553575f16124fba807067a8039839321fb9f3469c949dbdc8a4994",
+                                     "outcome_audit_sha256":  "2ca977089b0564f7ff60752c8cff4b968e1f528163239ef4c19e1bd22c094d24"
+                                 },
+                                 {
+                                     "node":  "N7",
+                                     "plan_audit_sha256":  "929970318d8fb3043371f82a9208360db7e38e6dd058e37f0eef515534f26d39",
+                                     "outcome_audit_sha256":  "307226705f0dc7495b0aa7aeebf88bd807c0216c19cab059cd23d01dd6835421"
+                                 },
+                                 {
+                                     "node":  "N8",
+                                     "plan_audit_sha256":  "7f16263f786315420ed42a7c79350add553ad84b11ce4cd6dbc21b0fdc320570",
+                                     "outcome_audit_sha256":  "7970e96af49bbc86f6e71785409a68b482f24e8b2f08a42c2993bbc93c14a8f9"
+                                 },
+                                 {
+                                     "node":  "N11",
+                                     "plan_audit_sha256":  "e157d9f3b6dcbc276b782d960c237d50fed9d4ff5614473678813e27541844a7",
+                                     "outcome_audit_sha256":  "bdefcf26d138b658d31df0b8525c46b776aa5e9086796bcd16696d8b783f2012"
+                                 },
+                                 {
+                                     "node":  "N15",
+                                     "plan_audit_sha256":  "01e95a0cc55e4d0580562008a65de2ee941a13a8b37f4fd730389937d5abaef1",
+                                     "outcome_audit_sha256":  "9f5f14ab7ed2cf4da50b597f8f861061948d9b65331091a017d677f7b4968c59"
+                                 },
+                                 {
+                                     "node":  "N16",
+                                     "plan_audit_sha256":  "ad6794067444a56658d52d23c3ca29f7092cd7024829f1c4313b295b10c77fef",
+                                     "outcome_audit_sha256":  "591865f6647e175c4aa02ec90abad1075c554eca49e3a15e5f63ad1639c24aba"
+                                 },
+                                 {
+                                     "node":  "N18",
+                                     "plan_audit_sha256":  "87db9821c255555ab6a42aab8d22cac945a5e0141aeeb3dd02e76a07e743af6d",
+                                     "outcome_audit_sha256":  "f09971ecf44ab66129f33ee3b7dad91515aac39d6d330b725916983fcb408053"
+                                 }
+                             ],
+    "expected_registered_tests":  26,
+    "registered_test_names":  [
+                                  "rrf",
+                                  "vector",
+                                  "chunker",
+                                  "extract",
+                                  "storage",
+                                  "mcp",
+                                  "rerank",
+                                  "minions",
+                                  "migration_v6",
+                                  "n12_dream",
+                                  "live_sync",
+                                  "n13",
+                                  "codeintel",
+                                  "analytics",
+                                  "n19",
+                                  "n20_23",
+                                  "n24_25",
+                                  "n26_27",
+                                  "wave4",
+                                  "wave5",
+                                  "doctor",
+                                  "n14",
+                                  "n15",
+                                  "n16",
+                                  "n17",
+                                  "n18"
+                              ],
+    "git":  {
+                "head":  "5ced8ccb511672536d0f9767a2bc1777baf561ab",
+                "branch":  "main",
+                "reference_log_fingerprint_sha256":  "4935d94316a51b3997c069bb97f0eda3827044ddaa41f3c1a25662a72a881378"
+            },
+    "scoped_diff":  {
+                        "diff_sha256":  "05e5e59c75c3da27976beb75bb214563e60a336b94a2d27caffd770cc0657603",
+                        "changed_path_count":  12,
+                        "protected_path_change_count":  0,
+                        "protected_assignment_change_count":  0
+                    },
+    "protected_repo_config":  [
+
+                              ],
+    "inputs":  [
+                   {
+                       "role":  "governance-input",
+                       "path":  "AGENTS.md",
+                       "sha256":  "71d174e725e6df4cda2767fa6aaf96c2f4f3316e1798ec419b18081e496ea1e2",
+                       "bytes":  5718
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "CMakeLists.txt",
+                       "sha256":  "24a4668591feb3b4a9ae1dba584c82dffe9f0d7c5f796fc6f0c31b631eced395",
+                       "bytes":  5027
+                   },
+                   {
+                       "role":  "governance-input",
+                       "path":  "docs/nodes/N19-PLAN.md",
+                       "sha256":  "d03201c31a6a4051b2cc6d5b82e5ced7ae8c4b0982bc65223e251870d01c1d3a",
+                       "bytes":  41047
+                   },
+                   {
+                       "role":  "governance-input",
+                       "path":  "docs/nodes/N19-PLAN-AUDIT.md",
+                       "sha256":  "e5c603efbfecb5603a0fd068dd2a0b39e7a75abac5fd116634adc397d9b7e470",
+                       "bytes":  32965
+                   },
+                   {
+                       "role":  "governance-input",
+                       "path":  "docs/nodes/README.md",
+                       "sha256":  "b7543d860eabe39c95b738d8682771e6883b246ddba2a143d07f7b2924023a80",
+                       "bytes":  1605
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "include/qbrain/ai/chat.hpp",
+                       "sha256":  "581b40d0b931c2d3876584d120936d5c4e92655a17084804f08ead59f9280bc7",
+                       "bytes":  674
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "include/qbrain/ai/embed.hpp",
+                       "sha256":  "a0b12ad0031da3e1755d26ad38ce87dd6d4271e68a33da766ab7ad3f6f209487",
+                       "bytes":  347
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "include/qbrain/ai/http_client.hpp",
+                       "sha256":  "bd42457d3d382e0cff714d7f316a7b521cd22968f25095233234cf88224c98d3",
+                       "bytes":  410
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "include/qbrain/cli/app.hpp",
+                       "sha256":  "b496252cecf6ad3ffb9f7e85deb51e96d49f305f8f2dc3e5b268ab5e68bde6fd",
+                       "bytes":  204
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "include/qbrain/codeintel/scan.hpp",
+                       "sha256":  "094037949b56801a220eb96f268c6de934546badd2ec5574175844e0fb829c3e",
+                       "bytes":  2344
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "include/qbrain/core/brain.hpp",
+                       "sha256":  "1aa7da46f32c3514320c9c878c0d57aae62721c59698fcfeb58c68ab98256229",
+                       "bytes":  9272
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "include/qbrain/core/types.hpp",
+                       "sha256":  "35472c36ff62bec42b282b987d2c39b4315f09ac29ff78883be7076898dbd6f3",
+                       "bytes":  2177
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "include/qbrain/cycle/dream.hpp",
+                       "sha256":  "6003aa8383cef1a4f3c8cd8e8779b1c9f995bc94c9e78ca8649826daec5a5ebe",
+                       "bytes":  1018
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "include/qbrain/files/store.hpp",
+                       "sha256":  "a91e30539a4a69337616c9595cc898b80710c3ea096ee17e85fc821a3073cee2",
+                       "bytes":  661
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "include/qbrain/graph/analytics.hpp",
+                       "sha256":  "d1d8f63081179dc49c1f46b5a4789445203eeddc0fabe63516fd72e373feb381",
+                       "bytes":  1068
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "include/qbrain/graph/extract.hpp",
+                       "sha256":  "61f9956fe0802c9bf1c79a38033dec13631a7fdbc3f71ed1b9366c4cc46366e3",
+                       "bytes":  323
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "include/qbrain/graph/traverse.hpp",
+                       "sha256":  "b157649a23642e4932689d2e105040eb9754848faa0ca7d9afed2ed537f1a0f2",
+                       "bytes":  457
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "include/qbrain/ingest/chunker.hpp",
+                       "sha256":  "5f4cb34c2ae142b86fb94e8f3a01cd70677224a9bab627d4f57093a34776b7d5",
+                       "bytes":  343
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "include/qbrain/ingest/import.hpp",
+                       "sha256":  "467ec1da3c7e77107104c5b44203cf55da97f3614c0c1c4aa3a4e6a9fadfc7c9",
+                       "bytes":  504
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "include/qbrain/ingest/markdown.hpp",
+                       "sha256":  "89551956b4774111e52935791997ca3137cbdd5b11ffaa1f5a9acec94651c7cb",
+                       "bytes":  372
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "include/qbrain/jobs/minions.hpp",
+                       "sha256":  "00da6811c7e0c41ac93b6b50e8e126b8d2dbf15e19b4f149a1116c108b52abe4",
+                       "bytes":  5038
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "include/qbrain/mcp/jsonrpc.hpp",
+                       "sha256":  "0aa1dca4121ac2235245f13468daf801fc381f0a100d8ce38be57c35552f3010",
+                       "bytes":  524
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "include/qbrain/mcp/server.hpp",
+                       "sha256":  "5a6fe4dfa6f2c288f17974541a61dbc546c0ae910ea7488250415740220ae4eb",
+                       "bytes":  713
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "include/qbrain/ops/registry.hpp",
+                       "sha256":  "8318bd4e755d97de5c9c3a869b2592cdf4868511e110e3010cc2809982d1dad8",
+                       "bytes":  1155
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "include/qbrain/schema/lint.hpp",
+                       "sha256":  "eafe8ac9e846750f36790805b0e2b1f0624de4c3b0150d0999440ad19d88dfe2",
+                       "bytes":  667
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "include/qbrain/schema/packs.hpp",
+                       "sha256":  "f177308e3a5878a85cedd6bd18776b79e37ba23b296096cbbaa1b787a1ff18ae",
+                       "bytes":  730
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "include/qbrain/search/hybrid.hpp",
+                       "sha256":  "45072d707a65485f355b22fa64ed662d9a1439703224224faad03fd9a5f00034",
+                       "bytes":  1181
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "include/qbrain/search/rerank.hpp",
+                       "sha256":  "7486917838473af720043e9cb6b71752ac950e3693de26f6aeae69b0ceb33148",
+                       "bytes":  1399
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "include/qbrain/search/rrf.hpp",
+                       "sha256":  "1f996af434ae1e8fd39e341f50a914e62094bba59e700dfd78c8e0cd461a166e",
+                       "bytes":  603
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "include/qbrain/search/vector.hpp",
+                       "sha256":  "f7d5ff18e87c1be9232d314fdbde9a485d56bab28fecdf95f8a7007f788be251",
+                       "bytes":  337
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "include/qbrain/service/inbox_watch.hpp",
+                       "sha256":  "89b3b4c0851a13104c704d1f9bf46b8bf41bf31a54bd5bbf3a7dbbfca7d72181",
+                       "bytes":  202
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "include/qbrain/service/live_sync.hpp",
+                       "sha256":  "9cc6c61e26565aaca5294e263f6ef3b36b2040ed7b9d3ed8ebabf0dc35f7d4ba",
+                       "bytes":  934
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "include/qbrain/storage/database.hpp",
+                       "sha256":  "2f0ccf8035aa35f3ce69a12d42afa18015754efb4671d7c528b36bb4285de8fd",
+                       "bytes":  2182
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "include/qbrain/storage/schema_sql.hpp",
+                       "sha256":  "7709912b2d792b6055c0b95d5c79a157b949669925242e7c840a256717c7a024",
+                       "bytes":  4106
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "include/qbrain/util/hash.hpp",
+                       "sha256":  "f5a02bc2dc179bc01a6598c8e91183b057c41c400839c1eceb9abaaeb2f04250",
+                       "bytes":  268
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "include/qbrain/util/log.hpp",
+                       "sha256":  "35da3c86a9068bd6b00484a096cf63b90b34ed1f3ce0cbb4e727b45d8ce2e856",
+                       "bytes":  464
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "include/qbrain/util/paths.hpp",
+                       "sha256":  "631a93eb746fb92b2b0e5d20c2dc131cda0686127d68685a045f6cec4cdef0ce",
+                       "bytes":  555
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "include/qbrain/util/string_util.hpp",
+                       "sha256":  "9394742e0a5ba2da8a83748e4afcf90fee400d473abe1db23b971faf905511e3",
+                       "bytes":  521
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "include/qbrain/util/time_util.hpp",
+                       "sha256":  "78390f81b3a583fd7e3b0ce3b62e7f4405ef3e0947b266a0e5fb4066b68b8cb3",
+                       "bytes":  335
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "scripts/build-cl.ps1",
+                       "sha256":  "553a1989952d346fce8f836146377aec6d0db29e143893c3ac7fd28869b15070",
+                       "bytes":  3605
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "scripts/build-tests-cl.ps1",
+                       "sha256":  "a682bb81ba366e7dc45eeee2825255f76b27c6db66b490791e4a1467c88f458e",
+                       "bytes":  3243
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "scripts/n19-verify.ps1",
+                       "sha256":  "cd6f37cfcb5b4e40ed4af2bec46776814d868905b5d246dc1f511d5fd4ec2e8a",
+                       "bytes":  90414
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/ai/chat.cpp",
+                       "sha256":  "d140568bb6977668c5912c39a32e5399ecf47ad843047fce777d1ec1be397191",
+                       "bytes":  2393
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/ai/embed.cpp",
+                       "sha256":  "4893549c139dffb7e909352dde6cb87fd32fb5ca3285c2058f0fe24ee93824c8",
+                       "bytes":  1922
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/ai/http_client.cpp",
+                       "sha256":  "9b442c82abf2fca866b81d8b9dc7a0919269e755e784d0cefcfc3232eb8261e9",
+                       "bytes":  4537
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/cli/app.cpp",
+                       "sha256":  "5a8eb76fa3845d39af3940377ce9ac8b2f2056cfe46775462cbdbc570903262e",
+                       "bytes":  157
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/cli/commands.cpp",
+                       "sha256":  "d02428ddcc80191ce4058423d212a2b0a2fb37dc7e9f0643786f4f868c54c41f",
+                       "bytes":  19909
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/codeintel/scan.cpp",
+                       "sha256":  "9cd8fb066ac8ac66cb400f060d6759277f298f9e0b38bea92b5c681fe23654ad",
+                       "bytes":  16062
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/core/brain.cpp",
+                       "sha256":  "24bcd78978dc3aefb8bf7057def006f1fa049a8d63276402403f3b9a3740235b",
+                       "bytes":  51109
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/core/types.cpp",
+                       "sha256":  "e3aeea582bac116e01f44aceef6c3f9b18235b7572291a3547a935912f7da262",
+                       "bytes":  136
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/cycle/dream.cpp",
+                       "sha256":  "e7c6d107e3d9c64526a6e9c428ebff27d5ce89a7545321412bd23ab3ed0e3a21",
+                       "bytes":  12815
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/files/store.cpp",
+                       "sha256":  "3e20f5e999721d129f2ae62fbab37c7be5ed5e605e73663ba108f79ae08f758c",
+                       "bytes":  3823
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/graph/analytics.cpp",
+                       "sha256":  "2ad297757745bec4707616374db628a52754390791d21489a7a425e6a7cf2c93",
+                       "bytes":  20344
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/graph/extract.cpp",
+                       "sha256":  "2a71b0c4d39fad1be8e1d11c23c0c902c19500994758c8300b62c773c01c363a",
+                       "bytes":  2048
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/graph/traverse.cpp",
+                       "sha256":  "9b9eeecff60a720f480f79c4d010369e7ed6984589e9210af1da4e935de4f5e4",
+                       "bytes":  1135
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/ingest/chunker.cpp",
+                       "sha256":  "08c0436d12333fbd46a98fb883b2673c4e4b525105ac50a57feef8f50dcca145",
+                       "bytes":  1576
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/ingest/import.cpp",
+                       "sha256":  "a51304a9dbbfe234d3f8b6cd39174c59a5a36f747644af03a22852bbc8f61819",
+                       "bytes":  4407
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/ingest/markdown.cpp",
+                       "sha256":  "3fca4a706193e4618a8a2941678e25c4856618d505315fe48ada2397dd3b3e89",
+                       "bytes":  2435
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/jobs/minions.cpp",
+                       "sha256":  "245b7bae5589947b3aaf03698f12c54959c62535439f781c8daa782bf0123806",
+                       "bytes":  22100
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/main.cpp",
+                       "sha256":  "72e0b8bb649e462617f2056bec417df4d4a4704f0d7b29acc883630868d54462",
+                       "bytes":  106
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/mcp/http_server.cpp",
+                       "sha256":  "9f488eb7ebe2f71f90bffa7462303684e1f115ff97a3b0e07d4959f2f456a25d",
+                       "bytes":  10833
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/mcp/jsonrpc.cpp",
+                       "sha256":  "30988951fc045e7a7a0f2b5819cd8122ba992b5cec400d7212989d9e69a74836",
+                       "bytes":  2625
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/mcp/server.cpp",
+                       "sha256":  "7515830e9d40c18580723567149569296b55d43a5e93615d7e5e35385564c4fd",
+                       "bytes":  14383
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/ops/handlers.cpp",
+                       "sha256":  "e02c76b55410f4ac02bb973d6e83691ffe1b97856f3a4234cb3677cca3c7ad7e",
+                       "bytes":  109093
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/ops/registry.cpp",
+                       "sha256":  "e3fb8bad77a88677d6ae23a2eba626e98d47ab41c0659cbac1d724688b134a18",
+                       "bytes":  1597
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/schema/lint.cpp",
+                       "sha256":  "a1771eda869a6d6407ed611d2f1efe540652dc18e973572a1fa680e31fe89f67",
+                       "bytes":  3900
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/schema/packs.cpp",
+                       "sha256":  "cfc4d27ceb42c51113acde8c60eed2f4f1213409cbd24f5bd6112487bfc016bf",
+                       "bytes":  4227
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/search/hybrid.cpp",
+                       "sha256":  "2a74917efc8e6ceffd8800ab2548fd4ce3c1065671d53dc174bc4bd190b74508",
+                       "bytes":  7734
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/search/rerank.cpp",
+                       "sha256":  "67d87412d90d14c79e1f44b19262917105d7433c66264e170f910c97a8dbb505",
+                       "bytes":  14885
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/search/rrf.cpp",
+                       "sha256":  "7df0be7c8f36e5c1f4ab76af16b2fd77f75d01d1ce1afd326a4ef5fbf044efc3",
+                       "bytes":  1761
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/search/vector.cpp",
+                       "sha256":  "313e930afdd5a6897d37650ec7c99b5dd87a4d11fd9953e6f4e2d8e5bdebbc11",
+                       "bytes":  1017
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/service/inbox_watch.cpp",
+                       "sha256":  "76cb8edab0e4691faa46cf7d5bc74e87c0432f948947df27ad24be4de330b84e",
+                       "bytes":  1546
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/service/live_sync.cpp",
+                       "sha256":  "35302192d0c1fdfb0515115945fc2419cf26f8ec450af9e7bb929bddc3cf7c4f",
+                       "bytes":  6099
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/storage/database.cpp",
+                       "sha256":  "bda29c5926936979102fd1078044b8ee76c250ae34707f4f4fda42ab4d32dacb",
+                       "bytes":  4570
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/storage/migrate.cpp",
+                       "sha256":  "d775529ff6f89d520f15a3fee30f0e180a2011646516de0a620e1870d538ec45",
+                       "bytes":  15352
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/util/hash.cpp",
+                       "sha256":  "00c8e73e28481e5be961470caaa27c68521cc767dee7f2335f96ab02a793a3a3",
+                       "bytes":  1653
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/util/log.cpp",
+                       "sha256":  "ecbf5cfcfef182f9645f2b4e9186b612f76f507f408b3c9a57843b80097900f5",
+                       "bytes":  583
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/util/paths.cpp",
+                       "sha256":  "f7c3522070c601635b385f8d68bfee898e6b70cad2e2acc5a25d9e2f90b2488f",
+                       "bytes":  3352
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/util/string_util.cpp",
+                       "sha256":  "3a6dbdd4c8c02f79e411e48b71fbc607355569f51089e90d779c5818b2065662",
+                       "bytes":  1981
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "src/qbrain/util/time_util.cpp",
+                       "sha256":  "cb315dc6c50958c6a69270b130a9757881a9030cd27b8b730626d6e296ffe217",
+                       "bytes":  1215
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "tests/test_analytics.cpp",
+                       "sha256":  "ba017586f00cf0d195cc142d4dd646f7c7197ae0c29f1cfbef678121ca350855",
+                       "bytes":  5076
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "tests/test_chunker.cpp",
+                       "sha256":  "31f47c8dc66538d2dae0bd3ca55a78311b2b61ec1365ee047e7d4ca305a14bf0",
+                       "bytes":  742
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "tests/test_codeintel.cpp",
+                       "sha256":  "a35c91419718f0be05a1b5da26a6a1c47d692ab7c23d29dda0154395e0b84013",
+                       "bytes":  2635
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "tests/test_doctor.cpp",
+                       "sha256":  "70483d7e12a0bd8f6304ffdf5e48647ce43ddfc9238507325a8c1f8fa7b88cf4",
+                       "bytes":  4003
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "tests/test_extract.cpp",
+                       "sha256":  "883d78e8afb18715e36fe328195b6ecae6a52951bd7c2546576289037dcc0eb0",
+                       "bytes":  1156
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "tests/test_live_sync.cpp",
+                       "sha256":  "947fbfb8fe32dded9e5c17cbcdf9acba2df51ef54bd87625bf8b3f0e213b9dde",
+                       "bytes":  1981
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "tests/test_main.cpp",
+                       "sha256":  "e47ab53280eb82f29ba189d022e174ee8300a683eef2134accb14758dfd12600",
+                       "bytes":  2656
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "tests/test_mcp.cpp",
+                       "sha256":  "8745ba5691dfb7d7d794f9fd9a8c43837e7cbed83a98f29f3d77a59bb8478052",
+                       "bytes":  11182
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "tests/test_migration_v6.cpp",
+                       "sha256":  "8b0c7e8fd1cd716ae2a7ae1a921098a2b48e99a5ad3029efc24f89697b908880",
+                       "bytes":  13332
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "tests/test_minions.cpp",
+                       "sha256":  "b3367ef79accf53f1da33a88d05f4948e65b9eb20bf4c95abb316f2d8282750a",
+                       "bytes":  12145
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "tests/test_n12_dream.cpp",
+                       "sha256":  "23350c06a9ded7ca637410770f342a1488ffc98143dc4bd04a3e30fb03e4b329",
+                       "bytes":  22662
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "tests/test_n13.cpp",
+                       "sha256":  "34ae2de83bc54b1fcd9611d7982ada6704617e3c02ce132be5bf807171425dec",
+                       "bytes":  16133
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "tests/test_n14.cpp",
+                       "sha256":  "3b4a69f3b4c2d282069ca81d8be6421d3a09a48a8ce61d71cf761f296eb97785",
+                       "bytes":  43337
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "tests/test_n15.cpp",
+                       "sha256":  "ad709351520f1f48f16fcbd6392ee8a93f886c10e92f70054b24f6b231cc9078",
+                       "bytes":  69183
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "tests/test_n16.cpp",
+                       "sha256":  "9653f1bfa0f3e0493e1017d88466b7e45cbdf16901a2eea5a2c58b77387c3ee7",
+                       "bytes":  24969
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "tests/test_n17.cpp",
+                       "sha256":  "e4fe3eaa144209e8a7e64b6f5251bf863514a05c1d5e6ae5109b118b112bcdac",
+                       "bytes":  64178
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "tests/test_n18.cpp",
+                       "sha256":  "4781d0029a8fd7d9a0cb298d4ac935bb36fc23e2612e51f562c5d7e33a87f9ea",
+                       "bytes":  69108
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "tests/test_n19.cpp",
+                       "sha256":  "27023d52d3c637b081747d1e66c2a86c84a21c0628fb413d6301af8e00e6d8e9",
+                       "bytes":  58903
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "tests/test_n20_23.cpp",
+                       "sha256":  "a8c068df0544c90e6dd6b2dce213878381ecf37637a087ca9afc81dc2e799f3b",
+                       "bytes":  4235
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "tests/test_n24_25.cpp",
+                       "sha256":  "443a2591fcefc00c714b14290ac00664d945e6db464b770d46f4cce98d484101",
+                       "bytes":  2302
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "tests/test_n26_27.cpp",
+                       "sha256":  "1fc30bcabd8388b3437cbed696212e6b354950b700f6e6e5d4ac38106775a2fe",
+                       "bytes":  2457
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "tests/test_rerank.cpp",
+                       "sha256":  "64a91574e2a56433392b39e52a74a101a09487ff1e6c772cb432da1a3e90ff06",
+                       "bytes":  17068
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "tests/test_rrf.cpp",
+                       "sha256":  "d18a5bd90fae53b71ab69c3f4242e0a7f1ef5bf4a101be50fd3eee5cd856a79d",
+                       "bytes":  879
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "tests/test_storage.cpp",
+                       "sha256":  "2e7eb17de213045625f9c0ae3f224142c5fbb5e2ae6c8d946e369fdff5b54095",
+                       "bytes":  4233
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "tests/test_vector.cpp",
+                       "sha256":  "a6ba9e5a02d88ca3d105a1174ee8ead1d4960417ce778c10dff012e71524cc76",
+                       "bytes":  874
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "tests/test_wave4.cpp",
+                       "sha256":  "1c6f6bc082a267c113b35ce840fb9f93e16f6930e22a1a1633f9667a76731c50",
+                       "bytes":  9973
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "tests/test_wave5.cpp",
+                       "sha256":  "0fb95676920eeb0d33a7f3c8afc20d913bd209fdc71bc6f5830063fdd511a45e",
+                       "bytes":  4557
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "tests/wave3_test_support.hpp",
+                       "sha256":  "9a4f94093a6e64b6a3f2021b52cefa23cd06d0223803d4e6bda3ea7ec9c301a6",
+                       "bytes":  5290
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "third_party/nlohmann/json.hpp",
+                       "sha256":  "010009e60834fccd54247fd3709ca44f604e125751b9ad7ffb780420d1067f7c",
+                       "bytes":  919977
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "third_party/sqlite/sqlite-amalgamation-3460100/sqlite3.c",
+                       "sha256":  "6c35bc5f7f85eac9c49928bacbb02bb694b547aabf69197e058cca245ad80e83",
+                       "bytes":  9089564
+                   },
+                   {
+                       "role":  "build-input",
+                       "path":  "third_party/sqlite/sqlite-amalgamation-3460100/sqlite3.h",
+                       "sha256":  "89b62c671c5964e137409ce034941b7b05a3af2c9875aba41f47f9483d0c2515",
+                       "bytes":  644069
+                   }
+               ]
+}

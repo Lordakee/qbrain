@@ -1,0 +1,52 @@
+# N13 Outcome Hard Audit
+**VERDICT: PASS**
+**Auditor: Claude Code**
+**Approved plan:** `docs/nodes/N13-PLAN.md`
+**Plan audit:** `docs/nodes/N13-PLAN-AUDIT.md` (VERDICT PASS, Claude Code, 2026-07-29)
+**Audit date:** 2026-07-30
+**Scope:** read-only
+
+## Acceptance
+
+| # | Status | Evidence |
+|---|--------|----------|
+| 1 | PASS | TEST-OUTPUT.txt: `n13_live_sync first_pages=2 second_skipped=2 changed_pages=1`; `test_n13.cpp` covers first/idempotent/changed-file paths. |
+| 2 | PASS | TEST-OUTPUT.txt: `watch_once=1`; CLI-SMOKE-OUTPUT.txt: `watch_once=pass`; `commands.cpp` maps `--watch --once` to `max_cycles=1`. |
+| 3 | PASS | TEST-OUTPUT.txt WARN `invalid source_id: bad/id`; `test_n13.cpp` errors=1 + snapshot-identical; `live_sync.cpp` weakly_canonical confinement enforced. |
+| 4 | PASS | State key = sha256(`brain\nsource\ncanonical_root`)[0:16].json (`live_sync.cpp`); TEST-OUTPUT.txt: `source_isolation=pass`; cross-brain count=0 in `test_n13.cpp`. |
+| 5 | PASS | `brain.cpp` SELECT COUNT+MAX(updated_at) WHERE `deleted_at IS NULL`; `test_n13.cpp`: `source_status("OTHER")` → pages=1 links=1. |
+| 6 | PASS | `brain.cpp` rejects default/unknown/non-empty before any txn; `test_n13.cpp`: non-force refused + snapshot-identical, EMPTY-SOURCE removed cleanly. |
+| 7 | PASS | TEST-OUTPUT.txt: `rollback_unchanged=pass force_cleanup=pass`; `brain.cpp` BEGIN IMMEDIATE→cascade FK→COMMIT; injected failure leaves full snapshot unchanged. |
+| 8 | PASS | TEST-OUTPUT.txt: `neighbors_depth2=8 cycle_nodes=8 source_isolation=pass`; `traverse.cpp` visited-set cycle guard; depth-100 cycle terminates at8 nodes. |
+| 9 | PASS | `minions.cpp` single UPDATE WHERE status IN (failed,cancelled,dead); `test_n13.cpp`: cancelled→waiting, payload preserved, fence/error cleared, re-retry on waiting→false. |
+| 10 | PASS | `brain.cpp` predicate-optional `active=0` update; `test_n13.cpp`: idempotent, remaining=1, `other-entity` untouched; `list_facts` filters `active=1`. |
+| 11 | PASS | TEST-OUTPUT.txt: `n13_mcp_deny_snapshot_sha256=…unchanged=pass allow_write=pass`; `handlers.cpp` all four `local_only=true`; deny precedes handler mutation. |
+| 12 | PASS | TEST-OUTPUT.txt: `read_ops=pass`; `handlers.cpp` four Read-scope ops; `recall` forces `use_vec=false` in `hybrid.cpp:148-150`; no post-call snapshot comparison (P2). |
+| 13 | PASS | VERIFY-REPORT.md: Win1110.0.22624/X64/MSVC 19.51.36248/`/std:c++20`/21 PASS 0 FAIL/build+test SHA-256/N1-N12 dependency table/explicit no-provider-change statement. |
+
+## Deliverables
+
+1. `live_sync.hpp/.cpp` — one-shot and watch cycles, source-aware state, path-confinement: **present and complete**.
+2. `import.cpp` source-id propagated to pages and links, fail-closed on invalid id: **present and complete**.
+3. `brain.hpp/.cpp` `source_status`, `remove_source` (non-force/force/rollback), `forget_fact`: **present and complete**.
+4. `traverse.hpp/.cpp` + `handlers.cpp` — source-scoped bidirectional BFS, depth bounds, cycle termination: **present and complete**.
+5. `minions.cpp`, `handlers.cpp` 8 ops registered, `commands.cpp` `cmd_sync`/`cmd_graph` routed, no N12 regression: **present and complete**.
+6. `tests/test_n13.cpp` registered in `test_main.cpp:69`, `n13-verify.ps1`, `n13-cli-smoke.ps1`, BUILD/TEST/CLI-SMOKE/VERIFY-REPORT evidence: **present and complete**.
+7. `N13-PLAN-AUDIT.md` PASS, `N13-HARD-AUDIT.md` (this audit), `VERIFY-REPORT.md`, all8 ledger rows with both-gates wording: **present and complete**.
+
+## Prior P1 Recheck
+
+- **Stale audit replacement:** `N13-HARD-AUDIT.md` now holds the comprehensive 13-assertion outcome audit; the historical 2026-07-26 file has been replaced. **RESOLVED.**
+- **CLI runtime evidence:** `CLI-SMOKE-OUTPUT.txt` captures a live run: `N13_CLI_SMOKE_OK sync_once=pass idempotent=pass watch_once=pass source=pass interval=pass graph=pass`. **RESOLVED.**
+
+## Findings
+
+**P0:** None.
+
+**P1:** None. Both prior P1s are resolved (see Prior P1 Recheck above).
+
+**P2:**
+1. **Ledger timing:** OPS-PARITY-LEDGER.md N13 note now reads "retrospective plan audit PASS and outcome hard audit PASS" with CLI smoke entry, matching N12 style. Resolved; no gap remains.
+2. **`recall` conservative semantics:** `handlers.cpp` aliases `search` with `mode=conservative`, forcing `use_vec=false` (`hybrid.cpp:148-150`) and skipping query embedding; lexical-only behavior is code-confirmed but has no dedicated isolation test with an explicit `no_vector=false` override to confirm mode enforcement.
+3. **Sync-state JSON/concurrency:** `load_state`/`save_state` (`live_sync.cpp:29-51`) are unguarded; concurrent syncs on the same brain/source/root scope silently lose entries (last-writer-wins); corrupt JSON is swallowed and degrades to full re-import rather than aborting.
+4. **Residual test limitations:** Force-removal cascade absence for chunks/tags, per-status retry rejection exhaustiveness, imported-link `source_id`, real symlink escape, and post-call snapshot equality for A12 are structurally guaranteed by code

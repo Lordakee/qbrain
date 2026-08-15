@@ -1,0 +1,17 @@
+{
+  "format_version": 1,
+  "node": "N23",
+  "state": "pending-native-evidence-and-claude-outcome-audit",
+  "prepared_utc": "2026-08-04T13:15:00.4277019+00:00",
+  "prebuild_manifest_sha256": "7ae4556f914b58b5d048c5a931eac316c21adf8f3b05b68acafb6274bfa02658",
+  "audit_verdict_written": true,
+  "node_or_ledger_status_written": true,
+  "outcome_audit": {
+    "file": "docs/nodes/N23-HARD-AUDIT.md",
+    "verdict": "PASS",
+    "auditor": "Claude Code (claude-opus-5, effort max)",
+    "date": "2026-08-15",
+    "task_id": "qbrain-n23-outcome-audit-claude-20260815",
+    "p1_remediation": "EVIDENCE-MANIFEST + VERIFY-REPORT updated post-PASS to bind audit facts; native two-round evidence = docs/nodes/n30-evidence/FINAL-VERIFY-SCRIPT.txt and FINAL-VERIFY-CMAKE.txt (n23 PASS, N23_SNAPSHOT_COUNT=124, five matrix markers pass, both paths both rounds)"
+  }
+}

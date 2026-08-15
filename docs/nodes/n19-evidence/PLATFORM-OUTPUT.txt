@@ -1,0 +1,6 @@
+os=Microsoft Windows 11 专业工作站版 10.0.22624 build 22624
+os_architecture=X64
+process_architecture=X64
+target_architecture=x64
+language_mode=/std:c++20
+compiler=Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36248 for x64

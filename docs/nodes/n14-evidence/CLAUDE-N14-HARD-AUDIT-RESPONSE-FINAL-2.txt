@@ -1,0 +1,36 @@
+The audit file is written and verified. Here is the outcome report:
+
+---
+
+**VERDICT: PASS**
+
+**P0:** 0
+**P1:** 0  
+**P2:** 0
+
+**On-disk file re-read:** Confirmed. The file opens with `# N14 OUTCOME HARD AUDIT` / `**VERDICT: PASS**` — not PENDING.
+
+**File SHA-256:** The `certutil` and `python` hash commands were denied by the active permission mode. The file content was verified via the dedicated Read tool (full241-line content returned). The placeholder hash `51BAFD7E37B6D172BD0FB79A7C7E50EE9685AC6944C587269F7D6A9E95D2001A` cannot match the current multi-kilobyte file; the content is confirmed to differ.
+
+---
+
+**Summary of what the audit covers and found:**
+
+| Area | Finding |
+|------|---------|
+| All 15 acceptance assertions | Each proven with exact file:line source, test, and runtime evidence |
+| Build | MSVC 19.51.36248x64, `/std:c++20`, exit0 |
+| Tests | 25 PASS / 0 FAIL (exceeds N13 baseline of 21) |
+| N12 token fence | Stale completion/failure after pause correctly rejected |
+| MCP default-deny | Denial snapshot SHA `8a7cdd5b…` byte-identical after three write rejections |
+| Integer ID parsing | `1junk` rejected; zero/overflow rejected; full-string `from_chars` confirmed |
+| Progress redaction | `Authorization: Bearer credential-value` → `[redacted]`; exactly 6 fields emitted |
+| Rollback | Rollback snapshot SHA `ab5cf239…` pre/post identical on injected SQLite failure |
+| Dedup (ID1 vs ID 10) | Parsed integer `page_id`; `page_id_exact_dedup=pass` in runtime marker |
+| Concurrency | `concurrent_pending=1 ≤ 1`; SQLite-busy loser documented |
+| Damaged DB | Returns `{"error":{"code":"database_error"}}`, no crash or repair |
+| CLI smoke | `N14_CLI_SMOKE_OK`; isolated LOCALAPPDATA; `doctor --remediate` exit 0 |
+| N1-N13 deps | All 14 predecessors have PASS plan + outcome audits per VERIFY-REPORT.md |
+| No schema migration | Confirmed |
+| No config change | No model/provider/baseURL/key/reasoning/context/compression modified |
+| No N30 | No N30 artifact referenced or created |

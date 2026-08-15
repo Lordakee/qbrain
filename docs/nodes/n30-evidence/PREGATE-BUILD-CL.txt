@@ -1,0 +1,58 @@
+=== build-cl clean run 2026-08-15T13:24:31+08:00 ===
+**********************************************************************
+** Visual Studio 2026 Developer Command Prompt v18.7.3
+** Copyright (c) 2026 Microsoft Corporation
+**********************************************************************
+[vcvarsall.bat] Environment initialized for: 'x64'
+sqlite3.c
+paths.cpp
+hash.cpp
+log.cpp
+string_util.cpp
+time_util.cpp
+database.cpp
+migrate.cpp
+types.cpp
+brain.cpp
+extract.cpp
+traverse.cpp
+analytics.cpp
+scan.cpp
+packs.cpp
+lint.cpp
+store.cpp
+vector.cpp
+rrf.cpp
+hybrid.cpp
+rerank.cpp
+正在生成代码...
+正在编译...
+minions.cpp
+dream.cpp
+chunker.cpp
+markdown.cpp
+import.cpp
+http_client.cpp
+embed.cpp
+chat.cpp
+registry.cpp
+handlers.cpp
+inbox_watch.cpp
+live_sync.cpp
+jsonrpc.cpp
+server.cpp
+http_server.cpp
+app.cpp
+commands.cpp
+main.cpp
+正在生成代码...
+BUILD_OK
+ 驱动器 D 中的卷没有标签。
+ 卷的序列号是 1077-94CA
+
+ D:\Projects\Qbrain\build\cl 的目录
+
+2026/08/15  13:31         3,139,072 qbrain.exe
+               1 个文件      3,139,072 字节
+               0 个目录 510,875,590,656 可用字节
+prod_exit=0

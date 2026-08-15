@@ -1,0 +1,402 @@
+{
+  "format_version": 1,
+  "node": "N20",
+  "gate": "pre-implementation-schema-v12",
+  "state": "passed",
+  "started_utc": "2026-08-04T11:30:26.2351096+00:00",
+  "doctor_completed_utc": "2026-08-04T11:31:42.8300086+00:00",
+  "cleanup_completed_utc": "2026-08-04T11:33:15.4187467+00:00",
+  "completed_utc": "2026-08-04T11:33:41.1404748+00:00",
+  "command": "build\\cl\\qbrain.exe doctor --brain n20-gate-2bcf6f82b9cb41cab9ab1d62e0b4de03 --json",
+  "execution_path": [
+    "qbrain doctor",
+    "Brain::health",
+    "storage::check_schema_integrity"
+  ],
+  "governance": {
+    "audited_draft_plan_sha256": "d6600297081e983876894d9da893f2ff5769c518e74fb72483687eaae1f02787",
+    "approved_plan_sha256": "147cc7d073d70d31184797cc7180f92cd8fa83d1ac134affd172dc4bbba77e11",
+    "plan_audit_sha256": "c3296b662fdd8e667de1e94bfa5838f141b3a4c249e0e2128e532bed5d506d66",
+    "approval_metadata_only": true,
+    "approval_metadata_fields": [
+      "Status",
+      "Plan audit"
+    ],
+    "git_head": "5ced8ccb511672536d0f9767a2bc1777baf561ab"
+  },
+  "dependency_audits": [
+    {
+      "path": "docs/nodes/N1-PLAN-AUDIT.md",
+      "sha256": "9fd6df77ad905463f34e6873c2220849003679a64c869e5fb1eaffba470f95e6",
+      "auditor": "Claude Code",
+      "verdict": "PASS"
+    },
+    {
+      "path": "docs/nodes/N1-HARD-AUDIT.md",
+      "sha256": "93f112c13d01864aa701683e2a4dbb3726a763d90b7a113c07dc543af4d31141",
+      "auditor": "Claude Code",
+      "verdict": "PASS"
+    },
+    {
+      "path": "docs/nodes/N2-PLAN-AUDIT.md",
+      "sha256": "c34fede88989a9847dd3cad0bf719b6476c28bbfb124cb094d4afbe24d90fb85",
+      "auditor": "Claude Code",
+      "verdict": "PASS"
+    },
+    {
+      "path": "docs/nodes/N2-HARD-AUDIT.md",
+      "sha256": "e9dc809dcdb73c0757708f81d53daf2fc89394c12cf953e86c0e9de5923a3413",
+      "auditor": "Claude Code",
+      "verdict": "PASS"
+    },
+    {
+      "path": "docs/nodes/N2.5-PLAN-AUDIT.md",
+      "sha256": "bd0cf1b5f4dddb9af40168a89d1a87be84d5a4eb2f99872d3389880523617953",
+      "auditor": "Claude Code",
+      "verdict": "PASS"
+    },
+    {
+      "path": "docs/nodes/N2.5-HARD-AUDIT.md",
+      "sha256": "dd6e404ab7583af8c6cbecd86179baba3401a1d5ef10f559b2067229a208c8ff",
+      "auditor": "Claude Code",
+      "verdict": "PASS"
+    },
+    {
+      "path": "docs/nodes/N7-PLAN-AUDIT.md",
+      "sha256": "929970318d8fb3043371f82a9208360db7e38e6dd058e37f0eef515534f26d39",
+      "auditor": "Claude Code",
+      "verdict": "PASS"
+    },
+    {
+      "path": "docs/nodes/N7-HARD-AUDIT.md",
+      "sha256": "307226705f0dc7495b0aa7aeebf88bd807c0216c19cab059cd23d01dd6835421",
+      "auditor": "Claude Code",
+      "verdict": "PASS"
+    },
+    {
+      "path": "docs/nodes/N8-PLAN-AUDIT.md",
+      "sha256": "7f16263f786315420ed42a7c79350add553ad84b11ce4cd6dbc21b0fdc320570",
+      "auditor": "Claude Code",
+      "verdict": "PASS"
+    },
+    {
+      "path": "docs/nodes/N8-HARD-AUDIT.md",
+      "sha256": "7970e96af49bbc86f6e71785409a68b482f24e8b2f08a42c2993bbc93c14a8f9",
+      "auditor": "Claude Code",
+      "verdict": "PASS"
+    },
+    {
+      "path": "docs/nodes/N11-PLAN-AUDIT.md",
+      "sha256": "e157d9f3b6dcbc276b782d960c237d50fed9d4ff5614473678813e27541844a7",
+      "auditor": "Claude Code",
+      "verdict": "PASS"
+    },
+    {
+      "path": "docs/nodes/N11-HARD-AUDIT.md",
+      "sha256": "bdefcf26d138b658d31df0b8525c46b776aa5e9086796bcd16696d8b783f2012",
+      "auditor": "Claude Code",
+      "verdict": "PASS"
+    },
+    {
+      "path": "docs/nodes/N15-PLAN-AUDIT.md",
+      "sha256": "01e95a0cc55e4d0580562008a65de2ee941a13a8b37f4fd730389937d5abaef1",
+      "auditor": "Claude Code",
+      "verdict": "PASS"
+    },
+    {
+      "path": "docs/nodes/N15-HARD-AUDIT.md",
+      "sha256": "9f5f14ab7ed2cf4da50b597f8f861061948d9b65331091a017d677f7b4968c59",
+      "auditor": "Claude Code",
+      "verdict": "PASS"
+    },
+    {
+      "path": "docs/nodes/N18-PLAN-AUDIT.md",
+      "sha256": "87db9821c255555ab6a42aab8d22cac945a5e0141aeeb3dd02e76a07e743af6d",
+      "auditor": "Claude Code",
+      "verdict": "PASS"
+    },
+    {
+      "path": "docs/nodes/N18-HARD-AUDIT.md",
+      "sha256": "f09971ecf44ab66129f33ee3b7dad91515aac39d6d330b725916983fcb408053",
+      "auditor": "Claude Code",
+      "verdict": "PASS"
+    },
+    {
+      "path": "docs/nodes/N19-PLAN-AUDIT.md",
+      "sha256": "e5c603efbfecb5603a0fd068dd2a0b39e7a75abac5fd116634adc397d9b7e470",
+      "auditor": "Claude Code",
+      "verdict": "PASS"
+    },
+    {
+      "path": "docs/nodes/N19-HARD-AUDIT.md",
+      "sha256": "d4ee4ad14e3768b5470865f092a783ba0d10b9e9155bfb17c4bd5ce594ad4f24",
+      "auditor": "Claude Code",
+      "verdict": "PASS"
+    }
+  ],
+  "qbrain": {
+    "sha256": "0d5c63f98713268ba76452105f743c1597c25166fba01ea215924778e15c0bd6",
+    "bytes": 2984960,
+    "last_write_utc": "2026-08-04T09:41:52.2157917Z"
+  },
+  "baseline": {
+    "manifest_sha256": "3bafa9ba27d6271f21f761f1d5639c13662449a6f4edfd64c62a627a2b991c7e",
+    "git_fingerprint_sha256": "fb5efb1a1da069f9343c02f98cf2949eb0a91f602444f23807eef8b03d93d3b6",
+    "audit_artifact_last_write_utc": "2026-08-04T11:20:19.0377705Z",
+    "input_count": 28,
+    "inputs": [
+      {
+        "path": "CMakeLists.txt",
+        "sha256": "24a4668591feb3b4a9ae1dba584c82dffe9f0d7c5f796fc6f0c31b631eced395",
+        "bytes": 5027,
+        "last_write_utc": "2026-08-04T02:56:10.3052522Z",
+        "git_status": " M CMakeLists.txt",
+        "git_diff_sha256": "d740c62d9a81f531bcf5a759e068678af3476491d5e62df99cdffb9757008693"
+      },
+      {
+        "path": "docs/nodes/N20-HARD-AUDIT.md",
+        "sha256": "aaa85c7103f4d4c481019e6e57e55cb67b85b2140a1616721146847eb48a93e9",
+        "bytes": 375,
+        "last_write_utc": "2026-07-27T01:05:30.2861362Z",
+        "git_status": "",
+        "git_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "docs/OPS-PARITY-LEDGER.md",
+        "sha256": "0c1d7f8771d2e0a86b4d89a2443738a20285786feca47b06cc985e29a06ca8c3",
+        "bytes": 12639,
+        "last_write_utc": "2026-08-04T10:25:11.5471211Z",
+        "git_status": " M docs/OPS-PARITY-LEDGER.md",
+        "git_diff_sha256": "a00296fcaa5f5b8f19c1a6f1a367f00e0b672f8fc8707edac1b9fe7346349340"
+      },
+      {
+        "path": "include/qbrain/core/brain.hpp",
+        "sha256": "1aa7da46f32c3514320c9c878c0d57aae62721c59698fcfeb58c68ab98256229",
+        "bytes": 9272,
+        "last_write_utc": "2026-08-04T02:30:50.3278606Z",
+        "git_status": " M include/qbrain/core/brain.hpp",
+        "git_diff_sha256": "fdf363db9511901c8c317671604cdf24c247ae0726316f27808304f8e5078695"
+      },
+      {
+        "path": "include/qbrain/mcp/server.hpp",
+        "sha256": "5a6fe4dfa6f2c288f17974541a61dbc546c0ae910ea7488250415740220ae4eb",
+        "bytes": 713,
+        "last_write_utc": "2026-07-25T14:45:09.1987274Z",
+        "git_status": "",
+        "git_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "include/qbrain/ops/registry.hpp",
+        "sha256": "8318bd4e755d97de5c9c3a869b2592cdf4868511e110e3010cc2809982d1dad8",
+        "bytes": 1155,
+        "last_write_utc": "2026-07-25T03:24:02.8394379Z",
+        "git_status": "",
+        "git_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "include/qbrain/schema/packs.hpp",
+        "sha256": "f177308e3a5878a85cedd6bd18776b79e37ba23b296096cbbaa1b787a1ff18ae",
+        "bytes": 730,
+        "last_write_utc": "2026-07-27T08:33:53.0983703Z",
+        "git_status": "",
+        "git_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "include/qbrain/storage/database.hpp",
+        "sha256": "2f0ccf8035aa35f3ce69a12d42afa18015754efb4671d7c528b36bb4285de8fd",
+        "bytes": 2182,
+        "last_write_utc": "2026-07-25T13:57:57.9637800Z",
+        "git_status": "",
+        "git_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "include/qbrain/storage/schema_sql.hpp",
+        "sha256": "7709912b2d792b6055c0b95d5c79a157b949669925242e7c840a256717c7a024",
+        "bytes": 4106,
+        "last_write_utc": "2026-07-26T03:58:29.3031964Z",
+        "git_status": "",
+        "git_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "include/qbrain/util/paths.hpp",
+        "sha256": "631a93eb746fb92b2b0e5d20c2dc131cda0686127d68685a045f6cec4cdef0ce",
+        "bytes": 555,
+        "last_write_utc": "2026-07-28T04:49:46.5566816Z",
+        "git_status": " M include/qbrain/util/paths.hpp",
+        "git_diff_sha256": "4018c063dd40fda3ac74a53ff255b6dce1382cd09a71137047ac2e0433c32142"
+      },
+      {
+        "path": "scripts/build-cl.ps1",
+        "sha256": "553a1989952d346fce8f836146377aec6d0db29e143893c3ac7fd28869b15070",
+        "bytes": 3605,
+        "last_write_utc": "2026-07-31T07:19:01.5503413Z",
+        "git_status": " M scripts/build-cl.ps1",
+        "git_diff_sha256": "0619a99ebb7b51033a782e8f3441a6c39b3c37c6db25698a002ddff080633a9c"
+      },
+      {
+        "path": "scripts/build-tests-cl.ps1",
+        "sha256": "a682bb81ba366e7dc45eeee2825255f76b27c6db66b490791e4a1467c88f458e",
+        "bytes": 3243,
+        "last_write_utc": "2026-08-04T02:56:10.3072375Z",
+        "git_status": " M scripts/build-tests-cl.ps1",
+        "git_diff_sha256": "fa087b04553c594e741608221bc5471bde6eb8b7bd576a4f434bfdf1d3514385"
+      },
+      {
+        "path": "src/qbrain/core/brain.cpp",
+        "sha256": "24bcd78978dc3aefb8bf7057def006f1fa049a8d63276402403f3b9a3740235b",
+        "bytes": 51109,
+        "last_write_utc": "2026-08-04T02:49:08.5628934Z",
+        "git_status": " M src/qbrain/core/brain.cpp",
+        "git_diff_sha256": "e6f455454a66c5dc5ed1873a25705263b09e863a7c543f51ffd22f726bdb7940"
+      },
+      {
+        "path": "src/qbrain/mcp/server.cpp",
+        "sha256": "7515830e9d40c18580723567149569296b55d43a5e93615d7e5e35385564c4fd",
+        "bytes": 14383,
+        "last_write_utc": "2026-08-04T02:49:08.5608620Z",
+        "git_status": " M src/qbrain/mcp/server.cpp",
+        "git_diff_sha256": "a31f0a61a408e1b2358add409af16e245efbdde8c6bab4fad061c221ff9a21de"
+      },
+      {
+        "path": "src/qbrain/ops/handlers.cpp",
+        "sha256": "e02c76b55410f4ac02bb973d6e83691ffe1b97856f3a4234cb3677cca3c7ad7e",
+        "bytes": 109093,
+        "last_write_utc": "2026-08-04T03:02:52.5998474Z",
+        "git_status": " M src/qbrain/ops/handlers.cpp",
+        "git_diff_sha256": "f32b0a8106ac970578f4fd99f0c0002d3338626f4e21afd436818ceceb079da6"
+      },
+      {
+        "path": "src/qbrain/ops/registry.cpp",
+        "sha256": "e3fb8bad77a88677d6ae23a2eba626e98d47ab41c0659cbac1d724688b134a18",
+        "bytes": 1597,
+        "last_write_utc": "2026-08-04T02:32:23.4419820Z",
+        "git_status": " M src/qbrain/ops/registry.cpp",
+        "git_diff_sha256": "1f563929edaf58e2c828f29da3e941f40015416e184b8065d066dec600453436"
+      },
+      {
+        "path": "src/qbrain/schema/packs.cpp",
+        "sha256": "cfc4d27ceb42c51113acde8c60eed2f4f1213409cbd24f5bd6112487bfc016bf",
+        "bytes": 4227,
+        "last_write_utc": "2026-07-27T08:34:20.4997910Z",
+        "git_status": "",
+        "git_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "src/qbrain/storage/database.cpp",
+        "sha256": "bda29c5926936979102fd1078044b8ee76c250ae34707f4f4fda42ab4d32dacb",
+        "bytes": 4570,
+        "last_write_utc": "2026-08-01T14:28:47.9815206Z",
+        "git_status": " M src/qbrain/storage/database.cpp",
+        "git_diff_sha256": "dbdd8f9ae1be0e94d28efd7e881cfe01aa8a52c2183c41346ea3c38ca44e6477"
+      },
+      {
+        "path": "src/qbrain/storage/migrate.cpp",
+        "sha256": "d775529ff6f89d520f15a3fee30f0e180a2011646516de0a620e1870d538ec45",
+        "bytes": 15352,
+        "last_write_utc": "2026-08-04T02:52:10.8856654Z",
+        "git_status": " M src/qbrain/storage/migrate.cpp",
+        "git_diff_sha256": "c62ef5839bee1862bd04bc4fd62b8976235080f8d28d5cb22df94da348a73787"
+      },
+      {
+        "path": "src/qbrain/util/paths.cpp",
+        "sha256": "f7c3522070c601635b385f8d68bfee898e6b70cad2e2acc5a25d9e2f90b2488f",
+        "bytes": 3352,
+        "last_write_utc": "2026-07-31T06:00:48.8548756Z",
+        "git_status": " M src/qbrain/util/paths.cpp",
+        "git_diff_sha256": "dc76b734da15487c24e4096e459cea8363cf00794d7963c516aaba8d000d74a1"
+      },
+      {
+        "path": "tests/test_main.cpp",
+        "sha256": "e47ab53280eb82f29ba189d022e174ee8300a683eef2134accb14758dfd12600",
+        "bytes": 2656,
+        "last_write_utc": "2026-08-04T02:56:10.3032348Z",
+        "git_status": " M tests/test_main.cpp",
+        "git_diff_sha256": "a998d5a551da6867a4b86d6c1917bc3d6eff13cab29a686882c8939af3283dde"
+      },
+      {
+        "path": "tests/test_mcp.cpp",
+        "sha256": "8745ba5691dfb7d7d794f9fd9a8c43837e7cbed83a98f29f3d77a59bb8478052",
+        "bytes": 11182,
+        "last_write_utc": "2026-07-28T05:25:46.9905226Z",
+        "git_status": " M tests/test_mcp.cpp",
+        "git_diff_sha256": "d696016899fedd5d223ce1a120bb67c22af4307520e30974985dbb5b1f892873"
+      },
+      {
+        "path": "tests/test_n20_23.cpp",
+        "sha256": "a8c068df0544c90e6dd6b2dce213878381ecf37637a087ca9afc81dc2e799f3b",
+        "bytes": 4235,
+        "last_write_utc": "2026-07-28T15:44:49.8341354Z",
+        "git_status": " M tests/test_n20_23.cpp",
+        "git_diff_sha256": "16d6892841b699af2c20f7e8b1ed819871f19da50299aeb9ec7049a1573d7c5a"
+      },
+      {
+        "path": "tests/test_storage.cpp",
+        "sha256": "2e7eb17de213045625f9c0ae3f224142c5fbb5e2ae6c8d946e369fdff5b54095",
+        "bytes": 4233,
+        "last_write_utc": "2026-07-28T02:27:49.1339436Z",
+        "git_status": " M tests/test_storage.cpp",
+        "git_diff_sha256": "2da17e308e7eab2fc02016c9f4d3725b842cad647618f6d135290efcf9449e95"
+      },
+      {
+        "path": "tests/wave3_test_support.hpp",
+        "sha256": "9a4f94093a6e64b6a3f2021b52cefa23cd06d0223803d4e6bda3ea7ec9c301a6",
+        "bytes": 5290,
+        "last_write_utc": "2026-07-31T11:56:04.6025513Z",
+        "git_status": "?? tests/wave3_test_support.hpp",
+        "git_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "third_party/nlohmann/json.hpp",
+        "sha256": "010009e60834fccd54247fd3709ca44f604e125751b9ad7ffb780420d1067f7c",
+        "bytes": 919977,
+        "last_write_utc": "2026-07-24T17:04:24.1971683Z",
+        "git_status": "",
+        "git_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "third_party/sqlite/sqlite-amalgamation-3460100/sqlite3.c",
+        "sha256": "6c35bc5f7f85eac9c49928bacbb02bb694b547aabf69197e058cca245ad80e83",
+        "bytes": 9089564,
+        "last_write_utc": "2024-08-13T10:02:58.0000000Z",
+        "git_status": "",
+        "git_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "third_party/sqlite/sqlite-amalgamation-3460100/sqlite3.h",
+        "sha256": "89b62c671c5964e137409ce034941b7b05a3af2c9875aba41f47f9483d0c2515",
+        "bytes": 644069,
+        "last_write_utc": "2024-08-13T10:02:58.0000000Z",
+        "git_status": "",
+        "git_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ],
+    "absent_planned_paths": [
+      "docs/nodes/n20-evidence/VERIFY-REPORT.md",
+      "scripts/n20-verify.ps1",
+      "tests/test_n20.cpp"
+    ]
+  },
+  "result": {
+    "exit_code": 0,
+    "ok": true,
+    "schema_version": 12,
+    "stderr_empty": true,
+    "stdout_json_sha256": "722fdbe6e24204cb562e6696f7b84310a7a37289552d399cf13fb3e7b2c8ad70"
+  },
+  "isolation": {
+    "localappdata_overridden": true,
+    "temporary_root": "D:\\Projects\\Qbrain\\build\\cl\\n20-gate-localappdata-2bcf6f82b9cb41cab9ab1d62e0b4de03",
+    "brain_id": "n20-gate-2bcf6f82b9cb41cab9ab1d62e0b4de03",
+    "temporary_file_count": 1,
+    "temporary_files": [
+      "Qbrain\\brains\\n20-gate-2bcf6f82b9cb41cab9ab1d62e0b4de03\\brain.db"
+    ],
+    "production_localappdata_not_used": true,
+    "production_qbrain_root_not_used": true,
+    "config_persisted": false,
+    "temporary_root_removed": true
+  },
+  "protected_model_configuration_changed": false,
+  "live_network_or_provider_call": false,
+  "commit_or_push_executed": false
+}

@@ -1,0 +1,169 @@
+{
+  "format_version": 1,
+  "node": "N23",
+  "gate": "pre-corrective-schema-v12",
+  "state": "passed",
+  "started_utc": "2026-08-04T11:20:38.2196019+00:00",
+  "doctor_completed_utc": "2026-08-04T11:20:38.9198771+00:00",
+  "completed_utc": "2026-08-04T11:22:39.4268265+00:00",
+  "command": "build\\cl\\qbrain.exe doctor --brain n23-pre-corrective-gate --json",
+  "working_directory": "D:\\Projects\\Qbrain",
+  "execution_path": [
+    "qbrain doctor",
+    "Brain::health",
+    "storage::check_schema_integrity"
+  ],
+  "approved_plan_sha256": "4301f77a8a7b427a3d27bd883ce21d0316a94a5261a10541f9b0a2a3f6942a17",
+  "audited_draft_plan_sha256": "138d68f638bea13f1bc8198339d6e1d0422fa11a85185c7a49698fde87bb5398",
+  "plan_audit_sha256": "0bff70920652adbe9929d0cd76697fadaa9912a9014ae6b41ddccb648c869aef",
+  "qbrain_sha256": "0d5c63f98713268ba76452105f743c1597c25166fba01ea215924778e15c0bd6",
+  "qbrain_tests_sha256": "6db3bd83676b010b6ee0ae8c41d9a84315bb3b3d9da1a043c9ce890cba49a00d",
+  "git_head": "5ced8ccb511672536d0f9767a2bc1777baf561ab",
+  "pre_corrective_input_manifest_format": "path<TAB>sha256<TAB>bytes; CRLF; no trailing separator; ordinal path order",
+  "pre_corrective_input_manifest_sha256": "acb0ece63c81e933b5c579d9bbb6ecc5b5f221daa2673059c2126c0d423d5eac",
+  "pre_corrective_inputs": [
+    {
+      "path": "CMakeLists.txt",
+      "sha256": "24a4668591feb3b4a9ae1dba584c82dffe9f0d7c5f796fc6f0c31b631eced395",
+      "bytes": 5027
+    },
+    {
+      "path": "include/qbrain/core/brain.hpp",
+      "sha256": "1aa7da46f32c3514320c9c878c0d57aae62721c59698fcfeb58c68ab98256229",
+      "bytes": 9272
+    },
+    {
+      "path": "include/qbrain/core/types.hpp",
+      "sha256": "35472c36ff62bec42b282b987d2c39b4315f09ac29ff78883be7076898dbd6f3",
+      "bytes": 2177
+    },
+    {
+      "path": "include/qbrain/ops/registry.hpp",
+      "sha256": "8318bd4e755d97de5c9c3a869b2592cdf4868511e110e3010cc2809982d1dad8",
+      "bytes": 1155
+    },
+    {
+      "path": "include/qbrain/storage/database.hpp",
+      "sha256": "2f0ccf8035aa35f3ce69a12d42afa18015754efb4671d7c528b36bb4285de8fd",
+      "bytes": 2182
+    },
+    {
+      "path": "include/qbrain/storage/schema_sql.hpp",
+      "sha256": "7709912b2d792b6055c0b95d5c79a157b949669925242e7c840a256717c7a024",
+      "bytes": 4106
+    },
+    {
+      "path": "include/qbrain/util/time_util.hpp",
+      "sha256": "78390f81b3a583fd7e3b0ce3b62e7f4405ef3e0947b266a0e5fb4066b68b8cb3",
+      "bytes": 335
+    },
+    {
+      "path": "scripts/build-cl.ps1",
+      "sha256": "553a1989952d346fce8f836146377aec6d0db29e143893c3ac7fd28869b15070",
+      "bytes": 3605
+    },
+    {
+      "path": "scripts/build-tests-cl.ps1",
+      "sha256": "a682bb81ba366e7dc45eeee2825255f76b27c6db66b490791e4a1467c88f458e",
+      "bytes": 3243
+    },
+    {
+      "path": "src/qbrain/core/brain.cpp",
+      "sha256": "24bcd78978dc3aefb8bf7057def006f1fa049a8d63276402403f3b9a3740235b",
+      "bytes": 51109
+    },
+    {
+      "path": "src/qbrain/mcp/server.cpp",
+      "sha256": "7515830e9d40c18580723567149569296b55d43a5e93615d7e5e35385564c4fd",
+      "bytes": 14383
+    },
+    {
+      "path": "src/qbrain/ops/handlers.cpp",
+      "sha256": "e02c76b55410f4ac02bb973d6e83691ffe1b97856f3a4234cb3677cca3c7ad7e",
+      "bytes": 109093
+    },
+    {
+      "path": "src/qbrain/ops/registry.cpp",
+      "sha256": "e3fb8bad77a88677d6ae23a2eba626e98d47ab41c0659cbac1d724688b134a18",
+      "bytes": 1597
+    },
+    {
+      "path": "src/qbrain/storage/database.cpp",
+      "sha256": "bda29c5926936979102fd1078044b8ee76c250ae34707f4f4fda42ab4d32dacb",
+      "bytes": 4570
+    },
+    {
+      "path": "src/qbrain/storage/migrate.cpp",
+      "sha256": "d775529ff6f89d520f15a3fee30f0e180a2011646516de0a620e1870d538ec45",
+      "bytes": 15352
+    },
+    {
+      "path": "src/qbrain/util/time_util.cpp",
+      "sha256": "cb315dc6c50958c6a69270b130a9757881a9030cd27b8b730626d6e296ffe217",
+      "bytes": 1215
+    },
+    {
+      "path": "tests/test_main.cpp",
+      "sha256": "e47ab53280eb82f29ba189d022e174ee8300a683eef2134accb14758dfd12600",
+      "bytes": 2656
+    },
+    {
+      "path": "tests/test_n15.cpp",
+      "sha256": "ad709351520f1f48f16fcbd6392ee8a93f886c10e92f70054b24f6b231cc9078",
+      "bytes": 69183
+    },
+    {
+      "path": "tests/test_n19.cpp",
+      "sha256": "27023d52d3c637b081747d1e66c2a86c84a21c0628fb413d6301af8e00e6d8e9",
+      "bytes": 58903
+    },
+    {
+      "path": "tests/test_n20_23.cpp",
+      "sha256": "a8c068df0544c90e6dd6b2dce213878381ecf37637a087ca9afc81dc2e799f3b",
+      "bytes": 4235
+    },
+    {
+      "path": "tests/wave3_test_support.hpp",
+      "sha256": "9a4f94093a6e64b6a3f2021b52cefa23cd06d0223803d4e6bda3ea7ec9c301a6",
+      "bytes": 5290
+    },
+    {
+      "path": "third_party/sqlite/sqlite-amalgamation-3460100/sqlite3.c",
+      "sha256": "6c35bc5f7f85eac9c49928bacbb02bb694b547aabf69197e058cca245ad80e83",
+      "bytes": 9089564
+    },
+    {
+      "path": "third_party/sqlite/sqlite-amalgamation-3460100/sqlite3.h",
+      "sha256": "89b62c671c5964e137409ce034941b7b05a3af2c9875aba41f47f9483d0c2515",
+      "bytes": 644069
+    }
+  ],
+  "result": {
+    "exit_code": 0,
+    "ok": true,
+    "schema_version": 12,
+    "overall": "OK",
+    "stderr_empty": true
+  },
+  "isolation": {
+    "localappdata_overridden": true,
+    "isolated_localappdata": "build/cl/n23-gate-data-754ec763a2a6466785130a9f22957449",
+    "production_localappdata": "%LOCALAPPDATA%\\Qbrain",
+    "production_localappdata_not_used": true,
+    "production_metadata_format": "relative-path<TAB>bytes<TAB>last-write-utc-ticks; CRLF; no trailing separator; full-name order",
+    "production_root_existed_before": true,
+    "production_root_existed_after": true,
+    "production_file_count_before": 173,
+    "production_file_count_after": 173,
+    "production_metadata_sha256_before": "919850ea5af6a68fe6f46a32c12fcd8df625e8a21255b35bba234e14c57d25cb",
+    "production_metadata_sha256_after": "919850ea5af6a68fe6f46a32c12fcd8df625e8a21255b35bba234e14c57d25cb",
+    "production_tree_unchanged": true,
+    "isolated_entry_count_before_cleanup": 4,
+    "isolated_database_count_before_cleanup": 1,
+    "config_persisted": false,
+    "temporary_root_removed": true
+  },
+  "protected_model_configuration_changed": false,
+  "commit_or_push_executed": false,
+  "n30_artifact_created_read_or_used": false
+}

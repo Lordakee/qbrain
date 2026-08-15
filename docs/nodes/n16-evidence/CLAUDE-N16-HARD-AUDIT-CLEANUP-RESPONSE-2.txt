@@ -1,0 +1,43 @@
+## Verification Complete
+
+**docs/nodes/N16-HARD-AUDIT.md** has been successfully corrected with all mandatory changes applied:
+
+### ✓ Corrections Applied
+
+1. **Excluded coordinator references removed**: All references to N30 deleted from acceptance row 12 (line 71) and final summary (line 118)
+
+2. **Unrelated future numbered nodes removed**: 
+   - N22 reference deleted from ledger comparison (line 81)
+   - P2-01 finding about N22 operations completely removed
+
+3. **P2 rewritten**: Now contains only `None.` - all three non-N16-scoped findings removed:
+   - P2-01 (N22 operations) - removed as unrelated future node
+   - P2-02 (test count) - removed as evidence, not a finding
+   - P2-03 (manifest files) - removed as already distinguished in Evidence basis
+
+4. **Assertion 9 strengthened** (line 68): Added comprehensive evidence citing `tests/wave3_test_support.hpp:56-114` with explicit mentions of:
+   - `sqlite_master` queries for schema definitions
+   - Coverage of tables, indexes, triggers, views
+   - `sqlite_sequence` inclusion
+   - Runtime markers `snapshot_schema=pass snapshot_matrix=pass ... read_only=pass`
+
+5. **Assertion 10 preserved** (line 69): `qbrain::mcp::handle_rpc_body` citation intact
+
+6. **Structure verified**:
+   - 7 deliverable rows ✓
+   - 12 acceptance rows ✓
+   - Auditor: Claude Code ✓
+   - Date: 2026-08-01 ✓
+   - Verdict: PASS ✓
+   - All SHA-256 hashes preserved ✓
+
+7. **Whitespace cleaned**: File ends with exactly one newline
+
+### Final Status
+
+**Verdict**: PASS  
+**P0**: 0 findings (None.)  
+**P1**: 0 findings (None.)  
+**P2**: 0 findings (None.)
+
+The corrected audit is now strictly N16-scoped with no excluded node identifiers and contains all required evidence citations.

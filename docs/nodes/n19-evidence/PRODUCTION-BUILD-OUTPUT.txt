@@ -1,0 +1,62 @@
+command=powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-cl.ps1
+started_utc=2026-08-04T09:31:32.4218237+00:00
+target_arch=x64
+language_mode=/std:c++20
+isolated_localappdata=true
+production_qbrain_data_touched=false
+**********************************************************************
+** Visual Studio 2026 Developer Command Prompt v18.7.3
+** Copyright (c) 2026 Microsoft Corporation
+**********************************************************************
+[vcvarsall.bat] Environment initialized for: 'x64'
+sqlite3.c
+paths.cpp
+hash.cpp
+log.cpp
+string_util.cpp
+time_util.cpp
+database.cpp
+migrate.cpp
+types.cpp
+brain.cpp
+extract.cpp
+traverse.cpp
+analytics.cpp
+scan.cpp
+packs.cpp
+lint.cpp
+store.cpp
+vector.cpp
+rrf.cpp
+hybrid.cpp
+rerank.cpp
+�������ɴ���...
+���ڱ���...
+minions.cpp
+dream.cpp
+chunker.cpp
+markdown.cpp
+import.cpp
+http_client.cpp
+embed.cpp
+chat.cpp
+registry.cpp
+handlers.cpp
+inbox_watch.cpp
+live_sync.cpp
+jsonrpc.cpp
+server.cpp
+http_server.cpp
+app.cpp
+commands.cpp
+main.cpp
+�������ɴ���...
+BUILD_OK
+ ������ D �еľ�û�б�ǩ��
+ ������к��� 1077-94CA
+ D:\Projects\Qbrain\build\cl ��Ŀ¼
+2026/08/04  17:41         2,984,960 qbrain.exe
+               1 ���ļ�      2,984,960 �ֽ�
+               0 ��Ŀ¼ 516,213,043,200 �����ֽ�
+ended_utc=2026-08-04T09:41:52.5605620+00:00
+exit_code=0

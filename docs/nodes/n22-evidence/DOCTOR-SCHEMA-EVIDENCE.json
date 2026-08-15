@@ -1,0 +1,50 @@
+{
+    "command":  "build\\cl\\qbrain.exe doctor --brain n22stdio070e35bf11e9487d --json",
+    "working_directory":  "D:/Projects/Qbrain",
+    "exit_code":  0,
+    "stderr_empty":  true,
+    "child_environment_policy":  "remove-qbrain-provider-secret-and-proxy-overrides",
+    "publication_nonce":  "0a52857e556345e0bbdd8b83e0f467c4",
+    "response_sha256":  "c67598b9bb0b5378c920d28f7cf7e8a026735f2faf62bb7e58b072364a6121f2",
+    "schema_version":  12,
+    "ok":  true,
+    "payload":  {
+                    "checks":  [
+                                   {
+                                       "name":  "database",
+                                       "status":  "OK"
+                                   },
+                                   {
+                                       "name":  "schema",
+                                       "status":  "OK"
+                                   },
+                                   {
+                                       "name":  "critical_tables",
+                                       "status":  "OK"
+                                   },
+                                   {
+                                       "name":  "optional",
+                                       "status":  "WARN"
+                                   }
+                               ],
+                    "notes":  [
+                                  "no embeddings yet (FTS-only search works; run: qbrain embed --all)",
+                                  "no embedding API key (set OPENAI_API_KEY or qbrain config set embedding.api_key)"
+                              ],
+                    "ok":  true,
+                    "overall":  "OK",
+                    "schema_version":  12,
+                    "stats":  {
+                                  "chunks":  12,
+                                  "embedded_chunks":  0,
+                                  "links":  0,
+                                  "pages":  11
+                              }
+                },
+    "persistent_tree_fingerprint_scope":  "directory-path-and-attributes;file-path-attributes-length-sha256-last-write-utc;directory-last-write-utc-excluded-for-sqlite-wal-read-lifecycle",
+    "isolated_tree_fixture_sha256":  "70461e4f4b8b330412d1056f64b87aba17c00a95899bdc80566481d7a70630c5",
+    "isolated_tree_after_probes_sha256":  "70461e4f4b8b330412d1056f64b87aba17c00a95899bdc80566481d7a70630c5",
+    "isolated_tree_after_doctor_sha256":  "70461e4f4b8b330412d1056f64b87aba17c00a95899bdc80566481d7a70630c5",
+    "isolated_tree_after_cleanup_sha256":  "absent",
+    "binary_sha256":  "84c3427a349fa5bb16819639229694fadc4f80011ee0cff03a2ca5ec5096f71a"
+}

@@ -1,0 +1,53 @@
+I've successfully completed the mandatory blocking OUTCOME HARD AUDIT for N15. Here's the summary:
+
+## Audit Complete
+
+**File written:** `docs\nodes\N15-HARD-AUDIT.md`
+
+**VERDICT: PASS**
+
+**Auditor:** Claude Code
+
+**Date:** 2026-08-01
+
+### Key Findings
+
+- **P0 issues:** 0 (None blocking)
+- **P1 issues:** 0 (None requiring fixes)
+- **P2 issues:** 3 (Non-blocking documentation enhancements, resolved, or moot)
+
+### Acceptance Assertions
+
+All 12 acceptance assertions from the approved plan are **PROVEN**:
+
+1. ✓ v12 migration: transactional, idempotent, rollback-safe
+2. ✓ Source attribution: every ingest row carries valid canonical source_id
+3. ✓ Retention: atomic per-source with exact 1..1000 boundary contract
+4. ✓ Ingest reads: newest-first, limit [1,50], source-scoped
+5. ✓ Link provenance: source-scoped counts, no cross-source leakage
+6. ✓ Chronicle day: strict YYYY-MM-DD UTC validation, leap-day support
+7. ✓ Chronicle since: inclusive bounds, rejects invalid/offset/trailing input
+8. ✓ Timeline entry: distinct type=timeline pages with collision avoidance
+9. ✓ MCP security: writes denied before mutation, authorized sources succeed
+10. ✓ Remote reads: allowlist enforced, snapshots unchanged
+11. ✓ Ledger accuracy: thin timeline-page subset explicitly documented
+12. ✓ Windows evidence: x64 MSVC C++20, 25 PASS/0 FAIL tests
+
+### Evidence Summary
+
+- **Build:** Windows 11 10.0.22624, MSVC 19.51.36248 x64, `/std:c++20`, exit code 0
+- **Tests:** 25 PASS, 0 FAIL, exit code 0
+- **Runtime markers:** All N15 checks pass including migration, source isolation, UTC validation, MCP security
+- **Wave3 manifest:** SHA-256 `7a102c4c36e6f20f1fe089bb70072c3733fe893f11f21fa2f6589bb0e1d9426f`, 99 files
+
+### File Verification
+
+The audit file has been written and verified:
+- **Previous placeholder SHA-256:** `63efe0bc36a313f7f752a254cb2d89f313ff04adf2aa1de36cfc9df01a1d9b91`
+- **File begins with:** `# N15 OUTCOME HARD AUDIT` and **VERDICT: PASS**
+- **File ends with:** `**VERDICT: PASS** — N15 plan status may be advanced to done. Ledger rows may be reconciled.`
+- **Line count:** 115 lines (includes summary, evidence table, 12-row acceptance table, deliverables check, P0/P1/P2 sections, plan comparison, and conclusion)
+
+The hash differs from the placeholder, confirming successful replacement. The file is ready and contains no trailing whitespace, exactly one final newline, and no excluded-node references.
+
+**Next steps:** N15 plan status may be advanced to `done` and ledger rows may be reconciled.

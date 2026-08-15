@@ -1,0 +1,60 @@
+# N13 Outcome Hard Audit
+
+**VERDICT: PASS**
+**Auditor:** Claude Code
+**Approved plan:** `docs/nodes/N13-PLAN.md` (plan audit PASS, 2026-07-29)
+**Date:** 2026-07-30
+**Scope:** read-only; no files edited.
+
+## Acceptance
+
+| # | Status | Evidence |
+|---|--------|----------|
+| 1 | PASS | `BUILD-OUTPUT.txt:110` `first_pages=2 second_skipped=2 changed_pages=1`; `[PASS] n13` |
+| 2 | PASS | `CLI-SMOKE-OUTPUT.txt:9` `--watch --once` exit 0; `BUILD-OUTPUT.txt:106` WARN bad root |
+| 3 | PASS | `BUILD-OUTPUT.txt:109` WARN `invalid source_id: bad/id`; n13 PASS |
+| 4 | PASS | `BUILD-OUTPUT.txt:110` `source_isolation=pass`; state key=sha256(brain/source/root) |
+| 5 | PASS | `BUILD-OUTPUT.txt:114` `[PASS] n13`; `test_n13.cpp:227-228` status counts verified |
+| 6 | PASS | `BUILD-OUTPUT.txt:114` n13 PASS; default/non-empty reject confirmed pre-txn |
+| 7 | PASS | `BUILD-OUTPUT.txt:112` `rollback_unchanged=pass force_cleanup=pass` |
+| 8 | PASS | `BUILD-OUTPUT.txt:112` `neighbors_depth2=8 cycle_nodes=8 source_isolation=pass` |
+| 9 | PASS | `BUILD-OUTPUT.txt:114` `[PASS] n13`; `test_n13.cpp:281-286` retry/payload/fence |
+| 10 | PASS | `BUILD-OUTPUT.txt:114` `[PASS] n13`; `test_n13.cpp:296-301` forget idempotent |
+| 11 | PASS | `BUILD-OUTPUT.txt:113` `n13_mcp_deny…unchanged=pass allow_write=pass` |
+| 12 | PASS | `BUILD-OUTPUT.txt:113` `read_ops=pass`; four ops Scope::Read, no-write confirmed |
+| 13 | PASS | `VERIFY-REPORT.md`: Win11/X64, MSVC 19.51.36248, `/std:c++20`, 21 PASS/0 FAIL, 14 hashes |
+
+## Deliverables
+
+1. `live_sync.hpp/.cpp` one-shot/watch cycles, source propagation — PASS
+2. `import.cpp` `page.source_id` propagated to pages and links — PASS
+3. `brain.hpp/.cpp` status, force removal, facts deactivation — PASS
+4. `traverse.hpp/.cpp` + handler bidirectional BFS, depth-bounded, source-scoped — PASS
+5. `minions.cpp`/`handlers.cpp`/CLI 8 registrations, sync/graph routing — PASS
+6. `tests/test_n13.cpp`, `n13-verify.ps1`, BUILD/TEST/CLI/VERIFY evidence — PASS
+7. Audit docs, `VERIFY-REPORT.md`, ledger rows for all 8 ops — PASS
+
+## Prior P1 Recheck
+
+**P1-1 (stale audit):** `N13-HARD-AUDIT.md` now bears VERDICT PASS, 13 rows, dated 2026-07-30. RESOLVED.
+**P1-2 (no CLI evidence):** `n13-evidence/CLI-SMOKE-OUTPUT.txt` present; `N13_CLI_SMOKE_OK` all 6 signals captured. RESOLVED.
+
+## Findings
+
+**P0:** None.
+
+**P1:** None — both prior P1s resolved (see above).
+
+**P2:**
+- Ledger timing: `OPS-PARITY-LEDGER.md:122` N13 note lacks "plan audit PASS + outcome hard audit PASS" wording; update before closing.
+- `recall` conservative semantics confirmed lexical-only (`hybrid.cpp:148-150` `use_vec=false`); path without explicit `no_vector` argument untested.
+- Sync-state JSON concurrency: `live_sync.cpp:29-51` read-modify-write unguarded; concurrent same-scope syncs yield last-writer-wins; corrupt JSON silently degrades to re-import.
+- Residual gaps: chunk/tag cascade absence, per-status retry rejection, `sources_status` deleted-page exclusion, and post-read-op snapshot equality not explicitly asserted.
+
+## Comparison to Approved Plan
+
+Deliverables 1–6 are fully met with no N14-N16 scope creep, no schema bump, and no provider/model/config change; all eight security notes are implemented as specified in the plan. No N30 orchestration node was created or needed — the plan explicitly excludes orchestration (`N13-PLAN.md:11`), and the three parallel slices stayed within scope with the parent agent owning both gates.
+
+## Conclusion
+
+VERDICT: PASS; all13 acceptance assertions and all 7 deliverables pass, no P0 or P1 remains, and N13 is done-eligible once the ledger N13 note records both gate approvals.

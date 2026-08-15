@@ -1,0 +1,1449 @@
+{
+  "deliverable": "N30 D2 - node reconciliation matrix (N1-N29, supplementary N2.5)",
+  "generated_utc": "2026-08-15T06:10:26Z",
+  "generator": "N30 subagent A (governance/docs slice)",
+  "git_head": "5ced8ccb511672536d0f9767a2bc1777baf561ab",
+  "tier_policy": {
+    "source": "docs/08-MASTER-PLAN-GBRAIN-PARITY.md v2.0.0 section 1 (AMD-2)",
+    "1": "current plan hash-bound + current Claude Code PASS - can satisfy node gates",
+    "2": "retrospective evidence (historical PASS, old audits) - historical background only; usable for docs only after explicit controller equivalence decision",
+    "3": "stub / contradiction / stale / plan-mismatch - must be corrective-closed"
+  },
+  "full_standard_observable": "Per N30-PLAN D2 (P1-2 adopted): >=50 lines; explicit assertion table (plan deliverables vs evidence line-by-line); findings section (may be empty); conclusion citing specific test output hashes; evidence file references.",
+  "global_findings": [
+    "HASH-BINDING VERIFICATION (2026-08-15): sha256 was recomputed for every N{k}-PLAN.md in the working tree and compared against every 64-hex digest cited in that node's PLAN-AUDIT.md and HARD-AUDIT.md. NO N1-N29 audit file contains the sha256 of the current working-tree plan it nominally covers. Consequence: zero Tier-1 evidence exists inside N1-N29 as of this snapshot; N30 is the first node operating under the Tier-1 standard. Nodes N14-N19/N22 audits cite many digests (13-40 per audit) but bind to plan text that predates the current files.",
+    "PLAN-AUDIT-BATCH-RESULT.json is stale (N1 BLOCKED, N2.5 FAIL, N2 FAIL, N3 FAIL, N4 BLOCKED vs current all-PASS audit files); classified duplicate-stale in D1 manifest; must not be committed.",
+    "Suite baseline drift: audits across N1-N29 cite 10/10, 12/12, 13/13, 14/14, 15/15, 16/16, 17/17, 18/18, 20/20, 21/21, 25/25, 26/26 suite counts - all historical. Current registered baseline: 29 tests (tests/test_main.cpp), pre-gate run 28 PASS + 1 FAIL (n20 expected-deny check, tests/test_n20.cpp:570), two rounds (docs/nodes/n30-evidence/PREGATE-TEST-RUN.txt).",
+    "N24-N28 have NO plan-audit artifacts at all (files missing) in addition to stub hard audits; their plan files are 19-31-line short forms without current-standard falsifiable acceptance sections.",
+    "N2-PLAN.md contains an internal contradiction (Status line says outcome PASS 2026-07-28; the Outcome-audit line says BLOCKED) while N2-HARD-AUDIT.md says PASS.",
+    "N29-HARD-AUDIT assertions that N21/N23 plans \"state Status: done\" are superseded: current N21-PLAN.md is draft (rewritten, audits pending) and current N23-PLAN.md is approved with outcome pending. AMD-1 dispositions in this matrix replace those claims."
+  ],
+  "counts": {
+    "nodes_total": 30,
+    "by_tier": {
+      "tier1": 0,
+      "tier2": 22,
+      "tier3": 8
+    },
+    "by_disposition": {
+      "accept": 21,
+      "corrective-closure": 3,
+      "supersede": 1,
+      "defer": 5
+    },
+    "plan_audit_missing": [
+      "N24",
+      "N25",
+      "N26",
+      "N27",
+      "N28"
+    ],
+    "outcome_audit_missing": []
+  },
+  "nodes": [
+    {
+      "node": "N1",
+      "title": "N1 Plan — 写入闭环硬化",
+      "plan_status": "done (outcome audit PASS 2026-07-28; N29 reconciliation)",
+      "plan_sha256": "7fc14a6921984f850fdf82b77e8042827de1bd8e97505df5938ce55d4d6a614a",
+      "plan_audit": {
+        "file": "docs/nodes/N1-PLAN-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "9fd6df77ad905463f34e6873c2220849003679a64c869e5fb1eaffba470f95e6",
+        "date": "2026-07-27",
+        "audit_type": null,
+        "lines": 30
+      },
+      "outcome_audit": {
+        "file": "docs/nodes/N1-HARD-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "93f112c13d01864aa701683e2a4dbb3726a763d90b7a113c07dc543af4d31141",
+        "date": "2026-07-28",
+        "audit_type": "Outcome re-audit under approved N29 governance reconciliation",
+        "lines": 50,
+        "evidence_structure": "retrospective"
+      },
+      "tier": 2,
+      "tier_basis": "retrospective evidence: historical PASS, structured but not hash-bound to current plan text",
+      "disposition": "accept",
+      "disposition_reason": "Plan status 'done (outcome audit PASS 2026-07-28; N29 reconciliation)'. N1-HARD-AUDIT.md (50 lines) has a 7-row assertion table, deliverables check, and findings, but cites the stale 18/18 suite count and contains no hash binding to the current plan text. Phase 1 node; master plan v2.0.0 section 2 freezes Phase 1 as historical. Accept with Tier-2 annotation (documentation-level).",
+      "affected_files": [
+        "docs/nodes/N1-PLAN.md",
+        "docs/nodes/N1-PLAN-AUDIT.md",
+        "docs/nodes/N1-HARD-AUDIT.md"
+      ],
+      "affected_files_note": "governance artifacts listed explicitly; code/test paths extracted verbatim from the plan text of N1-PLAN.md",
+      "ledger_rows": [
+        "put_page",
+        "capture"
+      ]
+    },
+    {
+      "node": "N2",
+      "title": "N2 Plan — Page / graph contract",
+      "plan_status": "done (plan PASS + outcome PASS 2026-07-28)",
+      "plan_sha256": "9a4f99cfd9385e8e245d9828d74ac4ac54bf15320877cb6da0fab7060e149b72",
+      "plan_audit": {
+        "file": "docs/nodes/N2-PLAN-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "c34fede88989a9847dd3cad0bf719b6476c28bbfb124cb094d4afbe24d90fb85",
+        "date": "2026-07-27",
+        "audit_type": null,
+        "lines": 19
+      },
+      "outcome_audit": {
+        "file": "docs/nodes/N2-HARD-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "e9dc809dcdb73c0757708f81d53daf2fc89394c12cf953e86c0e9de5923a3413",
+        "date": "2026-07-28",
+        "audit_type": null,
+        "lines": 29,
+        "evidence_structure": "retrospective"
+      },
+      "tier": 2,
+      "tier_basis": "retrospective evidence: historical PASS, structured but not hash-bound to current plan text",
+      "disposition": "corrective-closure",
+      "disposition_reason": "CONTRADICTION: N2-PLAN.md line 3 says 'done (plan PASS + outcome PASS 2026-07-28)' while line 6 says 'Outcome audit: docs/nodes/N2-HARD-AUDIT.md BLOCKED'; N2-HARD-AUDIT.md itself says VERDICT PASS (2026-07-28, 15/15 suite). The plan header must be corrected to cite the PASS audit or the audit re-run; audit is not hash-bound to the current plan text. Tier 2 (structured retrospective evidence); corrective-closure recommended under N30: fix the plan header contradiction (doc-only edit in D10 slice) and record the resolution here; no new product work required.",
+      "affected_files": [
+        "docs/nodes/N2-PLAN.md",
+        "docs/nodes/N2-PLAN-AUDIT.md",
+        "docs/nodes/N2-HARD-AUDIT.md"
+      ],
+      "affected_files_note": "governance artifacts listed explicitly; code/test paths extracted verbatim from the plan text of N2-PLAN.md",
+      "ledger_rows": [
+        "delete_page",
+        "restore_page",
+        "purge_deleted_pages",
+        "get_backlinks",
+        "get_versions",
+        "revert_version"
+      ]
+    },
+    {
+      "node": "N2.5",
+      "note": "Supplementary row: N2.5 is a real node directory in docs/nodes/ (present in the N1-N29 range of the node loop).",
+      "title": "N2.5 Plan — Multi-source validation",
+      "plan_status": "done (plan PASS + outcome PASS 2026-07-28)",
+      "plan_sha256": "5b7a56bee110eefec199bf2c3b5d0fbc70171ad634923a9a97dc85150d4b2983",
+      "plan_audit": {
+        "file": "docs/nodes/N2.5-PLAN-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "bd0cf1b5f4dddb9af40168a89d1a87be84d5a4eb2f99872d3389880523617953",
+        "date": "2026-07-28",
+        "audit_type": null,
+        "lines": 14
+      },
+      "outcome_audit": {
+        "file": "docs/nodes/N2.5-HARD-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "dd6e404ab7583af8c6cbecd86179baba3401a1d5ef10f559b2067229a208c8ff",
+        "date": "2026-07-28",
+        "audit_type": null,
+        "lines": 35,
+        "evidence_structure": "retrospective"
+      },
+      "tier": 2,
+      "tier_basis": "retrospective evidence: historical PASS, structured but not hash-bound to current plan text",
+      "disposition": "accept",
+      "disposition_reason": "Plan 'done (plan PASS + outcome PASS 2026-07-28)'; N2.5-HARD-AUDIT.md 35 lines with assertion table, consistent statuses. Phase 1 frozen; accept with Tier-2 annotation.",
+      "affected_files": [
+        "docs/nodes/N2.5-PLAN.md",
+        "docs/nodes/N2.5-PLAN-AUDIT.md",
+        "docs/nodes/N2.5-HARD-AUDIT.md"
+      ],
+      "affected_files_note": "governance artifacts listed explicitly; code/test paths extracted verbatim from the plan text of N2.5-PLAN.md",
+      "ledger_rows": [
+        "sources_list",
+        "sources_add",
+        "ensure_source"
+      ]
+    },
+    {
+      "node": "N3",
+      "title": "N3 Plan - Hybrid Search Ranking",
+      "plan_status": "done (plan PASS + outcome PASS 2026-07-28)",
+      "plan_sha256": "cfec9da05843718867ef29395179be67a820af6e53cd574259d3346def2f08b2",
+      "plan_audit": {
+        "file": "docs/nodes/N3-PLAN-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "ab99d7c2d0553575f16124fba807067a8039839321fb9f3469c949dbdc8a4994",
+        "date": "2026-07-28",
+        "audit_type": null,
+        "lines": 28
+      },
+      "outcome_audit": {
+        "file": "docs/nodes/N3-HARD-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "2ca977089b0564f7ff60752c8cff4b968e1f528163239ef4c19e1bd22c094d24",
+        "date": "2026-07-28",
+        "audit_type": null,
+        "lines": 34,
+        "evidence_structure": "retrospective"
+      },
+      "tier": 2,
+      "tier_basis": "retrospective evidence: historical PASS, structured but not hash-bound to current plan text",
+      "disposition": "accept",
+      "disposition_reason": "Plan done; audits PASS (plan-audit 28L, hard-audit 34L with assertion table). 2026-07-28 retrofit artifacts, no hash binding. Phase 1 frozen; accept with Tier-2 annotation.",
+      "affected_files": [
+        "docs/nodes/N3-PLAN.md",
+        "docs/nodes/N3-PLAN-AUDIT.md",
+        "docs/nodes/N3-HARD-AUDIT.md",
+        "scripts/build-tests-cl.ps1"
+      ],
+      "affected_files_note": "governance artifacts listed explicitly; code/test paths extracted verbatim from the plan text of N3-PLAN.md",
+      "ledger_rows": [
+        "search",
+        "query"
+      ]
+    },
+    {
+      "node": "N4",
+      "title": "N4 Plan — AI gateway + think (N4a / N4b)",
+      "plan_status": "done (plan PASS + outcome PASS 2026-07-28)",
+      "plan_sha256": "562994e8a8b442a9882b96ace55d09301d99c5692a9ea685340df27bbd443c46",
+      "plan_audit": {
+        "file": "docs/nodes/N4-PLAN-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "ee7e14ab9347edac185661fddb0cee1a3d0a5205f6932560aab49fb99509f0bb",
+        "date": "2026-07-27",
+        "audit_type": null,
+        "lines": 14
+      },
+      "outcome_audit": {
+        "file": "docs/nodes/N4-HARD-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "fe422f63e3cf686b3ebe7b85d8e04c4717df855d590a19aae59b4a9d96dc2065",
+        "date": "2026-07-28",
+        "audit_type": null,
+        "lines": 27,
+        "evidence_structure": "retrospective"
+      },
+      "tier": 2,
+      "tier_basis": "retrospective evidence: historical PASS, structured but not hash-bound to current plan text",
+      "disposition": "accept",
+      "disposition_reason": "Plan done; audits PASS (14L/27L). Phase 1 frozen; accept with Tier-2 annotation.",
+      "affected_files": [
+        "docs/nodes/N4-PLAN.md",
+        "docs/nodes/N4-PLAN-AUDIT.md",
+        "docs/nodes/N4-HARD-AUDIT.md"
+      ],
+      "affected_files_note": "governance artifacts listed explicitly; code/test paths extracted verbatim from the plan text of N4-PLAN.md",
+      "ledger_rows": [
+        "think"
+      ]
+    },
+    {
+      "node": "N5",
+      "title": "N5 Plan — Auto ingest (inbox, sync, capture)",
+      "plan_status": "done (plan PASS + outcome PASS 2026-07-28)",
+      "plan_sha256": "2f610dfba0d6569b3ce8008bb2240e8328a7e0b49fef1859419c76a2395bfabf",
+      "plan_audit": {
+        "file": "docs/nodes/N5-PLAN-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "481f77b815b0d0623e37010ab9dbcd9879d9d275d4b5e9e601e74c2d781bee28",
+        "date": "2026-07-28",
+        "audit_type": null,
+        "lines": 14
+      },
+      "outcome_audit": {
+        "file": "docs/nodes/N5-HARD-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "d179a16ed21a3c7b67f28fde061c403b0414e6e783e45319bb99e316ee57eb18",
+        "date": "2026-07-28",
+        "audit_type": null,
+        "lines": 33,
+        "evidence_structure": "retrospective"
+      },
+      "tier": 2,
+      "tier_basis": "retrospective evidence: historical PASS, structured but not hash-bound to current plan text",
+      "disposition": "accept",
+      "disposition_reason": "Plan done; audits PASS (14L/33L). Phase 1 frozen; accept with Tier-2 annotation.",
+      "affected_files": [
+        "docs/nodes/N5-PLAN.md",
+        "docs/nodes/N5-PLAN-AUDIT.md",
+        "docs/nodes/N5-HARD-AUDIT.md",
+        "scripts/build-tests-cl.ps1"
+      ],
+      "affected_files_note": "governance artifacts listed explicitly; code/test paths extracted verbatim from the plan text of N5-PLAN.md",
+      "ledger_rows": [
+        "capture",
+        "put_page"
+      ]
+    },
+    {
+      "node": "N6",
+      "title": "N6 Plan - Jobs Worker, Embed Drain, Dream MVP",
+      "plan_status": "done (plan PASS + outcome PASS 2026-07-28)",
+      "plan_sha256": "fb03e439885f9ee41dc187598b1da25504b4803af4353011f03b4df9366d5e18",
+      "plan_audit": {
+        "file": "docs/nodes/N6-PLAN-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "8de656eae1a26d244cf83ea2e06e9f2b8b264f3102b27f32c96ad1a63dddbb12",
+        "date": "2026-07-28",
+        "audit_type": null,
+        "lines": 28
+      },
+      "outcome_audit": {
+        "file": "docs/nodes/N6-HARD-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "637636d4ae57aa9087abba66abe1864f766c167d9a78e7e5954913a9dae5e9c9",
+        "date": "2026-07-28",
+        "audit_type": null,
+        "lines": 31,
+        "evidence_structure": "retrospective"
+      },
+      "tier": 2,
+      "tier_basis": "retrospective evidence: historical PASS, structured but not hash-bound to current plan text",
+      "disposition": "accept",
+      "disposition_reason": "Plan done; audits PASS (28L/31L). Phase 1 frozen; accept with Tier-2 annotation.",
+      "affected_files": [
+        "docs/nodes/N6-PLAN.md",
+        "docs/nodes/N6-PLAN-AUDIT.md",
+        "docs/nodes/N6-HARD-AUDIT.md",
+        "scripts/build-tests-cl.ps1"
+      ],
+      "affected_files_note": "governance artifacts listed explicitly; code/test paths extracted verbatim from the plan text of N6-PLAN.md",
+      "ledger_rows": [
+        "run_dream",
+        "extract_facts"
+      ]
+    },
+    {
+      "node": "N7",
+      "title": "N7 Plan — HTTP MCP (loopback + token)",
+      "plan_status": "done (plan PASS + outcome PASS 2026-07-28)",
+      "plan_sha256": "62cce60dd75e62218275dc433f479c4e9d7490f7b186b8074a5ffd9cf918392e",
+      "plan_audit": {
+        "file": "docs/nodes/N7-PLAN-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "929970318d8fb3043371f82a9208360db7e38e6dd058e37f0eef515534f26d39",
+        "date": "2026-07-28",
+        "audit_type": null,
+        "lines": 14
+      },
+      "outcome_audit": {
+        "file": "docs/nodes/N7-HARD-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "307226705f0dc7495b0aa7aeebf88bd807c0216c19cab059cd23d01dd6835421",
+        "date": "2026-07-28",
+        "audit_type": null,
+        "lines": 33,
+        "evidence_structure": "retrospective"
+      },
+      "tier": 2,
+      "tier_basis": "retrospective evidence: historical PASS, structured but not hash-bound to current plan text",
+      "disposition": "accept",
+      "disposition_reason": "Plan done; audits PASS (14L/33L). Loopback-token auth infra; no new ledger op rows. Phase 1 frozen; accept with Tier-2 annotation.",
+      "affected_files": [
+        "docs/nodes/N7-PLAN.md",
+        "docs/nodes/N7-PLAN-AUDIT.md",
+        "docs/nodes/N7-HARD-AUDIT.md",
+        "scripts/build-cl.ps1"
+      ],
+      "affected_files_note": "governance artifacts listed explicitly; code/test paths extracted verbatim from the plan text of N7-PLAN.md",
+      "ledger_rows": []
+    },
+    {
+      "node": "N8",
+      "title": "N8 Plan - Multi-Brain Routing",
+      "plan_status": "done (plan PASS + outcome PASS 2026-07-28)",
+      "plan_sha256": "84438fa09559aef0c5471f4de339cad5f710b774e0f61ba7253d285ba89e9449",
+      "plan_audit": {
+        "file": "docs/nodes/N8-PLAN-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "7f16263f786315420ed42a7c79350add553ad84b11ce4cd6dbc21b0fdc320570",
+        "date": "2026-07-28",
+        "audit_type": null,
+        "lines": 28
+      },
+      "outcome_audit": {
+        "file": "docs/nodes/N8-HARD-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "7970e96af49bbc86f6e71785409a68b482f24e8b2f08a42c2993bbc93c14a8f9",
+        "date": "2026-07-28",
+        "audit_type": null,
+        "lines": 29,
+        "evidence_structure": "retrospective"
+      },
+      "tier": 2,
+      "tier_basis": "retrospective evidence: historical PASS, structured but not hash-bound to current plan text",
+      "disposition": "accept",
+      "disposition_reason": "Plan done; audits PASS (28L/29L). NOTE: two coexisting audit artifacts - the tracked combined docs/nodes/N8-N11-HARD-AUDIT.md and the per-node N8-HARD-AUDIT.md; D10 should label the combined file superseded. Accept with Tier-2 annotation.",
+      "affected_files": [
+        "docs/nodes/N8-PLAN.md",
+        "docs/nodes/N8-PLAN-AUDIT.md",
+        "docs/nodes/N8-HARD-AUDIT.md"
+      ],
+      "affected_files_note": "governance artifacts listed explicitly; code/test paths extracted verbatim from the plan text of N8-PLAN.md",
+      "ledger_rows": [
+        "list_brains"
+      ]
+    },
+    {
+      "node": "N9",
+      "title": "N9 Plan — Skills (list_skills, get_skill)",
+      "plan_status": "done (plan PASS + outcome PASS 2026-07-28)",
+      "plan_sha256": "ac5a90e8e8fbb8838f39f72f688cb72ed5e3b92e2acd072b15bbf6560e9df0f4",
+      "plan_audit": {
+        "file": "docs/nodes/N9-PLAN-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "8939a95a619e398a1605e13b807771726ad27574a3fd6f9a7b0803d1f593ebfa",
+        "date": "2026-07-27",
+        "audit_type": null,
+        "lines": 14
+      },
+      "outcome_audit": {
+        "file": "docs/nodes/N9-HARD-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "1cf2ee1bfb671e8503a0eb400fd81ec24870b3254a5bd6335c1201d4ea2430c5",
+        "date": "2026-07-28",
+        "audit_type": null,
+        "lines": 30,
+        "evidence_structure": "retrospective"
+      },
+      "tier": 2,
+      "tier_basis": "retrospective evidence: historical PASS, structured but not hash-bound to current plan text",
+      "disposition": "accept",
+      "disposition_reason": "Plan done; audits PASS (14L/30L). Same combined N8-N11 artifact coexistence note as N8. Accept with Tier-2 annotation.",
+      "affected_files": [
+        "docs/nodes/N9-PLAN.md",
+        "docs/nodes/N9-PLAN-AUDIT.md",
+        "docs/nodes/N9-HARD-AUDIT.md"
+      ],
+      "affected_files_note": "governance artifacts listed explicitly; code/test paths extracted verbatim from the plan text of N9-PLAN.md",
+      "ledger_rows": [
+        "list_skills",
+        "get_skill"
+      ]
+    },
+    {
+      "node": "N10",
+      "title": "N10 Plan - Facts / Trajectory",
+      "plan_status": "done (plan PASS + outcome PASS 2026-07-28)",
+      "plan_sha256": "506174271523c9ed51530717a91da8d2fdc1877dfd9514fb5d748484b8f9165f",
+      "plan_audit": {
+        "file": "docs/nodes/N10-PLAN-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "912e1953d6bf2a871fca1ca7b6d50986154e4ec28830d65927be81ae00c45c2a",
+        "date": "2026-07-28",
+        "audit_type": null,
+        "lines": 28
+      },
+      "outcome_audit": {
+        "file": "docs/nodes/N10-HARD-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "27c4c3d389fbeadf2bf04c5d73827135baed7e09d912afd71cf85219b6e4d244",
+        "date": "2026-07-28",
+        "audit_type": null,
+        "lines": 30,
+        "evidence_structure": "retrospective"
+      },
+      "tier": 2,
+      "tier_basis": "retrospective evidence: historical PASS, structured but not hash-bound to current plan text",
+      "disposition": "accept",
+      "disposition_reason": "Plan done; audits PASS (28L/30L). Same combined N8-N11 artifact coexistence note as N8. Accept with Tier-2 annotation.",
+      "affected_files": [
+        "docs/nodes/N10-PLAN.md",
+        "docs/nodes/N10-PLAN-AUDIT.md",
+        "docs/nodes/N10-HARD-AUDIT.md",
+        "scripts/build-tests-cl.ps1"
+      ],
+      "affected_files_note": "governance artifacts listed explicitly; code/test paths extracted verbatim from the plan text of N10-PLAN.md",
+      "ledger_rows": [
+        "extract_facts",
+        "list_facts",
+        "find_trajectory"
+      ]
+    },
+    {
+      "node": "N11",
+      "title": "N11 Plan — Quality gate (doctor, tests, docs, ledger)",
+      "plan_status": "done (plan PASS + outcome PASS 2026-07-28)",
+      "plan_sha256": "1fb0898b37306d56b92b89eef40f824acf26a7a45d9626fbdecfd28fa8ea9b6d",
+      "plan_audit": {
+        "file": "docs/nodes/N11-PLAN-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "e157d9f3b6dcbc276b782d960c237d50fed9d4ff5614473678813e27541844a7",
+        "date": "2026-07-28",
+        "audit_type": null,
+        "lines": 41
+      },
+      "outcome_audit": {
+        "file": "docs/nodes/N11-HARD-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "bdefcf26d138b658d31df0b8525c46b776aa5e9086796bcd16696d8b783f2012",
+        "date": "2026-07-28",
+        "audit_type": null,
+        "lines": 48,
+        "evidence_structure": "retrospective"
+      },
+      "tier": 2,
+      "tier_basis": "retrospective evidence: historical PASS, structured but not hash-bound to current plan text",
+      "disposition": "accept",
+      "disposition_reason": "Plan done; audits PASS (41L/48L) plus N11-OUTCOME-EVIDENCE.md. Same combined N8-N11 artifact coexistence note as N8. Accept with Tier-2 annotation.",
+      "affected_files": [
+        "docs/nodes/N11-PLAN.md",
+        "docs/nodes/N11-PLAN-AUDIT.md",
+        "docs/nodes/N11-HARD-AUDIT.md",
+        "scripts/build-tests-cl.ps1"
+      ],
+      "affected_files_note": "governance artifacts listed explicitly; code/test paths extracted verbatim from the plan text of N11-PLAN.md",
+      "ledger_rows": [
+        "run_doctor"
+      ]
+    },
+    {
+      "node": "N12",
+      "title": "N12 Plan - Rerank, Minions, and Multi-phase Dream",
+      "plan_status": "done (retrospective plan + outcome audit PASS 2026-07-29)",
+      "plan_sha256": "b13487bbf3b179258419a3f56423780dffd537c7c0c7dfcfe79491617944adee",
+      "plan_audit": {
+        "file": "docs/nodes/N12-PLAN-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "4275b645cb9b08b9f118863ea8f56ca9137a0217d75d1db4440d37e5e1308970",
+        "date": "2026-07-29",
+        "audit_type": null,
+        "lines": 43
+      },
+      "outcome_audit": {
+        "file": "docs/nodes/N12-HARD-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "66709f852022c205e9651a89dc92373e57f278a3a13a52b01b0f2071d6dac2c2",
+        "date": null,
+        "audit_type": null,
+        "lines": 74,
+        "evidence_structure": "retrospective"
+      },
+      "tier": 2,
+      "tier_basis": "retrospective evidence: historical PASS, structured but not hash-bound to current plan text",
+      "disposition": "accept",
+      "disposition_reason": "Plan status itself says 'done (retrospective plan + outcome audit PASS 2026-07-29)'. N12-HARD-AUDIT.md 74L with assertion table; raw Claude transcripts preserved (n12-evidence/CLAUDE-N12-HARD-AUDIT-RESPONSE*.txt, VERIFY-REPORT.md, BUILD/TEST-OUTPUT.txt). Explicitly retrospective; accept with Tier-2 annotation.",
+      "affected_files": [
+        "docs/nodes/N12-PLAN.md",
+        "docs/nodes/N12-PLAN-AUDIT.md",
+        "docs/nodes/N12-HARD-AUDIT.md",
+        "docs/nodes/n12-evidence/",
+        "scripts/build-tests-cl.ps1",
+        "scripts/n12-verify.ps1",
+        "src/qbrain/ai/chat.cpp",
+        "src/qbrain/cycle/dream.cpp",
+        "src/qbrain/jobs/minions.cpp",
+        "src/qbrain/search/rerank.cpp"
+      ],
+      "affected_files_note": "governance artifacts listed explicitly; code/test paths extracted verbatim from the plan text of N12-PLAN.md",
+      "ledger_rows": [
+        "submit_job",
+        "list_jobs",
+        "get_job",
+        "cancel_job",
+        "run_dream"
+      ]
+    },
+    {
+      "node": "N13",
+      "title": "N13 Plan - Live Sync, Sources, Graph Traversal, and Job/Facts Operations",
+      "plan_status": "done (retrospective plan + outcome audit PASS 2026-07-30)",
+      "plan_sha256": "25315eb930d89084676e941055bf3e4f0941818cd46d0d13a50081bff9cb75ad",
+      "plan_audit": {
+        "file": "docs/nodes/N13-PLAN-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "632d8c5c062536555c307280badcf8cb3b41a0c33c91be1e4350e7b635ea0d9f",
+        "date": null,
+        "audit_type": null,
+        "lines": 47
+      },
+      "outcome_audit": {
+        "file": "docs/nodes/N13-HARD-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "49a73387886dfa34fe7226b944d2db0ea94f3a3414735d6378889e7afda02744",
+        "date": null,
+        "audit_type": null,
+        "lines": 58,
+        "evidence_structure": "retrospective"
+      },
+      "tier": 2,
+      "tier_basis": "retrospective evidence: historical PASS, structured but not hash-bound to current plan text",
+      "disposition": "accept",
+      "disposition_reason": "Plan status 'done (retrospective plan + outcome audit PASS 2026-07-30)'. N13-HARD-AUDIT.md 58L; six iterative Claude response transcripts preserved in n13-evidence/. Accept with Tier-2 annotation.",
+      "affected_files": [
+        "docs/nodes/N13-PLAN.md",
+        "docs/nodes/N13-PLAN-AUDIT.md",
+        "docs/nodes/N13-HARD-AUDIT.md",
+        "docs/nodes/n13-evidence/",
+        "include/qbrain/core/brain.hpp",
+        "include/qbrain/graph/traverse.hpp",
+        "include/qbrain/service/live_sync.hpp",
+        "scripts/build-tests-cl.ps1",
+        "scripts/n13-verify.ps1",
+        "src/qbrain/core/brain.cpp",
+        "src/qbrain/graph/traverse.cpp",
+        "src/qbrain/ingest/import.cpp",
+        "src/qbrain/jobs/minions.cpp",
+        "src/qbrain/ops/handlers.cpp",
+        "src/qbrain/service/live_sync.cpp",
+        "tests/test_n13.cpp"
+      ],
+      "affected_files_note": "governance artifacts listed explicitly; code/test paths extracted verbatim from the plan text of N13-PLAN.md",
+      "ledger_rows": [
+        "sync_brain",
+        "sources_remove",
+        "sources_status",
+        "traverse_graph",
+        "retry_job",
+        "forget_fact",
+        "resolve_slugs",
+        "recall"
+      ]
+    },
+    {
+      "node": "N14",
+      "title": "N14 Plan - Job Control, Progress, Status Snapshot, and Doctor Remediation",
+      "plan_status": "done (plan + outcome audit PASS 2026-08-04)",
+      "plan_sha256": "541260ed29e9a8f50ea5c69a11abea78e401f284793f8bfe5083a248fa2a593e",
+      "plan_audit": {
+        "file": "docs/nodes/N14-PLAN-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "e28365fc38b79bc4340defba8524350629f6966490532251445a6f84d6ce1385",
+        "date": null,
+        "audit_type": null,
+        "lines": 55
+      },
+      "outcome_audit": {
+        "file": "docs/nodes/N14-HARD-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "15c9b5a0886e6b9406b6bbe6ed2cd12e12ffa1b732768193a4e281355b1f3c2b",
+        "date": null,
+        "audit_type": null,
+        "lines": 244,
+        "evidence_structure": "full"
+      },
+      "tier": 2,
+      "tier_basis": "retrospective evidence: historical PASS, structured but not hash-bound to current plan text",
+      "disposition": "accept",
+      "disposition_reason": "N14-HARD-AUDIT.md 244L: assertion table, deliverables, findings, and 13 embedded SHA-256 digests; ledger cites audit hash 15c9b5a0... (OPS-PARITY-LEDGER.md N14-N16 notes). Structure meets the current full-standard observable, but none of the cited digests equals the sha256 of the current working-tree N14-PLAN.md (verified 2026-08-15) - binding to current plan text not verifiable, so Tier 2 (not Tier 1). Accept; no action.",
+      "affected_files": [
+        "docs/nodes/N14-PLAN.md",
+        "docs/nodes/N14-PLAN-AUDIT.md",
+        "docs/nodes/N14-HARD-AUDIT.md",
+        "docs/nodes/n14-evidence/",
+        "include/qbrain/core/brain.hpp",
+        "include/qbrain/jobs/minions.hpp",
+        "scripts/build-tests-cl.ps1",
+        "scripts/n14-verify.ps1",
+        "src/qbrain/cli/commands.cpp",
+        "src/qbrain/core/brain.cpp",
+        "src/qbrain/jobs/minions.cpp",
+        "src/qbrain/ops/handlers.cpp",
+        "tests/test_main.cpp",
+        "tests/test_n14.cpp"
+      ],
+      "affected_files_note": "governance artifacts listed explicitly; code/test paths extracted verbatim from the plan text of N14-PLAN.md",
+      "ledger_rows": [
+        "pause_job",
+        "resume_job",
+        "get_job_progress",
+        "get_status_snapshot",
+        "doctor_remediate"
+      ]
+    },
+    {
+      "node": "N15",
+      "title": "N15 Plan - Source-scoped Ingest Provenance and Chronicle Reads",
+      "plan_status": "done (plan + outcome audit PASS 2026-08-04)",
+      "plan_sha256": "1ea4a30a2c82b54adf1a1c2722168c9d82e187165214de27606b9a82f6fc88c8",
+      "plan_audit": {
+        "file": "docs/nodes/N15-PLAN-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "01e95a0cc55e4d0580562008a65de2ee941a13a8b37f4fd730389937d5abaef1",
+        "date": null,
+        "audit_type": null,
+        "lines": 60
+      },
+      "outcome_audit": {
+        "file": "docs/nodes/N15-HARD-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "9f5f14ab7ed2cf4da50b597f8f861061948d9b65331091a017d677f7b4968c59",
+        "date": null,
+        "audit_type": null,
+        "lines": 200,
+        "evidence_structure": "full"
+      },
+      "tier": 2,
+      "tier_basis": "retrospective evidence: historical PASS, structured but not hash-bound to current plan text",
+      "disposition": "accept",
+      "disposition_reason": "N15-HARD-AUDIT.md 200L, 11 embedded digests; ledger cites 9f5f14ab... Same hash-binding caveat as N14. Accept; Tier 2.",
+      "affected_files": [
+        "docs/nodes/N15-PLAN.md",
+        "docs/nodes/N15-PLAN-AUDIT.md",
+        "docs/nodes/N15-HARD-AUDIT.md",
+        "docs/nodes/n15-evidence/",
+        "include/qbrain/core/brain.hpp",
+        "scripts/build-tests-cl.ps1",
+        "scripts/n15-verify.ps1",
+        "src/qbrain/core/brain.cpp",
+        "src/qbrain/ingest/import.cpp",
+        "src/qbrain/ops/handlers.cpp",
+        "src/qbrain/service/live_sync.cpp",
+        "src/qbrain/storage/migrate.cpp",
+        "tests/test_main.cpp",
+        "tests/test_n15.cpp"
+      ],
+      "affected_files_note": "governance artifacts listed explicitly; code/test paths extracted verbatim from the plan text of N15-PLAN.md",
+      "ledger_rows": [
+        "list_link_sources",
+        "log_ingest",
+        "get_ingest_log",
+        "chronicle_day",
+        "chronicle_since",
+        "add_timeline_entry"
+      ]
+    },
+    {
+      "node": "N16",
+      "title": "N16 Plan - Source-scoped Heuristic Code Intelligence",
+      "plan_status": "done (plan + outcome audit PASS 2026-08-04)",
+      "plan_sha256": "1603b52ff6f8daa83b7804e62b575a9a9ca154e47326ea04d83449ff1b3841db",
+      "plan_audit": {
+        "file": "docs/nodes/N16-PLAN-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "ad6794067444a56658d52d23c3ca29f7092cd7024829f1c4313b295b10c77fef",
+        "date": "2026-07-30",
+        "audit_type": null,
+        "lines": 91
+      },
+      "outcome_audit": {
+        "file": "docs/nodes/N16-HARD-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "591865f6647e175c4aa02ec90abad1075c554eca49e3a15e5f63ad1639c24aba",
+        "date": null,
+        "audit_type": null,
+        "lines": 424,
+        "evidence_structure": "full"
+      },
+      "tier": 2,
+      "tier_basis": "retrospective evidence: historical PASS, structured but not hash-bound to current plan text",
+      "disposition": "accept",
+      "disposition_reason": "N16-HARD-AUDIT.md 424L, 22 embedded digests; ledger cites 591865f6... Same hash-binding caveat as N14. Accept; Tier 2.",
+      "affected_files": [
+        "docs/nodes/N16-PLAN.md",
+        "docs/nodes/N16-PLAN-AUDIT.md",
+        "docs/nodes/N16-HARD-AUDIT.md",
+        "docs/nodes/n16-evidence/",
+        "include/qbrain/codeintel/scan.hpp",
+        "include/qbrain/core/brain.hpp",
+        "scripts/build-tests-cl.ps1",
+        "scripts/n16-verify.ps1",
+        "src/qbrain/codeintel/scan.cpp",
+        "src/qbrain/core/brain.cpp",
+        "src/qbrain/ops/handlers.cpp",
+        "tests/test_codeintel.cpp",
+        "tests/test_main.cpp",
+        "tests/test_n16.cpp"
+      ],
+      "affected_files_note": "governance artifacts listed explicitly; code/test paths extracted verbatim from the plan text of N16-PLAN.md",
+      "ledger_rows": [
+        "code_def",
+        "code_refs",
+        "code_callers"
+      ]
+    },
+    {
+      "node": "N17",
+      "title": "N17 Plan - Audited Job Replay and Job Message Inbox",
+      "plan_status": "done",
+      "plan_sha256": "2ec493de60e5aca9cf0ee85fce4aa1ca6f1bfd751e1e487ce25ff41ada491a67",
+      "plan_audit": {
+        "file": "docs/nodes/N17-PLAN-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "46cded0d8537f432617e0fed4d59b1d9e842ce255ee6851ce224b4cea177433b",
+        "date": "2026-08-04",
+        "audit_type": null,
+        "lines": 150
+      },
+      "outcome_audit": {
+        "file": "docs/nodes/N17-HARD-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "766e4c6e0cf889ccbc6c0830754b537bd6be478cda6ee173d9d56c5b8bd11fca",
+        "date": "2026-08-04",
+        "audit_type": null,
+        "lines": 124,
+        "evidence_structure": "full"
+      },
+      "tier": 2,
+      "tier_basis": "retrospective evidence: historical PASS, structured but not hash-bound to current plan text",
+      "disposition": "accept",
+      "disposition_reason": "N17-HARD-AUDIT.md 124L with plan-hash references (2 digests); plan status line contains an inline VERDICT PASS. Same hash-binding caveat. Accept; Tier 2.",
+      "affected_files": [
+        "docs/nodes/N17-PLAN.md",
+        "docs/nodes/N17-PLAN-AUDIT.md",
+        "docs/nodes/N17-HARD-AUDIT.md",
+        "docs/nodes/n17-evidence/",
+        "include/qbrain/jobs/minions.hpp",
+        "scripts/build-cl.ps1",
+        "scripts/build-tests-cl.ps1",
+        "scripts/n17-verify.ps1",
+        "src/qbrain/jobs/minions.cpp",
+        "src/qbrain/mcp/server.cpp",
+        "src/qbrain/ops/handlers.cpp",
+        "src/qbrain/ops/registry.cpp",
+        "src/qbrain/storage/migrate.cpp",
+        "tests/test_main.cpp",
+        "tests/test_n17.cpp"
+      ],
+      "affected_files_note": "governance artifacts listed explicitly; code/test paths extracted verbatim from the plan text of N17-PLAN.md",
+      "ledger_rows": [
+        "replay_job",
+        "send_job_message"
+      ]
+    },
+    {
+      "node": "N18",
+      "title": "N18 Plan - Source-scoped Graph Heuristics",
+      "plan_status": "done (plan + outcome audit PASS 2026-08-04)",
+      "plan_sha256": "17831d5165a02ed0fe6ceb2d74597258c77ac349c8b4faeb1c7e00149ff8020a",
+      "plan_audit": {
+        "file": "docs/nodes/N18-PLAN-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "87db9821c255555ab6a42aab8d22cac945a5e0141aeeb3dd02e76a07e743af6d",
+        "date": "2026-07-30",
+        "audit_type": null,
+        "lines": 65
+      },
+      "outcome_audit": {
+        "file": "docs/nodes/N18-HARD-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "f09971ecf44ab66129f33ee3b7dad91515aac39d6d330b725916983fcb408053",
+        "date": null,
+        "audit_type": null,
+        "lines": 159,
+        "evidence_structure": "full"
+      },
+      "tier": 2,
+      "tier_basis": "retrospective evidence: historical PASS, structured but not hash-bound to current plan text",
+      "disposition": "accept",
+      "disposition_reason": "N18-HARD-AUDIT.md 159L, 15 digests; ledger cites f09971ec... Accept; Tier 2 (same caveat as N14).",
+      "affected_files": [
+        "docs/nodes/N18-PLAN.md",
+        "docs/nodes/N18-PLAN-AUDIT.md",
+        "docs/nodes/N18-HARD-AUDIT.md",
+        "docs/nodes/n18-evidence/",
+        "include/qbrain/graph/analytics.hpp",
+        "scripts/build-tests-cl.ps1",
+        "scripts/n18-verify.ps1",
+        "src/qbrain/graph/analytics.cpp",
+        "src/qbrain/ops/handlers.cpp",
+        "tests/test_analytics.cpp",
+        "tests/test_main.cpp",
+        "tests/test_n18.cpp"
+      ],
+      "affected_files_note": "governance artifacts listed explicitly; code/test paths extracted verbatim from the plan text of N18-PLAN.md",
+      "ledger_rows": [
+        "find_anomalies",
+        "find_contradictions",
+        "find_experts"
+      ]
+    },
+    {
+      "node": "N19",
+      "title": "N19 Plan - Source-scoped Identity, Context, Timeline, and Chronicle Reads",
+      "plan_status": "done",
+      "plan_sha256": "61b1553403b7afcb1411b6e62ce9788e73981d0c2d00b94135704ed5a32bebb3",
+      "plan_audit": {
+        "file": "docs/nodes/N19-PLAN-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "e5c603efbfecb5603a0fd068dd2a0b39e7a75abac5fd116634adc397d9b7e470",
+        "date": "2026-08-04",
+        "audit_type": null,
+        "lines": 432
+      },
+      "outcome_audit": {
+        "file": "docs/nodes/N19-HARD-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "d4ee4ad14e3768b5470865f092a783ba0d10b9e9155bfb17c4bd5ce594ad4f24",
+        "date": "2026-08-04",
+        "audit_type": null,
+        "lines": 91,
+        "evidence_structure": "full"
+      },
+      "tier": 2,
+      "tier_basis": "retrospective evidence: historical PASS, structured but not hash-bound to current plan text",
+      "disposition": "accept",
+      "disposition_reason": "N19-HARD-AUDIT.md 91L, 20 digests; plan/plan-audit embed 21 digests each (dependency hash table). Accept; Tier 2 (same caveat as N14).",
+      "affected_files": [
+        "docs/nodes/N19-PLAN.md",
+        "docs/nodes/N19-PLAN-AUDIT.md",
+        "docs/nodes/N19-HARD-AUDIT.md",
+        "docs/nodes/n19-evidence/",
+        "include/qbrain/core/brain.hpp",
+        "include/qbrain/util/time_util.hpp",
+        "scripts/build-cl.ps1",
+        "scripts/build-tests-cl.ps1",
+        "scripts/n19-verify.ps1",
+        "src/qbrain/core/brain.cpp",
+        "src/qbrain/mcp/server.cpp",
+        "src/qbrain/ops/handlers.cpp",
+        "src/qbrain/search/hybrid.cpp",
+        "src/qbrain/util/time_util.cpp",
+        "tests/test_main.cpp",
+        "tests/test_n19.cpp"
+      ],
+      "affected_files_note": "governance artifacts listed explicitly; code/test paths extracted verbatim from the plan text of N19-PLAN.md",
+      "ledger_rows": [
+        "get_brain_identity",
+        "volunteer_context",
+        "get_timeline",
+        "volunteer_chronicle"
+      ]
+    },
+    {
+      "node": "N20",
+      "title": "N20 Plan - Schema Pack and Pack-Ontology Correctness Closure",
+      "plan_status": "approved",
+      "plan_sha256": "147cc7d073d70d31184797cc7180f92cd8fa83d1ac134affd172dc4bbba77e11",
+      "plan_audit": {
+        "file": "docs/nodes/N20-PLAN-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "c3296b662fdd8e667de1e94bfa5838f141b3a4c249e0e2128e532bed5d506d66",
+        "date": "2026-08-04",
+        "audit_type": null,
+        "lines": 92
+      },
+      "outcome_audit": {
+        "file": "docs/nodes/N20-HARD-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "aaa85c7103f4d4c481019e6e57e55cb67b85b2140a1616721146847eb48a93e9",
+        "date": "2026-07-27",
+        "audit_type": null,
+        "lines": 26,
+        "evidence_structure": "stub"
+      },
+      "tier": 3,
+      "tier_basis": "stub / contradiction / stale / plan-mismatch evidence - must be corrective-closed",
+      "disposition": "corrective-closure",
+      "disposition_reason": "AMD-1 required disposition. Current N20-PLAN.md is 'approved' (2026-08-04 refresh; N20-PLAN-AUDIT.md PASS 2026-08-04 bound to approved draft SHA-256 d6600297081e983876894d9da893f2ff5769c518e74fb72483687a940) and states 'Outcome audit: pending (a fresh node-specific Claude Code audit is required)'. The existing N20-HARD-AUDIT.md is a 26-line stub dated 2026-07-27 - EIGHT DAYS BEFORE the approved plan - with a single-row acceptance table ('packs list/active/stats/ontology | PASS') and no hash binding; the plan's process note explicitly voids it ('context only'). Dedicated tests/test_n20.cpp EXISTS in the uncommitted tree and currently FAILS one expected-deny check (line 570, !result.ok) at the N30 pre-gate. RECOMMENDED (controller draft): corrective-closure under N30 - N30 D3 central scope enforcement is expected to fix the failing deny check; once the full suite is green (>=30 registered, two rounds), a FRESH Claude Code outcome audit against the approved N20-PLAN.md (sha256 recorded above) must be commissioned in N30's outcome phase before N30 is marked done. Do not reuse the 2026-07-27 stub. Do not fabricate.",
+      "controller_decision": "DRAFT prepared by subagent A; parent (controller) must finalize per AMD-1 before N30 done",
+      "affected_files": [
+        "docs/nodes/N20-PLAN.md",
+        "docs/nodes/N20-PLAN-AUDIT.md",
+        "docs/nodes/N20-HARD-AUDIT.md",
+        "docs/nodes/n20-evidence/",
+        "include/qbrain/schema/packs.hpp",
+        "scripts/build-cl.ps1",
+        "scripts/build-tests-cl.ps1",
+        "scripts/n20-verify.ps1",
+        "src/qbrain/mcp/server.cpp",
+        "src/qbrain/ops/handlers.cpp",
+        "src/qbrain/schema/packs.cpp",
+        "tests/test_main.cpp",
+        "tests/test_n20.cpp",
+        "tests/test_n20_23.cpp"
+      ],
+      "affected_files_note": "governance artifacts listed explicitly; code/test paths extracted verbatim from the plan text of N20-PLAN.md",
+      "ledger_rows": [
+        "list_schema_packs",
+        "get_active_schema_pack",
+        "reload_schema_pack",
+        "schema_stats",
+        "ontology_get",
+        "ontology_dimensions"
+      ]
+    },
+    {
+      "node": "N21",
+      "title": "N21 Plan - Source-scoped Takes and Bounded Calibration Bootstrap",
+      "plan_status": "draft",
+      "plan_sha256": "3a52587e393926ee68d5ca9f6fb6ced07d2904948774f75d1941bce7982f969b",
+      "plan_audit": {
+        "file": "docs/nodes/N21-PLAN-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "2b40852e48c2430e0ae9288005c634c8eba1d166dec398e5a1b4040b2a184c98",
+        "date": "2026-07-29",
+        "audit_type": "Retrospective audit under approved N29 governance reconciliation",
+        "lines": 41
+      },
+      "outcome_audit": {
+        "file": "docs/nodes/N21-HARD-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "f5c361cf4522123226437ffab342d483d623d0b6c7538111083d3b283797e952",
+        "date": "2026-07-29",
+        "audit_type": "Retrospective N29 reconciliation; implementation already exists",
+        "lines": 47,
+        "evidence_structure": "retrospective"
+      },
+      "tier": 3,
+      "tier_basis": "stub / contradiction / stale / plan-mismatch evidence - must be corrective-closed",
+      "disposition": "supersede",
+      "disposition_reason": "AMD-1 required disposition. Current N21-PLAN.md is 'draft' with 'Plan audit: pending' and 'Outcome audit: pending'; its process note explicitly voids all historical artifacts ('The short historical N21 plan, its 2026-07-29 retrospective PASS artifacts ... are context only. They do not approve this plan'). Meanwhile N21-PLAN-AUDIT.md (PASS, 2026-07-29, 'Retrospective audit under approved N29 governance reconciliation') and N21-HARD-AUDIT.md (PASS, 2026-07-29, 47L, 18/18 suite) are retrospective artifacts bound to the OLD short plan - they contradict the current draft's 'pending' declarations. RECOMMENDED (controller draft): supersede-and-close via this N30 matrix record - accept the 2026-07-29 retrospective evidence as Tier 2 for documentation only (capability exists: 5 takes ops registered, exercised by tests/test_n20_23.cpp); close the never-approved draft without running its loop, because its substantive scope is already absorbed by approved plans: takes_calibration remote default-deny is inside N30 D3's mandatory negative matrix, and strict argument/source contracts are N31 registry/MCP contract closure scope. The 5 takes ledger rows keep Tier-2 annotation until N31's generated inventory verifies them. Alternative (higher cost): controller completes the draft loop (fresh plan audit -> approve -> implement -> fresh outcome audit) - only justified if the controller wants the deeper N21 corrective contract now rather than in N30/N31.",
+      "controller_decision": "DRAFT prepared by subagent A; parent (controller) must finalize per AMD-1 before N30 done",
+      "affected_files": [
+        "docs/nodes/N21-PLAN.md",
+        "docs/nodes/N21-PLAN-AUDIT.md",
+        "docs/nodes/N21-HARD-AUDIT.md",
+        "include/qbrain/core/brain.hpp",
+        "include/qbrain/storage/database.hpp",
+        "scripts/build-cl.ps1",
+        "scripts/build-tests-cl.ps1",
+        "scripts/n21-verify.ps1",
+        "src/qbrain/core/brain.cpp",
+        "src/qbrain/mcp/server.cpp",
+        "src/qbrain/ops/handlers.cpp",
+        "src/qbrain/storage/migrate.cpp",
+        "tests/test_main.cpp",
+        "tests/test_n17.cpp",
+        "tests/test_n19.cpp",
+        "tests/test_n20_23.cpp",
+        "tests/test_n21.cpp"
+      ],
+      "affected_files_note": "governance artifacts listed explicitly; code/test paths extracted verbatim from the plan text of N21-PLAN.md",
+      "ledger_rows": [
+        "takes_list",
+        "takes_search",
+        "takes_scorecard",
+        "takes_calibration",
+        "get_calibration_profile"
+      ]
+    },
+    {
+      "node": "N22",
+      "title": "N22 Plan - Source-scoped Heuristic Callees, Flow, Blast, and Cache Compatibility",
+      "plan_status": "done",
+      "plan_sha256": "8964e9e7fd543e60c0aebc9d1028cf54f3ee58d430cb02d8a07a7a4ff179562e",
+      "plan_audit": {
+        "file": "docs/nodes/N22-PLAN-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "bac3404aa98a492c6da00fb76b0f55325c7fa26ec1c486c3a1587539b691d986",
+        "date": "2026-08-04",
+        "audit_type": null,
+        "lines": 145
+      },
+      "outcome_audit": {
+        "file": "docs/nodes/N22-HARD-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "657601adc61d88fdb9b7e356fc3d764641312f0eb763b47d61b9a1d9a20cdcda",
+        "date": "2026-08-07",
+        "audit_type": "Fresh node-specific outcome hard audit against the approved refreshed plan. The 2026-07-29 N29 retrospective that previously occupied this file was **not** used as evidence and is superseded by this document.",
+        "lines": 132,
+        "evidence_structure": "full"
+      },
+      "tier": 2,
+      "tier_basis": "retrospective evidence: historical PASS, structured but not hash-bound to current plan text",
+      "disposition": "accept",
+      "disposition_reason": "N22-HARD-AUDIT.md 132L with plan-hash reference; plan 'done' with inline VERDICT PASS; N22 evidence froze the current 29-test registration baseline (master plan v2.0.0 section 0: 'N22 frozen double-run 29/29'). Note: the FROZEN 29/29 is historical; the live pre-N30 baseline is 29 registered / 28 PASS + 1 FAIL (n20). Accept; Tier 2 (same hash caveat as N14).",
+      "affected_files": [
+        "docs/nodes/N22-PLAN.md",
+        "docs/nodes/N22-PLAN-AUDIT.md",
+        "docs/nodes/N22-HARD-AUDIT.md",
+        "docs/nodes/n22-evidence/",
+        "include/qbrain/codeintel/scan.hpp",
+        "scripts/build-cl.ps1",
+        "scripts/build-tests-cl.ps1",
+        "scripts/n22-verify.ps1",
+        "src/qbrain/codeintel/scan.cpp",
+        "src/qbrain/mcp/server.cpp",
+        "src/qbrain/ops/handlers.cpp",
+        "tests/test_main.cpp",
+        "tests/test_n20_23.cpp",
+        "tests/test_n22.cpp"
+      ],
+      "affected_files_note": "governance artifacts listed explicitly; code/test paths extracted verbatim from the plan text of N22-PLAN.md",
+      "ledger_rows": [
+        "code_callees",
+        "code_flow",
+        "code_blast",
+        "code_traversal_cache_clear"
+      ]
+    },
+    {
+      "node": "N23",
+      "title": "N23 Plan - Source-scoped Chronicle History and Backfill Closure",
+      "plan_status": "approved",
+      "plan_sha256": "72186f2fdcc2289eda49b69e1cb56367537bc27691fdec7ea9377884afcad2fa",
+      "plan_audit": {
+        "file": "docs/nodes/N23-PLAN-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "8da7e7af958e4d776885970c4cfddc581376582e94c3797b9309a43a5297b714",
+        "date": "2026-08-08",
+        "audit_type": "Fresh revised-plan hard audit retry",
+        "lines": 184
+      },
+      "outcome_audit": {
+        "file": "docs/nodes/N23-HARD-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "0ab5517a77331de181550b4365244a86a8d0c4c9a9883b267837df017a579ebb",
+        "date": "2026-07-29",
+        "audit_type": "Retrospective N29 reconciliation; post-fix outcome audit",
+        "lines": 45,
+        "evidence_structure": "retrospective"
+      },
+      "tier": 3,
+      "tier_basis": "stub / contradiction / stale / plan-mismatch evidence - must be corrective-closed",
+      "disposition": "corrective-closure",
+      "disposition_reason": "AMD-1 required disposition. Current N23-PLAN.md is 'approved' with a strong, hash-bound plan audit (N23-PLAN-AUDIT.md PASS 2026-08-08, bound to draft SHA-256 9601d6bc7665b52ac5871073d900c6b61763d1c5c440d88df68c8fbd6397a940; audited draft hash and audit hash recorded in the plan header) and 'Outcome audit: pending (fresh node-specific Claude Code audit required after implementation and evidence)'. The existing N23-HARD-AUDIT.md is the older 2026-07-29 retrospective (45L, 18/18 suite) bound to the pre-revision short plan; the plan's process note voids it, and immutable archives exist (n23-evidence/N23-PLAN-APPROVED-BASELINE.md etc.). Corrective implementation and evidence appear present in the uncommitted tree (tests/test_n23.cpp registered and PASSING at pre-gate; scripts/n23-verify.ps1; n23-evidence/). RECOMMENDED (controller draft): corrective-closure under N30 - complete the loop: after N30's suite is green, commission a FRESH Claude Code outcome audit against the approved N23-PLAN.md (sha256 recorded above) in N30's outcome phase. If that audit finds implementation incomplete, escalate to supersede/defer decision. Alternative: supersede-and-close with Tier-2 documentation-only acceptance of the 2026-07-29 retrospective - rejected here because an approved hash-bound plan already exists and wasting it re-plans work that appears implemented.",
+      "controller_decision": "DRAFT prepared by subagent A; parent (controller) must finalize per AMD-1 before N30 done",
+      "affected_files": [
+        "docs/nodes/N23-PLAN.md",
+        "docs/nodes/N23-PLAN-AUDIT.md",
+        "docs/nodes/N23-HARD-AUDIT.md",
+        "docs/nodes/n23-evidence/",
+        "include/qbrain/core/brain.hpp",
+        "include/qbrain/util/time_util.hpp",
+        "scripts/build-cl.ps1",
+        "scripts/build-tests-cl.ps1",
+        "scripts/n23-verify.ps1",
+        "src/qbrain/core/brain.cpp",
+        "src/qbrain/mcp/server.cpp",
+        "src/qbrain/ops/handlers.cpp",
+        "src/qbrain/ops/registry.cpp",
+        "src/qbrain/util/time_util.cpp",
+        "tests/test_main.cpp",
+        "tests/test_n23.cpp"
+      ],
+      "affected_files_note": "governance artifacts listed explicitly; code/test paths extracted verbatim from the plan text of N23-PLAN.md",
+      "ledger_rows": [
+        "chronicle_on_this_day",
+        "chronicle_last_seen",
+        "chronicle_backfill"
+      ]
+    },
+    {
+      "node": "N24",
+      "title": "N24 Plan — Local file attachments",
+      "plan_status": "done — hard audit **PASS** (2026-07-27)",
+      "plan_sha256": "11c512f790d94a6a66fd7f6eff160b9eac28854d3a02aac9dff38fcf8be44625",
+      "plan_audit": {
+        "file": null,
+        "exists": false,
+        "verdict": "missing",
+        "sha256": null,
+        "date": null,
+        "audit_type": null,
+        "lines": 0
+      },
+      "outcome_audit": {
+        "file": "docs/nodes/N24-HARD-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "634636cc96a96a443edd4a8a1d009a61c30540eb0709fc5532a046a91ae4857e",
+        "date": "2026-07-27",
+        "audit_type": null,
+        "lines": 17,
+        "evidence_structure": "stub"
+      },
+      "tier": 3,
+      "tier_basis": "stub / contradiction / stale / plan-mismatch evidence - must be corrective-closed",
+      "disposition": "defer",
+      "disposition_reason": "AMD-7 explicit deferral. N24-HARD-AUDIT.md is a 17-line stub (single-row acceptance table 'file_upload/list/url + v10 | PASS', no assertion detail, no evidence hashes, no plan hash binding); N24-PLAN.md is a 22-line short-form plan with no falsifiable current-standard acceptance section; N24-PLAN-AUDIT.md does NOT exist (missing). Recorded deferral - no audit fabricated.",
+      "deferral": {
+        "reason": "stub audit below current standard (AMD-7)",
+        "detail": "AMD-7 explicit deferral. N24-HARD-AUDIT.md is a 17-line stub (single-row acceptance table 'file_upload/list/url + v10 | PASS', no assertion detail, no evidence hashes, no plan hash binding); N24-PLAN.md is a 22-line short-form plan with no falsifiable current-standard acceptance section; N24-PLAN-AUDIT.md does NOT exist (missing). Recorded deferral - no audit fabricated.",
+        "owner": "Phase-2 corrective closure (schedule in N31 preparation or dedicated audit node)",
+        "ledger_rows_affected": [
+          "file_list",
+          "file_upload",
+          "file_url"
+        ]
+      },
+      "affected_files": [
+        "docs/nodes/N24-PLAN.md",
+        "docs/nodes/N24-HARD-AUDIT.md"
+      ],
+      "affected_files_note": "governance artifacts listed explicitly; code/test paths extracted verbatim from the plan text of N24-PLAN.md",
+      "ledger_rows": [
+        "file_list",
+        "file_upload",
+        "file_url"
+      ]
+    },
+    {
+      "node": "N25",
+      "title": "N25 Plan — Ontology propose/conflicts + schema lint/graph",
+      "plan_status": "done — hard audit **PASS** (2026-07-27)",
+      "plan_sha256": "6756c984c2566385ae4f6ef594cc70accb5889a9fcfd3b561a5032bbcdffcde9",
+      "plan_audit": {
+        "file": null,
+        "exists": false,
+        "verdict": "missing",
+        "sha256": null,
+        "date": null,
+        "audit_type": null,
+        "lines": 0
+      },
+      "outcome_audit": {
+        "file": "docs/nodes/N25-HARD-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "79e1b0653d0b818ef6ab39fd79c5a4e914fc932d0a746cb537c59c1f2ff55ec3",
+        "date": "2026-07-27",
+        "audit_type": null,
+        "lines": 17,
+        "evidence_structure": "stub"
+      },
+      "tier": 3,
+      "tier_basis": "stub / contradiction / stale / plan-mismatch evidence - must be corrective-closed",
+      "disposition": "defer",
+      "disposition_reason": "AMD-7 explicit deferral. N25-HARD-AUDIT.md 17-line stub; N25-PLAN.md 25-line short form; N25-PLAN-AUDIT.md missing. Recorded deferral - no audit fabricated.",
+      "deferral": {
+        "reason": "stub audit below current standard (AMD-7)",
+        "detail": "AMD-7 explicit deferral. N25-HARD-AUDIT.md 17-line stub; N25-PLAN.md 25-line short form; N25-PLAN-AUDIT.md missing. Recorded deferral - no audit fabricated.",
+        "owner": "Phase-2 corrective closure (schedule in N31 preparation or dedicated audit node)",
+        "ledger_rows_affected": [
+          "ontology_propose",
+          "ontology_conflicts",
+          "schema_lint",
+          "schema_graph",
+          "schema_explain_type",
+          "schema_review_orphans"
+        ]
+      },
+      "affected_files": [
+        "docs/nodes/N25-PLAN.md",
+        "docs/nodes/N25-HARD-AUDIT.md"
+      ],
+      "affected_files_note": "governance artifacts listed explicitly; code/test paths extracted verbatim from the plan text of N25-PLAN.md",
+      "ledger_rows": [
+        "ontology_propose",
+        "ontology_conflicts",
+        "schema_lint",
+        "schema_graph",
+        "schema_explain_type",
+        "schema_review_orphans"
+      ]
+    },
+    {
+      "node": "N26",
+      "title": "N26 Plan — Agent / advisor / onboard / skillopt stubs",
+      "plan_status": "done — hard audit **PASS** (2026-07-27)",
+      "plan_sha256": "11f1161330cbf9ef7bdc173a568a21ab43006cd14e91eee042219e066eec952e",
+      "plan_audit": {
+        "file": null,
+        "exists": false,
+        "verdict": "missing",
+        "sha256": null,
+        "date": null,
+        "audit_type": null,
+        "lines": 0
+      },
+      "outcome_audit": {
+        "file": "docs/nodes/N26-HARD-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "e0a3adec559ae4ea41d4437049f14114455b9c094951b2ccbd5e480065522341",
+        "date": "2026-07-27",
+        "audit_type": null,
+        "lines": 17,
+        "evidence_structure": "stub"
+      },
+      "tier": 3,
+      "tier_basis": "stub / contradiction / stale / plan-mismatch evidence - must be corrective-closed",
+      "disposition": "defer",
+      "disposition_reason": "AMD-7 explicit deferral. N26-HARD-AUDIT.md 17-line stub; N26-PLAN.md 20-line short form; N26-PLAN-AUDIT.md missing. Recorded deferral - no audit fabricated.",
+      "deferral": {
+        "reason": "stub audit below current standard (AMD-7)",
+        "detail": "AMD-7 explicit deferral. N26-HARD-AUDIT.md 17-line stub; N26-PLAN.md 20-line short form; N26-PLAN-AUDIT.md missing. Recorded deferral - no audit fabricated.",
+        "owner": "Phase-2 corrective closure (schedule in N31 preparation or dedicated audit node)",
+        "ledger_rows_affected": [
+          "submit_agent",
+          "advisor",
+          "run_onboard",
+          "run_skillopt",
+          "list_brain_skillpack"
+        ]
+      },
+      "affected_files": [
+        "docs/nodes/N26-PLAN.md",
+        "docs/nodes/N26-HARD-AUDIT.md"
+      ],
+      "affected_files_note": "governance artifacts listed explicitly; code/test paths extracted verbatim from the plan text of N26-PLAN.md",
+      "ledger_rows": [
+        "submit_agent",
+        "advisor",
+        "run_onboard",
+        "run_skillopt",
+        "list_brain_skillpack"
+      ]
+    },
+    {
+      "node": "N27",
+      "title": "N27 Plan — Raw data + transcripts + salience + image search stubs",
+      "plan_status": "done — hard audit **PASS** (2026-07-27)",
+      "plan_sha256": "e53f450da8506e6d36d47fca8b8d5dc0115811e90b0f11477e72d226524ad09b",
+      "plan_audit": {
+        "file": null,
+        "exists": false,
+        "verdict": "missing",
+        "sha256": null,
+        "date": null,
+        "audit_type": null,
+        "lines": 0
+      },
+      "outcome_audit": {
+        "file": "docs/nodes/N27-HARD-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "60fd69baddddab05649a23c2b3dab7ba0ce94b55c825c9a4002ab934ac3264ac",
+        "date": "2026-07-27",
+        "audit_type": null,
+        "lines": 17,
+        "evidence_structure": "stub"
+      },
+      "tier": 3,
+      "tier_basis": "stub / contradiction / stale / plan-mismatch evidence - must be corrective-closed",
+      "disposition": "defer",
+      "disposition_reason": "AMD-7 explicit deferral. N27-HARD-AUDIT.md 17-line stub; N27-PLAN.md short form (raw_data/transcripts/salience/image stubs, schema v11); N27-PLAN-AUDIT.md missing. Recorded deferral - no audit fabricated.",
+      "deferral": {
+        "reason": "stub audit below current standard (AMD-7)",
+        "detail": "AMD-7 explicit deferral. N27-HARD-AUDIT.md 17-line stub; N27-PLAN.md short form (raw_data/transcripts/salience/image stubs, schema v11); N27-PLAN-AUDIT.md missing. Recorded deferral - no audit fabricated.",
+        "owner": "Phase-2 corrective closure (schedule in N31 preparation or dedicated audit node)",
+        "ledger_rows_affected": [
+          "put_raw_data",
+          "get_raw_data",
+          "get_recent_transcripts",
+          "get_recent_salience",
+          "search_by_image"
+        ]
+      },
+      "affected_files": [
+        "docs/nodes/N27-PLAN.md",
+        "docs/nodes/N27-HARD-AUDIT.md"
+      ],
+      "affected_files_note": "governance artifacts listed explicitly; code/test paths extracted verbatim from the plan text of N27-PLAN.md",
+      "ledger_rows": [
+        "put_raw_data",
+        "get_raw_data",
+        "get_recent_transcripts",
+        "get_recent_salience",
+        "search_by_image"
+      ]
+    },
+    {
+      "node": "N28",
+      "title": "N28 Plan — schema_apply_mutations (final ledger close)",
+      "plan_status": "done — hard audit **PASS** (2026-07-27)",
+      "plan_sha256": "2300e2a14ac0af10b68a974bf91567f9d621c13bdb86166a05a98077c2544a15",
+      "plan_audit": {
+        "file": null,
+        "exists": false,
+        "verdict": "missing",
+        "sha256": null,
+        "date": null,
+        "audit_type": null,
+        "lines": 0
+      },
+      "outcome_audit": {
+        "file": "docs/nodes/N28-HARD-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "2bb095091249751e89a046eb96d34fca5a4a2f5140ab5a0f8fe6b810ba9dbcec",
+        "date": "2026-07-27",
+        "audit_type": null,
+        "lines": 16,
+        "evidence_structure": "stub"
+      },
+      "tier": 3,
+      "tier_basis": "stub / contradiction / stale / plan-mismatch evidence - must be corrective-closed",
+      "disposition": "defer",
+      "disposition_reason": "AMD-7 explicit deferral. N28-HARD-AUDIT.md 16-line stub; N28-PLAN.md 19-line short form (schema_apply_mutations add_type/add_dimension only); N28-PLAN-AUDIT.md missing. Recorded deferral - no audit fabricated.",
+      "deferral": {
+        "reason": "stub audit below current standard (AMD-7)",
+        "detail": "AMD-7 explicit deferral. N28-HARD-AUDIT.md 16-line stub; N28-PLAN.md 19-line short form (schema_apply_mutations add_type/add_dimension only); N28-PLAN-AUDIT.md missing. Recorded deferral - no audit fabricated.",
+        "owner": "Phase-2 corrective closure (schedule in N31 preparation or dedicated audit node)",
+        "ledger_rows_affected": [
+          "schema_apply_mutations"
+        ]
+      },
+      "affected_files": [
+        "docs/nodes/N28-PLAN.md",
+        "docs/nodes/N28-HARD-AUDIT.md"
+      ],
+      "affected_files_note": "governance artifacts listed explicitly; code/test paths extracted verbatim from the plan text of N28-PLAN.md",
+      "ledger_rows": [
+        "schema_apply_mutations"
+      ]
+    },
+    {
+      "node": "N29",
+      "title": "N29 Plan - Strict Audit Artifact Reconciliation",
+      "plan_status": "done (outcome audit PASS 2026-07-29)",
+      "plan_sha256": "821cbe3741d56f1948e2b2cbccdcac1a3459a4d3682632445f3e091d920a798c",
+      "plan_audit": {
+        "file": "docs/nodes/N29-PLAN-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "877076c6d9e7b62da2c0424b752869184a95da606851291056508fee84e707e1",
+        "date": "2026-07-28",
+        "audit_type": null,
+        "lines": 39
+      },
+      "outcome_audit": {
+        "file": "docs/nodes/N29-HARD-AUDIT.md",
+        "exists": true,
+        "verdict": "PASS",
+        "sha256": "88ba65292986aa0d6ada59f49a77956e8f7c493fe763aab32d3944c10e6144ae",
+        "date": "2026-07-29",
+        "audit_type": "Final retrospective governance reconciliation",
+        "lines": 49,
+        "evidence_structure": "retrospective"
+      },
+      "tier": 2,
+      "tier_basis": "retrospective evidence: historical PASS, structured but not hash-bound to current plan text",
+      "disposition": "accept",
+      "disposition_reason": "N29-HARD-AUDIT.md 49L with 5-row assertion table and deliverables check - near-full structure but 1 line below the >=50-line observable, no test-output hash in the conclusion, and its assertions 1-3 ('N1, N21, N22, N23 ... each state Status: done') describe a state now SUPERSEDED: current N21-PLAN is draft and current N23-PLAN is approved (their 2026-08-04/08-08 revisions postdate N29). Governance reconciliation node, no product code, no ledger rows. Accept as historical (Tier 2); its N21/N23 consistency claims are replaced by the AMD-1 dispositions in this matrix.",
+      "affected_files": [
+        "docs/nodes/N29-PLAN.md",
+        "docs/nodes/N29-PLAN-AUDIT.md",
+        "docs/nodes/N29-HARD-AUDIT.md",
+        "tests/test_n20_23.cpp"
+      ],
+      "affected_files_note": "governance artifacts listed explicitly; code/test paths extracted verbatim from the plan text of N29-PLAN.md",
+      "ledger_rows": []
+    }
+  ]
+}

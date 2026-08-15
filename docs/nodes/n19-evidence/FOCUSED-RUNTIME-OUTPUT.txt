@@ -1,0 +1,3 @@
+source_log_sha256=95ca314165d4586d68bbbe95dc774db4e2b2bf382b54fdffb765e1ccaf62a3ca
+[INFO] n19 schema_v12=pass schema_reopen=pass utc_boundaries=pass source_matrix=pass strict_arguments=pass identity=pass identity_exact_matrix=pass identity_matrix_cells=4 path_redaction=pass context_query=pass context_fail_open=pass context_recent=pass utf8_bounds=pass timeline=pass chronicle=pass seven_day_default=pass registry=pass mcp_rpc=pass ambient_default=pass selected_decoy=pass damaged_database=pass read_only=pass snapshot_call_count=204 selected_snapshot_sha256=192e0efd7f46b10c6ab2c65b3ac33481832f05097698318c3f4ee286730bc8f8 decoy_snapshot_sha256=0d74cc5de575761d7c6573cd8392ded34c77e242d3d977a3fb3fee0d66e40da1
+[PASS] n19

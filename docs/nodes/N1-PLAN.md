@@ -1,6 +1,8 @@
 # N1 Plan — 写入闭环硬化
 
-**Status**: approved-for-impl (master v1.1.0 §5)  
+**Status**: done (outcome audit PASS 2026-07-28; N29 reconciliation)
+**Plan audit**: PASS (`N1-PLAN-AUDIT.md`)
+**Outcome audit**: PASS (`N1-HARD-AUDIT.md`)
 **Depends on**: N0 PASS  
 
 ## Goal

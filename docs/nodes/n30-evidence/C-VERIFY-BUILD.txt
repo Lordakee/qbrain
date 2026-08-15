@@ -1,0 +1,110 @@
+# N30 Subagent C — Build/Storage/Routing Verification (D5/D7/D8/D9)
+
+Date: 2026-08-15 (UTC 2026-08-15T07:36:46Z)
+Scope: D5 exact HTTP routing, D7 build alignment (CMake + PowerShell scripts),
+D8 schema health completeness, D9 atomic pack writes.
+Owner: implementation subagent C (parallel slice; subagent B owns
+registry.*/handlers.cpp/cli/commands.cpp and the n30-b test section).
+
+## Verification run 1 — direct MSVC script path
+
+Command (Git Bash, from repo root):
+
+    powershell -NoProfile -ExecutionPolicy Bypass -File "scripts/build-tests-cl.ps1"
+      (internally invokes scripts/build-cl.ps1; vswhere-based MSVC discovery,
+       per-run temp object dir, outputs copied to build\cl)
+
+Output tail (build + suite, 2026-08-15 15:13 run; full log kept by parent in
+/tmp/n30c-run2.log during the session):
+
+    ...
+    [PASS] n24_25
+    [PASS] n26_27
+    [PASS] wave5
+    [PASS] doctor
+    [FAIL] n14: CHECK failed: allowed_pause.ok
+    [FAIL] n15: CHECK failed: !rpc_is_error(allowed_log)
+    [FAIL] n17: CHECK failed: error["code"] == code @ D:\Projects\Qbrain\tests\test_n17.cpp:235
+    [PASS] n18
+    [PASS] n30_c_routing_storage
+    [PASS] n30_b_auth_redaction
+
+Result: BUILD_OK + TESTS_BUILD_OK. Suite: 31 registered tests, 23 PASS / 8 FAIL.
+A second run of build\cl\qbrain_tests.exe reproduced the identical 23/8 result
+(deterministic). Binary sha256:
+  build\cl\qbrain.exe      d679dcfdfc272a9e7eddaa814885b9d7408f887d9757d12ca88b7252aec65736
+
+The 8 failures (mcp, n13, n14, n15, n17, n20, n22, n23) all assert the OLD
+remote-write semantics (e.g. `allowed_pause.ok`, `isError == false` for remote
+writes with --allow-write). Subagent B's files changed mid-verification
+(registry.cpp/handlers.cpp/commands.cpp, mtimes 2026-08-15 14:38-14:39,
+hash drift vs. the pre-build snapshot recorded by C), which is exactly the
+central-scope enforcement (D3) landing in parallel. n20 was already failing at
+the N30 pre-gate baseline. None of the 8 failures are in C-owned code or test
+sections; both N30 sections (n30_c_routing_storage, n30_b_auth_redaction) PASS.
+
+## Verification run 2 — CMake path (fresh build dir, build/cmake-verify)
+
+Commands (Git Bash, from repo root; build/cmake-pregate untouched):
+
+    rm -rf build/cmake-verify
+    cmake -S . -B build/cmake-verify
+    cmake --build build/cmake-verify --config Release
+    build\cmake-verify\Release\qbrain.exe --help        (smoke: prints usage, exit 0)
+    cd build/cmake-verify/Release && ./qbrain_tests.exe
+
+Output tail (configure):
+
+    -- Configuring done (9.5s)
+    -- Generating done (0.6s)
+    -- Build files have been written to: D:/Projects/Qbrain/build/cmake-verify
+
+Output tail (build):
+
+    正在生成代码...
+    qbrain_tests.vcxproj -> D:\Projects\Qbrain\build\cmake-verify\Release\qbrain_tests.exe
+    qbrain.vcxproj -> D:\Projects\Qbrain\build\cmake-verify\Release\qbrain.exe
+    BUILD_EXIT=0
+
+Suite result: identical to the script path — 31 registered, 23 PASS / 8 FAIL
+(same 8 B-domain failures), n30_c_routing_storage PASS, n30_b_auth_redaction
+PASS. Second round reproduced the identical 23/8 result (deterministic).
+Binary sha256:
+  build\cmake-verify\Release\qbrain.exe       010194fcd207ea137c5ad81e50f241453235b0a37e6909ab083fbb529d2e148e
+  build\cmake-verify\Release\qbrain_tests.exe 5cd11743cc70288cb421107e804a0dc6614e5986dc7539c31f6a7ca8a944e196
+
+Prior CMake failures fixed in this slice:
+  - C1083 nlohmann/json.hpp in test targets: NLOHMANN_DIR include is now PUBLIC
+    on qbrain_lib() so test sources that include <nlohmann/json.hpp> compile.
+  - src/qbrain/files/store.cpp added (new qbrain_files lib, linked into ops)
+    so CMake compiles the same 38-file production set as the script.
+  - NEW divergence found while verifying: qbrain_ops referenced
+    qbrain::codeintel symbols but did not link qbrain_codeintel — the monolithic
+    script link masked it; CMake production exe failed LNK2019/LNK1120
+    (8 unresolved externals). Fixed by adding qbrain_codeintel to
+    target_link_libraries(qbrain_ops ...). After the fix both qbrain.exe and
+    qbrain_tests.exe build clean.
+
+## Test sections delivered by C (tests/test_n30.cpp, marked `// --- n30-c:`)
+
+- HTTP exact routing unit tests (parse_http_request_line / route_http_request):
+  exact method+path matches, query split, /ingestx + /ingest/ + /xingest +
+  /healthy NOT routed, method-not-allowed, 14 malformed request-line cases.
+- HTTP loopback negatives over the real socket path: POST /ingestx -> 404
+  "not found" (pages unchanged), lowercase method -> 405, unknown path -> 404,
+  malformed method token -> 400 "malformed request line", duplicate
+  Content-Length -> 400, invalid Content-Length -> 400, oversized declared
+  body -> 400, plus positive sanity for GET /health and POST / (JSON-RPC ping).
+- Schema corruption fixtures (D8): 11 cases — DROP TABLE page_versions / facts /
+  takes / file_index / raw_data / pages_fts, DROP INDEX idx_facts_entity /
+  idx_raw_data_key / idx_takes_body, ALTER TABLE pages DROP COLUMN source_kind,
+  ALTER TABLE file_index DROP COLUMN path — each yields
+  check_schema_integrity().ok == false with the object named in `missing`, and
+  run_doctor returns overall FAIL.
+- Pack atomicity (D9): successful add_type updates default.json; injected
+  failure (read-only pack file blocks the atomic replace) returns a non-empty
+  error, leaves sha256 and bytes identical, leaves no .tmp-* sibling; retry
+  after restoring writability succeeds. Also exposed and fixed a production
+  gap: a stale read-only .bak (CopyFileW copies the read-only attribute)
+  blocked all later mutations — apply_mutations now clears/removes the stale
+  backup before taking a fresh one.

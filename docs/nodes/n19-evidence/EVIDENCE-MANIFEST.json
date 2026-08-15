@@ -1,0 +1,387 @@
+{
+    "format_version":  1,
+    "node":  "N19",
+    "state":  "runtime-evidence-verified",
+    "generated_utc":  "2026-08-04T09:51:14.7275983+00:00",
+    "prebuild_manifest_sha256":  "e7b556cb957f0e2eeecd8bfeda8d385727ca6f94f32d4fcb9294e4658aa5aa27",
+    "pre_corrective_schema_gate":  {
+                                       "path":  "docs/nodes/n19-evidence/PRE-CORRECTIVE-SCHEMA-GATE.json",
+                                       "gate_file_sha256":  "2638f4c02a501cf295f8b2ab575e894d051159479b8f6a8beadca28d6544ea3a",
+                                       "gate":  "pre-corrective-schema-v12",
+                                       "state":  "passed",
+                                       "started_utc":  "2026-08-04T08:50:12.4331908+00:00",
+                                       "completed_utc":  "2026-08-04T08:50:13.0139314+00:00",
+                                       "command":  "build\\cl\\qbrain.exe doctor --brain n19-pre-corrective-gate --json",
+                                       "execution_path":  [
+                                                              "qbrain doctor",
+                                                              "Brain::health",
+                                                              "storage::check_schema_integrity"
+                                                          ],
+                                       "approved_plan_sha256":  "d03201c31a6a4051b2cc6d5b82e5ced7ae8c4b0982bc65223e251870d01c1d3a",
+                                       "audited_draft_plan_sha256":  "f1cffc57a0e3d1c7447eb8c0cacfa130a3afeb05f85cdceaba26406fc69f958e",
+                                       "plan_audit_sha256":  "e5c603efbfecb5603a0fd068dd2a0b39e7a75abac5fd116634adc397d9b7e470",
+                                       "qbrain_sha256":  "04460d5ae88d4e1c285cb4f7b4a05df548bfd830772a053b9555f2d45990e7b4",
+                                       "git_head":  "5ced8ccb511672536d0f9767a2bc1777baf561ab",
+                                       "pre_corrective_input_manifest_sha256":  "dbe67c9bfbb31baaa4ae2c19dbac40bb11c9e82c662cd2c73ed930f8e5528cfa",
+                                       "pre_corrective_input_count":  20,
+                                       "result":  {
+                                                      "exit_code":  0,
+                                                      "ok":  true,
+                                                      "schema_version":  12,
+                                                      "stderr_empty":  true
+                                                  },
+                                       "isolation":  {
+                                                         "localappdata_overridden":  true,
+                                                         "production_localappdata_not_used":  true,
+                                                         "config_persisted":  false,
+                                                         "temporary_root_removed":  true
+                                                     },
+                                       "ordering":  {
+                                                        "unchanged_input_count":  18,
+                                                        "corrective_input_count":  2,
+                                                        "corrective_inputs":  [
+                                                                                  {
+                                                                                      "path":  "scripts/n19-verify.ps1",
+                                                                                      "gate_sha256":  "832cd2711c8c4b00dfb992e657a16a43b4224244111ab78d2c18756060312e8c",
+                                                                                      "current_sha256":  "cd6f37cfcb5b4e40ed4af2bec46776814d868905b5d246dc1f511d5fd4ec2e8a",
+                                                                                      "current_bytes":  90414,
+                                                                                      "current_last_write_utc":  "2026-08-04T09:20:20.7511984Z"
+                                                                                  },
+                                                                                  {
+                                                                                      "path":  "tests/test_n19.cpp",
+                                                                                      "gate_sha256":  "1d8cdc8504f812148ba770e595334b1fce6c2fdbec73a5b2903c642902b22b6a",
+                                                                                      "current_sha256":  "27023d52d3c637b081747d1e66c2a86c84a21c0628fb413d6301af8e00e6d8e9",
+                                                                                      "current_bytes":  58903,
+                                                                                      "current_last_write_utc":  "2026-08-04T09:05:29.5273994Z"
+                                                                                  }
+                                                                              ],
+                                                        "gate_completed_before_all_corrective_inputs":  true
+                                                    },
+                                       "protected_model_configuration_changed":  false,
+                                       "commit_or_push_executed":  false
+                                   },
+    "governance":  {
+                       "plan_sha256":  "d03201c31a6a4051b2cc6d5b82e5ced7ae8c4b0982bc65223e251870d01c1d3a",
+                       "plan_audit_sha256":  "e5c603efbfecb5603a0fd068dd2a0b39e7a75abac5fd116634adc397d9b7e470",
+                       "plan_status":  "approved",
+                       "outcome_audit":  "pending",
+                       "plan_audit_verdict":  "PASS",
+                       "plan_auditor":  "Claude Code"
+                   },
+    "dependency_contracts":  [
+                                 {
+                                     "node":  "N1",
+                                     "plan_audit_sha256":  "9fd6df77ad905463f34e6873c2220849003679a64c869e5fb1eaffba470f95e6",
+                                     "outcome_audit_sha256":  "93f112c13d01864aa701683e2a4dbb3726a763d90b7a113c07dc543af4d31141"
+                                 },
+                                 {
+                                     "node":  "N2",
+                                     "plan_audit_sha256":  "c34fede88989a9847dd3cad0bf719b6476c28bbfb124cb094d4afbe24d90fb85",
+                                     "outcome_audit_sha256":  "e9dc809dcdb73c0757708f81d53daf2fc89394c12cf953e86c0e9de5923a3413"
+                                 },
+                                 {
+                                     "node":  "N2.5",
+                                     "plan_audit_sha256":  "bd0cf1b5f4dddb9af40168a89d1a87be84d5a4eb2f99872d3389880523617953",
+                                     "outcome_audit_sha256":  "dd6e404ab7583af8c6cbecd86179baba3401a1d5ef10f559b2067229a208c8ff"
+                                 },
+                                 {
+                                     "node":  "N3",
+                                     "plan_audit_sha256":  "ab99d7c2d0553575f16124fba807067a8039839321fb9f3469c949dbdc8a4994",
+                                     "outcome_audit_sha256":  "2ca977089b0564f7ff60752c8cff4b968e1f528163239ef4c19e1bd22c094d24"
+                                 },
+                                 {
+                                     "node":  "N7",
+                                     "plan_audit_sha256":  "929970318d8fb3043371f82a9208360db7e38e6dd058e37f0eef515534f26d39",
+                                     "outcome_audit_sha256":  "307226705f0dc7495b0aa7aeebf88bd807c0216c19cab059cd23d01dd6835421"
+                                 },
+                                 {
+                                     "node":  "N8",
+                                     "plan_audit_sha256":  "7f16263f786315420ed42a7c79350add553ad84b11ce4cd6dbc21b0fdc320570",
+                                     "outcome_audit_sha256":  "7970e96af49bbc86f6e71785409a68b482f24e8b2f08a42c2993bbc93c14a8f9"
+                                 },
+                                 {
+                                     "node":  "N11",
+                                     "plan_audit_sha256":  "e157d9f3b6dcbc276b782d960c237d50fed9d4ff5614473678813e27541844a7",
+                                     "outcome_audit_sha256":  "bdefcf26d138b658d31df0b8525c46b776aa5e9086796bcd16696d8b783f2012"
+                                 },
+                                 {
+                                     "node":  "N15",
+                                     "plan_audit_sha256":  "01e95a0cc55e4d0580562008a65de2ee941a13a8b37f4fd730389937d5abaef1",
+                                     "outcome_audit_sha256":  "9f5f14ab7ed2cf4da50b597f8f861061948d9b65331091a017d677f7b4968c59"
+                                 },
+                                 {
+                                     "node":  "N16",
+                                     "plan_audit_sha256":  "ad6794067444a56658d52d23c3ca29f7092cd7024829f1c4313b295b10c77fef",
+                                     "outcome_audit_sha256":  "591865f6647e175c4aa02ec90abad1075c554eca49e3a15e5f63ad1639c24aba"
+                                 },
+                                 {
+                                     "node":  "N18",
+                                     "plan_audit_sha256":  "87db9821c255555ab6a42aab8d22cac945a5e0141aeeb3dd02e76a07e743af6d",
+                                     "outcome_audit_sha256":  "f09971ecf44ab66129f33ee3b7dad91515aac39d6d330b725916983fcb408053"
+                                 }
+                             ],
+    "platform":  {
+                     "os":  "Microsoft Windows 11 专业工作站版 10.0.22624 build 22624",
+                     "os_architecture":  "X64",
+                     "process_architecture":  "X64",
+                     "target_architecture":  "x64",
+                     "language_mode":  "/std:c++20",
+                     "compiler":  "Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36248 for x64"
+                 },
+    "commands":  {
+                     "production_build":  "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-cl.ps1",
+                     "production_exit_code":  0,
+                     "test_build_and_suite":  "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-tests-cl.ps1 -SkipProductionBuild",
+                     "test_build_exit_code":  0,
+                     "verifier_full_suite":  "build\\cl\\qbrain_tests.exe",
+                     "verifier_full_suite_exit_code":  0,
+                     "isolated_schema_smoke":  "build\\cl\\qbrain.exe doctor --json",
+                     "isolated_schema_smoke_exit_code":  0
+                 },
+    "tests":  {
+                  "registered":  26,
+                  "passed":  26,
+                  "failed":  0,
+                  "dedicated_n19":  "PASS",
+                  "n19_snapshot_call_count":  204,
+                  "identity_matrix_cells":  4
+              },
+    "n19":  {
+                "marker":  "[INFO] n19 schema_v12=pass schema_reopen=pass utc_boundaries=pass source_matrix=pass strict_arguments=pass identity=pass identity_exact_matrix=pass identity_matrix_cells=4 path_redaction=pass context_query=pass context_fail_open=pass context_recent=pass utf8_bounds=pass timeline=pass chronicle=pass seven_day_default=pass registry=pass mcp_rpc=pass ambient_default=pass selected_decoy=pass damaged_database=pass read_only=pass snapshot_call_count=204 selected_snapshot_sha256=192e0efd7f46b10c6ab2c65b3ac33481832f05097698318c3f4ee286730bc8f8 decoy_snapshot_sha256=0d74cc5de575761d7c6573cd8392ded34c77e242d3d977a3fb3fee0d66e40da1",
+                "identity_exact_matrix":  true,
+                "identity_matrix_cells":  4,
+                "selected_snapshot_sha256":  "192e0efd7f46b10c6ab2c65b3ac33481832f05097698318c3f4ee286730bc8f8",
+                "decoy_snapshot_sha256":  "0d74cc5de575761d7c6573cd8392ded34c77e242d3d977a3fb3fee0d66e40da1",
+                "damaged_fixture_snapshot_label_count":  1,
+                "schema_version":  12,
+                "real_mcp_framing":  true,
+                "registry_schema":  true,
+                "read_only_selected_and_decoy":  true
+            },
+    "binaries":  [
+                     {
+                         "role":  "production-binary",
+                         "path":  "build/cl/qbrain.exe",
+                         "sha256":  "0d5c63f98713268ba76452105f743c1597c25166fba01ea215924778e15c0bd6",
+                         "bytes":  2984960
+                     },
+                     {
+                         "role":  "test-binary",
+                         "path":  "build/cl/qbrain_tests.exe",
+                         "sha256":  "6db3bd83676b010b6ee0ae8c41d9a84315bb3b3d9da1a043c9ce890cba49a00d",
+                         "bytes":  4432384
+                     }
+                 ],
+    "deliverables":  [
+                         {
+                             "role":  "n19-deliverable",
+                             "path":  "include/qbrain/core/brain.hpp",
+                             "sha256":  "1aa7da46f32c3514320c9c878c0d57aae62721c59698fcfeb58c68ab98256229",
+                             "bytes":  9272
+                         },
+                         {
+                             "role":  "n19-deliverable",
+                             "path":  "include/qbrain/search/hybrid.hpp",
+                             "sha256":  "45072d707a65485f355b22fa64ed662d9a1439703224224faad03fd9a5f00034",
+                             "bytes":  1181
+                         },
+                         {
+                             "role":  "n19-deliverable",
+                             "path":  "include/qbrain/util/time_util.hpp",
+                             "sha256":  "78390f81b3a583fd7e3b0ce3b62e7f4405ef3e0947b266a0e5fb4066b68b8cb3",
+                             "bytes":  335
+                         },
+                         {
+                             "role":  "n19-deliverable",
+                             "path":  "src/qbrain/core/brain.cpp",
+                             "sha256":  "24bcd78978dc3aefb8bf7057def006f1fa049a8d63276402403f3b9a3740235b",
+                             "bytes":  51109
+                         },
+                         {
+                             "role":  "n19-deliverable",
+                             "path":  "src/qbrain/search/hybrid.cpp",
+                             "sha256":  "2a74917efc8e6ceffd8800ab2548fd4ce3c1065671d53dc174bc4bd190b74508",
+                             "bytes":  7734
+                         },
+                         {
+                             "role":  "n19-deliverable",
+                             "path":  "src/qbrain/ops/handlers.cpp",
+                             "sha256":  "e02c76b55410f4ac02bb973d6e83691ffe1b97856f3a4234cb3677cca3c7ad7e",
+                             "bytes":  109093
+                         },
+                         {
+                             "role":  "n19-deliverable",
+                             "path":  "src/qbrain/mcp/server.cpp",
+                             "sha256":  "7515830e9d40c18580723567149569296b55d43a5e93615d7e5e35385564c4fd",
+                             "bytes":  14383
+                         },
+                         {
+                             "role":  "n19-deliverable",
+                             "path":  "src/qbrain/util/time_util.cpp",
+                             "sha256":  "cb315dc6c50958c6a69270b130a9757881a9030cd27b8b730626d6e296ffe217",
+                             "bytes":  1215
+                         },
+                         {
+                             "role":  "n19-deliverable",
+                             "path":  "tests/test_n19.cpp",
+                             "sha256":  "27023d52d3c637b081747d1e66c2a86c84a21c0628fb413d6301af8e00e6d8e9",
+                             "bytes":  58903
+                         },
+                         {
+                             "role":  "n19-deliverable",
+                             "path":  "tests/test_main.cpp",
+                             "sha256":  "e47ab53280eb82f29ba189d022e174ee8300a683eef2134accb14758dfd12600",
+                             "bytes":  2656
+                         },
+                         {
+                             "role":  "n19-deliverable",
+                             "path":  "CMakeLists.txt",
+                             "sha256":  "24a4668591feb3b4a9ae1dba584c82dffe9f0d7c5f796fc6f0c31b631eced395",
+                             "bytes":  5027
+                         },
+                         {
+                             "role":  "n19-deliverable",
+                             "path":  "scripts/build-cl.ps1",
+                             "sha256":  "553a1989952d346fce8f836146377aec6d0db29e143893c3ac7fd28869b15070",
+                             "bytes":  3605
+                         },
+                         {
+                             "role":  "n19-deliverable",
+                             "path":  "scripts/build-tests-cl.ps1",
+                             "sha256":  "a682bb81ba366e7dc45eeee2825255f76b27c6db66b490791e4a1467c88f458e",
+                             "bytes":  3243
+                         },
+                         {
+                             "role":  "n19-deliverable",
+                             "path":  "scripts/n19-verify.ps1",
+                             "sha256":  "cd6f37cfcb5b4e40ed4af2bec46776814d868905b5d246dc1f511d5fd4ec2e8a",
+                             "bytes":  90414
+                         },
+                         {
+                             "role":  "n19-deliverable",
+                             "path":  "docs/nodes/N19-PLAN.md",
+                             "sha256":  "d03201c31a6a4051b2cc6d5b82e5ced7ae8c4b0982bc65223e251870d01c1d3a",
+                             "bytes":  41047
+                         },
+                         {
+                             "role":  "n19-deliverable",
+                             "path":  "docs/nodes/N19-PLAN-AUDIT.md",
+                             "sha256":  "e5c603efbfecb5603a0fd068dd2a0b39e7a75abac5fd116634adc397d9b7e470",
+                             "bytes":  32965
+                         }
+                     ],
+    "relevant_schema_inputs":  [
+                                   {
+                                       "role":  "schema-or-sqlite-input",
+                                       "path":  "include/qbrain/storage/database.hpp",
+                                       "sha256":  "2f0ccf8035aa35f3ce69a12d42afa18015754efb4671d7c528b36bb4285de8fd",
+                                       "bytes":  2182
+                                   },
+                                   {
+                                       "role":  "schema-or-sqlite-input",
+                                       "path":  "include/qbrain/storage/schema_sql.hpp",
+                                       "sha256":  "7709912b2d792b6055c0b95d5c79a157b949669925242e7c840a256717c7a024",
+                                       "bytes":  4106
+                                   },
+                                   {
+                                       "role":  "schema-or-sqlite-input",
+                                       "path":  "src/qbrain/storage/database.cpp",
+                                       "sha256":  "bda29c5926936979102fd1078044b8ee76c250ae34707f4f4fda42ab4d32dacb",
+                                       "bytes":  4570
+                                   },
+                                   {
+                                       "role":  "schema-or-sqlite-input",
+                                       "path":  "src/qbrain/storage/migrate.cpp",
+                                       "sha256":  "d775529ff6f89d520f15a3fee30f0e180a2011646516de0a620e1870d538ec45",
+                                       "bytes":  15352
+                                   },
+                                   {
+                                       "role":  "schema-or-sqlite-input",
+                                       "path":  "third_party/sqlite/sqlite-amalgamation-3460100/sqlite3.c",
+                                       "sha256":  "6c35bc5f7f85eac9c49928bacbb02bb694b547aabf69197e058cca245ad80e83",
+                                       "bytes":  9089564
+                                   },
+                                   {
+                                       "role":  "schema-or-sqlite-input",
+                                       "path":  "third_party/sqlite/sqlite-amalgamation-3460100/sqlite3.h",
+                                       "sha256":  "89b62c671c5964e137409ce034941b7b05a3af2c9875aba41f47f9483d0c2515",
+                                       "bytes":  644069
+                                   }
+                               ],
+    "evidence_files":  [
+                           {
+                               "role":  "pre-corrective-schema-gate",
+                               "path":  "docs/nodes/n19-evidence/PRE-CORRECTIVE-SCHEMA-GATE.json",
+                               "sha256":  "2638f4c02a501cf295f8b2ab575e894d051159479b8f6a8beadca28d6544ea3a",
+                               "bytes":  4778
+                           },
+                           {
+                               "role":  "prebuild-manifest",
+                               "path":  "docs/nodes/n19-evidence/PREBUILD-MANIFEST.json",
+                               "sha256":  "e7b556cb957f0e2eeecd8bfeda8d385727ca6f94f32d4fcb9294e4658aa5aa27",
+                               "bytes":  45089
+                           },
+                           {
+                               "role":  "production-build-log",
+                               "path":  "docs/nodes/n19-evidence/PRODUCTION-BUILD-OUTPUT.txt",
+                               "sha256":  "b5fa020d00e9abaa90df2bd3719670b749b9841c6144ab21fb427fb21dcd4531",
+                               "bytes":  1495
+                           },
+                           {
+                               "role":  "test-build-log",
+                               "path":  "docs/nodes/n19-evidence/TEST-BUILD-OUTPUT.txt",
+                               "sha256":  "b1f79f7924b55faf36440ef8a1168ccb8236976fe2d313c773c158feb9306082",
+                               "bytes":  142159
+                           },
+                           {
+                               "role":  "full-suite-log",
+                               "path":  "docs/nodes/n19-evidence/FULL-SUITE-OUTPUT.txt",
+                               "sha256":  "95ca314165d4586d68bbbe95dc774db4e2b2bf382b54fdffb765e1ccaf62a3ca",
+                               "bytes":  141260
+                           },
+                           {
+                               "role":  "focused-runtime-log",
+                               "path":  "docs/nodes/n19-evidence/FOCUSED-RUNTIME-OUTPUT.txt",
+                               "sha256":  "f4de3fb1f98332caacaae51a6ff5cb1f1520d198f78edda369ec8118a03982a7",
+                               "bytes":  726
+                           },
+                           {
+                               "role":  "snapshot-evidence",
+                               "path":  "docs/nodes/n19-evidence/SNAPSHOT-EVIDENCE.txt",
+                               "sha256":  "bd8b8c8d065e24d530ac733e51e8cb93f3b798bbcbcc95921ae25ca71b63e7f3",
+                               "bytes":  84000
+                           },
+                           {
+                               "role":  "mcp-schema-evidence",
+                               "path":  "docs/nodes/n19-evidence/MCP-SCHEMA-EVIDENCE.txt",
+                               "sha256":  "d1d8c903947ba7b6754c01fa2a9e2e072e2338326bce84e2ba6a78f470e0af44",
+                               "bytes":  31888
+                           },
+                           {
+                               "role":  "schema-smoke-evidence",
+                               "path":  "docs/nodes/n19-evidence/SCHEMA-SMOKE-OUTPUT.txt",
+                               "sha256":  "615902fc0751394500bdd8bb3eb80cbf08b69b9ceaf74206a2313cbc56207cbd",
+                               "bytes":  268
+                           },
+                           {
+                               "role":  "platform-evidence",
+                               "path":  "docs/nodes/n19-evidence/PLATFORM-OUTPUT.txt",
+                               "sha256":  "6af1d454dc6de519b9517889d59760bdfa361cbdaf2d014313a18d517605e275",
+                               "bytes":  243
+                           }
+                       ],
+    "scoped_safety":  {
+                          "excluded_node_artifact_count":  0,
+                          "excluded_node_build_test_runtime_reference_count":  0,
+                          "protected_repo_config_changed_during_evidence_interval":  false,
+                          "protected_setting_assignment_change_count":  0,
+                          "isolated_test_config_policy":  "absent_or_canonical_defaults_only",
+                          "isolated_test_config_count":  1,
+                          "isolated_test_config_sha256":  "441063381f57fbee120246cbf69050c6ae40ab554ccbebad812ac901cb5eae92",
+                          "git_head_changed_during_evidence_interval":  false,
+                          "git_reference_log_changed_during_evidence_interval":  false,
+                          "commit_or_push_command_executed_by_verifier":  false,
+                          "production_qbrain_data_touched":  false,
+                          "llm_or_provider_request_executed_by_n19":  false
+                      }
+}

@@ -1,3 +1,66 @@
-# N23 HARD AUDIT
+# N23 HARD AUDIT (fresh outcome audit — supersedes the 2026-07-29 retrospective)
 
-Wrote `docs/nodes/N23-HARD-AUDIT.md` using the N20 audit layout: table header row above the acceptance criterion, blank lines separating the P0/P1/P2 subsections, and the test name backticked.
+**Auditor**: Claude Code (claude-opus-5, effort max), watchdog task qbrain-n23-outcome-audit-claude-20260815, 2026-08-15
+**Audit basis**: docs/nodes/N23-PLAN.md (approved; plan-audit bound to draft SHA 9601d6bc…)
+**Human authorization**: user instruction 2026-08-15 (quoted verbatim in the dispatch log)
+
+---
+
+---
+
+## N23 Outcome Hard Audit — Source-scoped Chronicle History and Backfill Closure
+
+**Auditor**: Claude Code
+**Plan basis**: `docs/nodes/N23-PLAN.md` (status `approved`; plan-audit PASS 2026-08-08 bound to draft SHA `9601d6bc7665b52ac5871073d900c6b61763d1c5c440d88df68c8fbd6397a940`; audit SHA `8da7e7af958e4d776885970c4cfddc581376582e94c3797b9309a43a5297b714`)  
+**Historical superseded**: `docs/nodes/N23-HARD-AUDIT.md` (2026-07-29retrospective, pre-revision plan)  
+**Evidence examined**: `src/qbrain/ops/handlers.cpp` (N23 region), `include/qbrain/core/brain.hpp`, `tests/test_n23.cpp`, `tests/test_main.cpp`, `docs/nodes/n23-evidence/{PRE-CORRECTIVE-SCHEMA-GATE.json, POST-GATE-SHARED-INPUT-REVALIDATION-v1.json, PREBUILD-MANIFEST.json, EVIDENCE-MANIFEST.json, VERIFY-REPORT.md, PRODUCTION-BUILD-OUTPUT.txt}`, `docs/nodes/n30-evidence/{PRE-GATE.json, NODE-RECONCILIATION-MATRIX.json N23 row, FINAL-VERIFY-SCRIPT.txt, FINAL-VERIFY-CMAKE.txt}`, `docs/nodes/N23-PLAN-AUDIT.md`
+
+---
+
+### VERDICT: PASS
+
+---
+
+### Assertion-table review
+
+| # | Acceptance assertion (§ in plan) | Evidence | Result |
+|---|----------------------------------|----------|--------|
+| 1 | Pre-corrective gate `ok=true`, schema v12, isolated, byte-identical; verifier validates archived/current governance + sidecar before accepting native evidence | `PRE-CORRECTIVE-SCHEMA-GATE.json`: `ok:true`, `schema_version:12`, `production_tree_unchanged:true`, `temporary_root_removed:true`. Sidecar SHA `06c1d9fb...` bound in `PREBUILD-MANIFEST.json`. Sidecar records gate hash and completion time, archived governance, current governance, and both allowed-change paths. | PASS |
+| 2 | All three ops default omitted source_id to literal `default`; ignore ambient QBRAIN_SOURCE injection; enforce registered-source + remote authorization before data access; no brain/source boundary crossing | Handler `resolve_source(ctx, true, error)` called before any data enumeration/mutation in all three ops. `mcp:ambient-default` test (line 1310): with `QBRAIN_SOURCE=team_a` set, omitted `source_id` returns default-source rows only and excludes `TEAM_HISTORY_SENTINEL`. Source isolation via separate `selected` and `decoy` brains; `DECOY_*` sentinels excluded throughout124 snapshots. | PASS |
+| 3 | `chronicle_on_this_day`: strict date/alias, prior-year-only, exact `matched_at`/`years_ago`, predicates-before-limit, `matched_at DESC id DESC` ordering, 1..200 limit | Handler validates `valid_utc_day`/`valid_month_day`, alias equality; clamps limit1..200. Tests: anchor-year page excluded (`history-anchor`), future-year excluded, `matched_at` = later qualifying timestamp confirmed (`history-both` → `2023-03-01 10:00:00`), tie-break by id desc confirmed (tie-second before tie-first), leap and century-leap explicit checks (`years_ago=4`, `years_ago=400`), bad dates → `invalid_argument/date`. | PASS |
+| 4 | `chronicle_last_seen`: required entity, no global fallback, active-page effective activity, exact signed UTC calendar `days_ago`, bounded `not_found` with no cross-source disclosure | `entity/exact`: `last_seen=2024-03-02 12:00:00` (max of created/updated). `days_ago=-1` for asof=2024-03-01 (before last_seen). Deleted-page → `not_found`. Cross-source (`entity/team-only` default-scoped) → `not_found`. Error JSON contains no `TEAM_ENTITY_SENTINEL` or `DECOY_ENTITY_SENTINEL` (lines 886–887). UTF-8 4096-byte boundary accepted;4097bytes and malformed UTF-8 → `invalid_argument/entity`. | PASS |
+| 5 | `chronicle_backfill` selects only active `meeting`/`conversation`/`calendar-event` in chosen source after inclusive since;1..1000 limit; never tags arbitrary pages or other source/brain | Eligible-type check: `bf-note` (type=note) not tagged, `bf-deleted` not tagged, `BF_TEAM_SENTINEL` not tagged (different source). Since boundary: `bf-before` (2023-12-31, before2024-01-01 since) not tagged. Decoy-brain unchanged (`decoy_before_real == decoy_after_real`, line 1089). | PASS |
+| 6 | Dry-run is fully read-only; real run is one idempotent transaction with exact counts; forced SQLite failure leaves full logical state unchanged | Dry-run: all124 g_snapshot entries verify `selected_before == selected_after`. Real run: `tagged=2`, `already_tagged=1`; forced-failure rollback test: trigger causes INSERT→IGNORE, `attempted_tag_inserts==1`, full logical snapshot identical to before (line 1170). Busy: `database_busy/database`, state unchanged (line 1195). | PASS |
+| 7 | Read=`Scope::Read`; backfill=`Scope::Write`+`local_only=true`; remote default-deny and allow-write paths; allow-write never bypasses source authorization | `on_this_day_op->scope==Read && !local_only`, `last_seen_op->scope==Read && !local_only`, `backfill_op->scope==Write && local_only` (lines 1231–1233). MCP `write-denied` → `write_denied/operation` (line 1328). MCP allow-write+default-source succeeds (line 1332). MCP allow-write + `source=other` (not in allowlist) → `source_not_allowed/source_id` (line 1339). | PASS |
+| 8 | All invalid forms rejected before enumeration/mutation with structured nonzero errors |7 bad dates → `invalid_argument/date`; 5 bad mmdd → `invalid_argument/mmdd`; 8 bad limit numbers → `invalid_argument/limit`; 7 bad since strings → `invalid_argument/since`; bad bool variants → `invalid_argument/dry_run`; 20 MCP wrong-type cases → `invalid_argument/<field>`; non-object MCP arguments → `invalid_argument/arguments`; unknown fields (local + MCP) → `invalid_argument/<unknown>`. All errors: `ok=false`, nonzero exit, `{"error":{"code":…,"field":…,"message":…}}`, size≤ 512. | PASS |
+| 9 | Registered metadata and `tools/list` expose exact schemas; all valid forms callable; no undeclared form silently accepted | Exact JSON schema comparison: `on_schema == expected_on_schema`, `last_schema == expected_last_schema`, `backfill_schema == expected_backfill_schema` (lines 1286–1288). MCP `tools/list` schemas identical to registered (lines 1290–1292). `additionalProperties:false` in all three. Boolean `dry_run` correctly typed. | PASS |
+| 10 | Exact declared fields; no body/path/config/secret/cross-source disclosure; bounded UTF-8 titles | Explicit check: `matching_alias.json.find("BODY_SECRET_LONG_TITLE") == npos` (line 722). `require_error` helper checks serialized JSON ≤ 512 and excludes `BODY_SECRET`, `TEAM_`, `DECOY_`, `mcp.allowed_sources`, `api_key`, `provider`, `model`, `D:\` (lines 193–196). Long title truncated at≤ 512 bytes on code-point boundary with `[truncated]` marker (lines 720–721). | PASS |
+| 11 | 124 selected/decoy snapshots prove all reads/dry-runs/rejections/denials are nonmutating; backfill changes only the exact allowed tag rows | `SnapshotMatrix::read()` verifies `selected_before == selected_after && decoy_before == decoy_after` for every read-wrapped call (line 110–111); all 124 g_snapshot entries assert equality (lines 1408–1410). Exact allowed tag delta: `expected_added_tags` = only `bf-new` + `bf-at` (line 1083–1087); `added_tags == expected_added_tags && removed_tags.empty()` (lines 1094–1095). Non-tag tables, schema, and sqlite_sequence unchanged (lines 1091–1093). | PASS |
+| 12 | Native MSVC C++20 builds exit0; two frozen-binary suite runs ≥27 tests, every test PASS, one N23 PASS, identical across both runs | `FINAL-VERIFY-SCRIPT.txt`: round1 lines 1263–1269 (`N23_ON_THIS_DAY_MATRIX=pass`, `N23_LAST_SEEN_MATRIX=pass`, `N23_BACKFILL_MATRIX=pass`, `N23_REGISTRY_MCP_MATRIX=pass`, `N23_SOURCE_BRAIN_ISOLATION=pass`, `N23_SNAPSHOT_COUNT=124`, `[PASS] n23`); round 2 lines 2511–2517 identical. `FINAL-VERIFY-CMAKE.txt`: round 1 lines 1263–1269, round 2 lines 2428–2434; same markers, same count. Both build paths pass in both rounds. Total registered suite count≥ 27 (30 in test_main.cpp). | PASS |
+| 13 | Evidence manifests bind approved plan, plan audit, immutable gate, sidecar, HEAD, scoped inputs, commands, platform, binaries, logs, counts, and hashes | `PREBUILD-MANIFEST.json`: comprehensive frozen-input manifest (91 files, SHA-bound), plan SHA `4301f77a`, gate SHA `06c1d9fb`, HEAD `5ced8cc`, 29 registered test names including `n23`, schema v12. **Gap: see P1 finding below.** `EVIDENCE-MANIFEST.json` and `VERIFY-REPORT.md` remain in `pending-native-evidence-and-claude-outcome-audit` placeholder state; no completed final manifest binds build logs or two-run counts inside n23-evidence. | PARTIAL — see P1 |
+| 14 | No N20-N22/N24+ capability, N30 artifact/reference, protected model/provider/API config change, secret, production-data access, commit, or push | Handlers section bounded `// N23 source-scoped Chronicle page-activity/tagging subset` through `// N24 files`. `PRE-CORRECTIVE-SCHEMA-GATE.json`: `protected_model_configuration_changed: false`, `commit_or_push_executed: false`, `n30_artifact_created_read_or_used: false`. `PREBUILD-MANIFEST.json`: same three false flags. | PASS |
+| 15 | Only after a fresh complete outcome-audit PASS may the parent set plan to `done` and reconcile the three historical N23 ledger row notes | `EVIDENCE-MANIFEST.json`: `audit_verdict_written: false`, `node_or_ledger_status_written: false` — correctly awaiting this audit. | PASS (gated correctly) |
+
+---
+
+### N30 reconciliation: `via_mcp` semantics
+
+The plan's §chronicle_backfill contract9states: "remote invocation is denied unless explicit allow-write is enabled, and source authorization still applies when it is enabled." Under the N30 change, write-path tests use `mcp_call` (which routes through `handle_rpc_body` with `ServeOptions.allow_write`) rather than `call_op(remote=true, allow_write=true)`. The three required behavioral guarantees are all exercised and pass: (1) MCP without allow-write → `write_denied/operation` (line 1328); (2) MCP with allow-write, authorized source → succeeds (line 1332); (3) MCP with allow-write, unauthorized source → `source_not_allowed/source_id` (line 1339). Plan intent is fully preserved.
+
+---
+
+### Findings
+
+**P1— Evidence directory incomplete (plan §Deliverables 6, §Acceptance Assertion 13)**
+`docs/nodes/n23-evidence/EVIDENCE-MANIFEST.json` and `VERIFY-REPORT.md` remain in `pending-native-evidence-and-claude-outcome-audit` placeholder state. Dedicated N23 test build logs, two full-suite run logs, and a final manifest binding binary hashes, two-run counts, and snapshot evidence are not present in `docs/nodes/n23-evidence/`. The test evidence exists only in `docs/nodes/n30-evidence/FINAL-VERIFY-SCRIPT.txt` and `FINAL-VERIFY-CMAKE.txt`. This means assertion 13 is not fully met by the N23-specific artifacts. Remediation required after this PASS: the controller must update `EVIDENCE-MANIFEST.json` (`audit_verdict_written: true`, bind this audit's facts) and `VERIFY-REPORT.md` to reflect the completed state, citing the N30FINAL-VERIFY evidence as the native run record.
+
+**P2 — PREBUILD-MANIFEST.json references historical plan SHA (documentation only)**  
+`PREBUILD-MANIFEST.json` (captured 2026-08-04T13:15:00) records `docs/nodes/N23-PLAN.md sha256 = 4301f77a...` (the first approved baseline), while the current approved plan has SHA `72186f2f...` (per sidecar `current_governance.plan_sha256`), which in turn differs from the plan-audit-bound draft SHA `9601d6bc...`. This is consistent with the documented governance timeline: the prebuild manifest was captured before the revised plan audit; the sidecar (captured 2026-08-08) explicitly records both `audited_draft_sha256 = 9601d6bc` and `plan_sha256 = 72186f2f`, confirming the chain and identifying the hash drift as the routine `draft→approved` status-field update. The substantive plan content is unchanged across these versions.
+
+---
+
+### Conclusion
+
+The N23 implementation is complete, correct, and conformant with the approved plan. All three source-scoped Chronicle operations — `chronicle_on_this_day`, `chronicle_last_seen`, and `chronicle_backfill` — are implemented with the required Brain APIs, handler validation, scope/locality metadata, exact JSON schemas, and descriptions that correctly state the Qbrain subset exclusions. The 1426-line `tests/test_n23.cpp` exercises all seven test-matrix dimensions; all 124 snapshots confirm nonmutating reads and rejections; the exact allowed tag delta is verified; transaction rollback and database-busy paths are exercised. Four independent build/run combinations (FINAL-VERIFY-SCRIPT rounds 1 and 2, FINAL-VERIFY-CMAKE rounds 1 and 2) all show `[PASS] n23` with `N23_SNAPSHOT_COUNT=124` and all five N23 matrix markers `=pass`. The pre-corrective gate is valid and byte-identical; the sidecar is correctly formed with process-termination tokens removed from `build-cl.ps1` and `registry.cpp` bound no-edit. The single P1 finding (incomplete n23-evidence final manifests) is a post-PASS documentation remediation task that does not call into question implementation correctness; the native evidence it references is present and unambiguous in the N30 FINAL-VERIFY files.
+
+**VERDICT: PASS**

@@ -1,0 +1,8 @@
+command=build\cl\qbrain.exe doctor --json
+exit_code=0
+ok=true
+schema_version=12
+response_sha256=722fdbe6e24204cb562e6696f7b84310a7a37289552d399cf13fb3e7b2c8ad70
+isolated_localappdata=true
+application_config_persisted=false
+production_qbrain_data_touched=false

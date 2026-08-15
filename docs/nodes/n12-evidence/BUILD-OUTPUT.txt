@@ -1,0 +1,115 @@
+**********************************************************************
+** Visual Studio 2026 Developer Command Prompt v18.7.3
+** Copyright (c) 2026 Microsoft Corporation
+**********************************************************************
+[vcvarsall.bat] Environment initialized for: 'x64'
+sqlite3.c
+paths.cpp
+hash.cpp
+log.cpp
+string_util.cpp
+time_util.cpp
+database.cpp
+migrate.cpp
+types.cpp
+brain.cpp
+extract.cpp
+traverse.cpp
+analytics.cpp
+scan.cpp
+packs.cpp
+lint.cpp
+store.cpp
+vector.cpp
+rrf.cpp
+hybrid.cpp
+rerank.cpp
+正在生成代码...
+正在编译...
+minions.cpp
+dream.cpp
+chunker.cpp
+markdown.cpp
+import.cpp
+http_client.cpp
+embed.cpp
+chat.cpp
+registry.cpp
+handlers.cpp
+inbox_watch.cpp
+live_sync.cpp
+jsonrpc.cpp
+server.cpp
+http_server.cpp
+app.cpp
+commands.cpp
+main.cpp
+正在生成代码...
+BUILD_OK
+ Volume in drive D has no label.
+ Volume Serial Number is 1077-94CA
+
+ Directory of D:\Projects\Qbrain\build\cl
+
+2026/07/30  04:37         2,844,672 qbrain.exe
+               1 File(s)      2,844,672 bytes
+               0 Dir(s)  520,544,223,232 bytes free
+**********************************************************************
+** Visual Studio 2026 Developer Command Prompt v18.7.3
+** Copyright (c) 2026 Microsoft Corporation
+**********************************************************************
+[vcvarsall.bat] Environment initialized for: 'x64'
+test_main.cpp
+test_rrf.cpp
+test_vector.cpp
+test_chunker.cpp
+test_extract.cpp
+test_storage.cpp
+test_mcp.cpp
+test_rerank.cpp
+test_minions.cpp
+test_migration_v6.cpp
+test_n12_dream.cpp
+test_live_sync.cpp
+test_codeintel.cpp
+test_analytics.cpp
+test_n19.cpp
+test_n20_23.cpp
+test_n24_25.cpp
+test_n26_27.cpp
+test_wave4.cpp
+test_wave5.cpp
+正在生成代码...
+正在编译...
+test_doctor.cpp
+正在生成代码...
+TESTS_BUILD_OK
+[PASS] rrf
+[PASS] vector
+[PASS] chunker
+[PASS] extract
+[PASS] storage
+[PASS] mcp
+[INFO] silent_provider_elapsed_ms=4013
+[INFO] rerank_audit_sample={"doc_count":3,"failure_reason":"transport_timeout","fallback_taken":true,"query_hash":"9bfba5c7b750d97c3e8bc7f14fdfccaac20483ceb6c4514df11faeab0f9c63f7","timestamp":"2026-07-29T20:41:54Z"}
+[PASS] rerank
+[INFO] minions_concurrent_claim winner=tok-race-A loser=sqlite_busy error=step: database is locked
+[PASS] minions
+[INFO] migration_v6_snapshot_sha256=4b8467e0dd83589a5926bb58fc808de222b944537c402f2e1c0d83f816dc7798 populated_v5_before_after=identical
+[INFO] migration_v6 populated_v5=preserved idempotent=noop rollback_after_first_ddl=clean rollback_after_marker=clean migrated_job_fence=pass fresh_shape=pass
+[PASS] migration_v6
+[INFO] dream_dry_run_snapshot_sha256=d8043e69e62898699ba46120bb9d11bc020fd98f0e678312337d196ff4b6fb7d phases=orphans,extract_facts,consolidate,embed,purge unchanged=pass
+[INFO] dream_purge_snapshot_before_sha256=37e500cf66b0ce470a7f0e247a6b15d4c0b0443647837a241970be717976fd2d after_sha256=1c0fc0a15f73eebac1def8c4fc8a2eac71e0718aaf1ad8f0ffe5b6583e23c1de mutations=7
+[INFO] mcp_write_deny_snapshot_sha256=62b37dd1f07272f686d74530786c898e3bde06b91b50cec87bc8c51b4bd250cc ops=submit_job,cancel_job,run_dream unchanged=pass
+[PASS] n12_dream
+[WARN] live_sync: not a directory: C:\Users\ADMINI~1\AppData\Local\Temp\qbrain_live_sync_test\notes\..\..\should_not_matter
+[PASS] live_sync
+[PASS] codeintel
+[PASS] analytics
+[PASS] n19
+[PASS] n20_23
+[PASS] n24_25
+[PASS] n26_27
+[PASS] wave4
+[PASS] wave5
+[PASS] doctor

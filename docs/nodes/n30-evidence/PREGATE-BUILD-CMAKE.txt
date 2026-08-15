@@ -1,0 +1,180 @@
+-- Building for: Visual Studio 17 2022
+-- Selecting Windows SDK version 10.0.26100.0 to target Windows 10.0.22624.
+-- The C compiler identification is MSVC 19.44.35228.0
+-- The CXX compiler identification is MSVC 19.44.35228.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: C:/Program/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: C:/Program/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Configuring done (20.1s)
+-- Generating done (0.6s)
+-- Build files have been written to: D:/Projects/Qbrain/build/cmake-pregate
+适用于 .NET Framework MSBuild 版本 17.14.51+25f168cee
+
+  1>Checking Build System
+  Building Custom Rule D:/Projects/Qbrain/CMakeLists.txt
+  sqlite3.c
+  sqlite3.vcxproj -> D:\Projects\Qbrain\build\cmake-pregate\Debug\sqlite3.lib
+  Building Custom Rule D:/Projects/Qbrain/CMakeLists.txt
+  paths.cpp
+D:\Projects\Qbrain\src\qbrain\util\paths.cpp(38,28): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\Projects\Qbrain\build\cmake-pregate\qbrain_util.vcxproj]
+  hash.cpp
+  log.cpp
+  string_util.cpp
+  time_util.cpp
+  正在生成代码...
+  qbrain_util.vcxproj -> D:\Projects\Qbrain\build\cmake-pregate\Debug\qbrain_util.lib
+  Building Custom Rule D:/Projects/Qbrain/CMakeLists.txt
+  http_client.cpp
+  embed.cpp
+D:\Projects\Qbrain\src\qbrain\ai\embed.cpp(18,31): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\Projects\Qbrain\build\cmake-pregate\qbrain_ai.vcxproj]
+  chat.cpp
+  正在生成代码...
+  qbrain_ai.vcxproj -> D:\Projects\Qbrain\build\cmake-pregate\Debug\qbrain_ai.lib
+  Building Custom Rule D:/Projects/Qbrain/CMakeLists.txt
+  database.cpp
+  migrate.cpp
+  正在生成代码...
+  qbrain_storage.vcxproj -> D:\Projects\Qbrain\build\cmake-pregate\Debug\qbrain_storage.lib
+  Building Custom Rule D:/Projects/Qbrain/CMakeLists.txt
+  types.cpp
+  brain.cpp
+D:\Projects\Qbrain\src\qbrain\core\brain.cpp(127,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\Projects\Qbrain\build\cmake-pregate\qbrain_core.vcxproj]
+D:\Projects\Qbrain\src\qbrain\core\brain.cpp(193,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\Projects\Qbrain\build\cmake-pregate\qbrain_core.vcxproj]
+D:\Projects\Qbrain\src\qbrain\core\brain.cpp(194,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\Projects\Qbrain\build\cmake-pregate\qbrain_core.vcxproj]
+D:\Projects\Qbrain\src\qbrain\core\brain.cpp(198,28): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\Projects\Qbrain\build\cmake-pregate\qbrain_core.vcxproj]
+D:\Projects\Qbrain\src\qbrain\core\brain.cpp(199,28): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\Projects\Qbrain\build\cmake-pregate\qbrain_core.vcxproj]
+  正在生成代码...
+  qbrain_core.vcxproj -> D:\Projects\Qbrain\build\cmake-pregate\Debug\qbrain_core.lib
+  Building Custom Rule D:/Projects/Qbrain/CMakeLists.txt
+  minions.cpp
+  qbrain_jobs.vcxproj -> D:\Projects\Qbrain\build\cmake-pregate\Debug\qbrain_jobs.lib
+  Building Custom Rule D:/Projects/Qbrain/CMakeLists.txt
+  dream.cpp
+  qbrain_cycle.vcxproj -> D:\Projects\Qbrain\build\cmake-pregate\Debug\qbrain_cycle.lib
+  Building Custom Rule D:/Projects/Qbrain/CMakeLists.txt
+  extract.cpp
+  traverse.cpp
+  analytics.cpp
+D:\Projects\Qbrain\src\qbrain\graph\analytics.cpp(457,40): warning C4244: “=”: 从“int64_t”转换到“int”，可能丢失数据 [D:\Projects\Qbrain\build\cmake-pregate\qbrain_graph.vcxproj]
+  正在生成代码...
+  qbrain_graph.vcxproj -> D:\Projects\Qbrain\build\cmake-pregate\Debug\qbrain_graph.lib
+  Building Custom Rule D:/Projects/Qbrain/CMakeLists.txt
+  chunker.cpp
+  markdown.cpp
+  import.cpp
+  正在生成代码...
+  qbrain_ingest.vcxproj -> D:\Projects\Qbrain\build\cmake-pregate\Debug\qbrain_ingest.lib
+  Building Custom Rule D:/Projects/Qbrain/CMakeLists.txt
+  packs.cpp
+  lint.cpp
+  正在生成代码...
+  qbrain_schema.vcxproj -> D:\Projects\Qbrain\build\cmake-pregate\Debug\qbrain_schema.lib
+  Building Custom Rule D:/Projects/Qbrain/CMakeLists.txt
+  vector.cpp
+  rrf.cpp
+  hybrid.cpp
+  rerank.cpp
+D:\Projects\Qbrain\src\qbrain\search\rerank.cpp(342,37): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\Projects\Qbrain\build\cmake-pregate\qbrain_search.vcxproj]
+  正在生成代码...
+  qbrain_search.vcxproj -> D:\Projects\Qbrain\build\cmake-pregate\Debug\qbrain_search.lib
+  Building Custom Rule D:/Projects/Qbrain/CMakeLists.txt
+  inbox_watch.cpp
+  live_sync.cpp
+  正在生成代码...
+  qbrain_service.vcxproj -> D:\Projects\Qbrain\build\cmake-pregate\Debug\qbrain_service.lib
+  Building Custom Rule D:/Projects/Qbrain/CMakeLists.txt
+  registry.cpp
+  handlers.cpp
+  正在生成代码...
+  qbrain_ops.vcxproj -> D:\Projects\Qbrain\build\cmake-pregate\Debug\qbrain_ops.lib
+  Building Custom Rule D:/Projects/Qbrain/CMakeLists.txt
+  jsonrpc.cpp
+  server.cpp
+D:\Projects\Qbrain\src\qbrain\mcp\server.cpp(346,32): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\Projects\Qbrain\build\cmake-pregate\qbrain_mcp.vcxproj]
+  http_server.cpp
+  正在生成代码...
+  qbrain_mcp.vcxproj -> D:\Projects\Qbrain\build\cmake-pregate\Debug\qbrain_mcp.lib
+  Building Custom Rule D:/Projects/Qbrain/CMakeLists.txt
+  app.cpp
+  commands.cpp
+D:\Projects\Qbrain\src\qbrain\cli\commands.cpp(41,28): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\Projects\Qbrain\build\cmake-pregate\qbrain_cli.vcxproj]
+D:\Projects\Qbrain\src\qbrain\cli\commands.cpp(364,28): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\Projects\Qbrain\build\cmake-pregate\qbrain_cli.vcxproj]
+D:\Projects\Qbrain\src\qbrain\cli\commands.cpp(375,28): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\Projects\Qbrain\build\cmake-pregate\qbrain_cli.vcxproj]
+  正在生成代码...
+  qbrain_cli.vcxproj -> D:\Projects\Qbrain\build\cmake-pregate\Debug\qbrain_cli.lib
+  Building Custom Rule D:/Projects/Qbrain/CMakeLists.txt
+  main.cpp
+qbrain_ops.lib(handlers.obj) : error LNK2019: 无法解析的外部符号 "void __cdecl qbrain::codeintel::clear_traversal_cache(void)" (?clear_traversal_cache@codeintel@qbrain@@YAXXZ)，函数 "public: __cdecl `void __cdecl qbrain::ops::register_builtin_ops(void)'::`2'::<lambda_90>::operator()(struct qbrain::ops::OpContext &)const " (??R<lambda_90>@?1??register_builtin_ops@ops@qbrain@@YAXXZ@QEBA@AEAUOpContext@23@@Z) 中引用了该符号 [D:\Projects\Qbrain\build\cmake-pregate\qbrain.vcxproj]
+qbrain_ops.lib(handlers.obj) : error LNK2019: 无法解析的外部符号 "bool __cdecl qbrain::codeintel::is_valid_symbol(class std::basic_string_view<char,struct std::char_traits<char> >)" (?is_valid_symbol@codeintel@qbrain@@YA_NV?$basic_string_view@DU?$char_traits@D@std@@@std@@@Z)，函数 "public: __cdecl `void __cdecl qbrain::ops::register_builtin_ops(void)'::`2'::<lambda_56>::operator()(struct qbrain::ops::OpContext &,class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > &,class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > &,int &,int &,struct qbrain::ops::OpResult &)const " (??R<lambda_56>@?1??register_builtin_ops@ops@qbrain@@YAXXZ@QEBA@AEAUOpContext@23@AEAV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@1AEAH2AEAUOpResult@23@@Z) 中引用了该符号 [D:\Projects\Qbrain\build\cmake-pregate\qbrain.vcxproj]
+qbrain_ops.lib(handlers.obj) : error LNK2019: 无法解析的外部符号 "class std::vector<struct qbrain::codeintel::Hit,class std::allocator<struct qbrain::codeintel::Hit> > __cdecl qbrain::codeintel::find_defs_in_source(class qbrain::Brain &,class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > const &,class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > const &,int,int)" (?find_defs_in_source@codeintel@qbrain@@YA?AV?$vector@UHit@codeintel@qbrain@@V?$allocator@UHit@codeintel@qbrain@@@std@@@std@@AEAVBrain@2@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@4@1HH@Z)，函数 "public: __cdecl `void __cdecl qbrain::ops::register_builtin_ops(void)'::`2'::<lambda_57>::operator()(struct qbrain::ops::OpContext &)const " (??R<lambda_57>@?1??register_builtin_ops@ops@qbrain@@YAXXZ@QEBA@AEAUOpContext@23@@Z) 中引用了该符号 [D:\Projects\Qbrain\build\cmake-pregate\qbrain.vcxproj]
+qbrain_ops.lib(handlers.obj) : error LNK2019: 无法解析的外部符号 "class std::vector<struct qbrain::codeintel::Hit,class std::allocator<struct qbrain::codeintel::Hit> > __cdecl qbrain::codeintel::find_refs_in_source(class qbrain::Brain &,class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > const &,class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > const &,int,int)" (?find_refs_in_source@codeintel@qbrain@@YA?AV?$vector@UHit@codeintel@qbrain@@V?$allocator@UHit@codeintel@qbrain@@@std@@@std@@AEAVBrain@2@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@4@1HH@Z)，函数 "public: __cdecl `void __cdecl qbrain::ops::register_builtin_ops(void)'::`2'::<lambda_58>::operator()(struct qbrain::ops::OpContext &)const " (??R<lambda_58>@?1??register_builtin_ops@ops@qbrain@@YAXXZ@QEBA@AEAUOpContext@23@@Z) 中引用了该符号 [D:\Projects\Qbrain\build\cmake-pregate\qbrain.vcxproj]
+qbrain_ops.lib(handlers.obj) : error LNK2019: 无法解析的外部符号 "class std::vector<struct qbrain::codeintel::Hit,class std::allocator<struct qbrain::codeintel::Hit> > __cdecl qbrain::codeintel::find_callers_in_source(class qbrain::Brain &,class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > const &,class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > const &,int,int)" (?find_callers_in_source@codeintel@qbrain@@YA?AV?$vector@UHit@codeintel@qbrain@@V?$allocator@UHit@codeintel@qbrain@@@std@@@std@@AEAVBrain@2@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@4@1HH@Z)，函数 "public: __cdecl `void __cdecl qbrain::ops::register_builtin_ops(void)'::`2'::<lambda_59>::operator()(struct qbrain::ops::OpContext &)const " (??R<lambda_59>@?1??register_builtin_ops@ops@qbrain@@YAXXZ@QEBA@AEAUOpContext@23@@Z) 中引用了该符号 [D:\Projects\Qbrain\build\cmake-pregate\qbrain.vcxproj]
+qbrain_ops.lib(handlers.obj) : error LNK2019: 无法解析的外部符号 "class std::vector<struct qbrain::codeintel::Hit,class std::allocator<struct qbrain::codeintel::Hit> > __cdecl qbrain::codeintel::find_callees_in_source(class qbrain::Brain &,class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > const &,class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > const &,int,int)" (?find_callees_in_source@codeintel@qbrain@@YA?AV?$vector@UHit@codeintel@qbrain@@V?$allocator@UHit@codeintel@qbrain@@@std@@@std@@AEAVBrain@2@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@4@1HH@Z)，函数 "public: __cdecl `void __cdecl qbrain::ops::register_builtin_ops(void)'::`2'::<lambda_87>::operator()(struct qbrain::ops::OpContext &)const " (??R<lambda_87>@?1??register_builtin_ops@ops@qbrain@@YAXXZ@QEBA@AEAUOpContext@23@@Z) 中引用了该符号 [D:\Projects\Qbrain\build\cmake-pregate\qbrain.vcxproj]
+qbrain_ops.lib(handlers.obj) : error LNK2019: 无法解析的外部符号 "class std::vector<struct qbrain::codeintel::Hit,class std::allocator<struct qbrain::codeintel::Hit> > __cdecl qbrain::codeintel::find_flow_in_source(class qbrain::Brain &,class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > const &,class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > const &,int,int,int)" (?find_flow_in_source@codeintel@qbrain@@YA?AV?$vector@UHit@codeintel@qbrain@@V?$allocator@UHit@codeintel@qbrain@@@std@@@std@@AEAVBrain@2@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@4@1HHH@Z)，函数 "public: __cdecl `void __cdecl qbrain::ops::register_builtin_ops(void)'::`2'::<lambda_88>::operator()(struct qbrain::ops::OpContext &)const " (??R<lambda_88>@?1??register_builtin_ops@ops@qbrain@@YAXXZ@QEBA@AEAUOpContext@23@@Z) 中引用了该符号 [D:\Projects\Qbrain\build\cmake-pregate\qbrain.vcxproj]
+qbrain_ops.lib(handlers.obj) : error LNK2019: 无法解析的外部符号 "class std::vector<struct qbrain::codeintel::Hit,class std::allocator<struct qbrain::codeintel::Hit> > __cdecl qbrain::codeintel::find_blast_in_source(class qbrain::Brain &,class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > const &,class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > const &,int,int)" (?find_blast_in_source@codeintel@qbrain@@YA?AV?$vector@UHit@codeintel@qbrain@@V?$allocator@UHit@codeintel@qbrain@@@std@@@std@@AEAVBrain@2@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@4@1HH@Z)，函数 "public: __cdecl `void __cdecl qbrain::ops::register_builtin_ops(void)'::`2'::<lambda_89>::operator()(struct qbrain::ops::OpContext &)const " (??R<lambda_89>@?1??register_builtin_ops@ops@qbrain@@YAXXZ@QEBA@AEAUOpContext@23@@Z) 中引用了该符号 [D:\Projects\Qbrain\build\cmake-pregate\qbrain.vcxproj]
+qbrain_ops.lib(handlers.obj) : error LNK2019: 无法解析的外部符号 "__int64 __cdecl qbrain::files::upload(class qbrain::Brain &,class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > const &,class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > const &)" (?upload@files@qbrain@@YA_JAEAVBrain@2@AEBV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@1@Z)，函数 "public: __cdecl `void __cdecl qbrain::ops::register_builtin_ops(void)'::`2'::<lambda_94>::operator()(struct qbrain::ops::OpContext &)const " (??R<lambda_94>@?1??register_builtin_ops@ops@qbrain@@YAXXZ@QEBA@AEAUOpContext@23@@Z) 中引用了该符号 [D:\Projects\Qbrain\build\cmake-pregate\qbrain.vcxproj]
+qbrain_ops.lib(handlers.obj) : error LNK2019: 无法解析的外部符号 "class std::vector<struct qbrain::files::FileEntry,class std::allocator<struct qbrain::files::FileEntry> > __cdecl qbrain::files::list_files(class qbrain::Brain &,int)" (?list_files@files@qbrain@@YA?AV?$vector@UFileEntry@files@qbrain@@V?$allocator@UFileEntry@files@qbrain@@@std@@@std@@AEAVBrain@2@H@Z)，函数 "public: __cdecl `void __cdecl qbrain::ops::register_builtin_ops(void)'::`2'::<lambda_95>::operator()(struct qbrain::ops::OpContext &)const " (??R<lambda_95>@?1??register_builtin_ops@ops@qbrain@@YAXXZ@QEBA@AEAUOpContext@23@@Z) 中引用了该符号 [D:\Projects\Qbrain\build\cmake-pregate\qbrain.vcxproj]
+qbrain_ops.lib(handlers.obj) : error LNK2019: 无法解析的外部符号 "class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > __cdecl qbrain::files::file_url(class qbrain::Brain &,__int64)" (?file_url@files@qbrain@@YA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAVBrain@2@_J@Z)，函数 "public: __cdecl `void __cdecl qbrain::ops::register_builtin_ops(void)'::`2'::<lambda_94>::operator()(struct qbrain::ops::OpContext &)const " (??R<lambda_94>@?1??register_builtin_ops@ops@qbrain@@YAXXZ@QEBA@AEAUOpContext@23@@Z) 中引用了该符号 [D:\Projects\Qbrain\build\cmake-pregate\qbrain.vcxproj]
+qbrain_ops.lib(handlers.obj) : error LNK2019: 无法解析的外部符号 "class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > __cdecl qbrain::files::file_url_by_name(class qbrain::Brain &,class std::basic_string<char,struct std::char_traits<char>,class std::allocator<char> > const &)" (?file_url_by_name@files@qbrain@@YA?AV?$basic_string@DU?$char_traits@D@std@@V?$allocator@D@2@@std@@AEAVBrain@2@AEBV34@@Z)，函数 "public: __cdecl `void __cdecl qbrain::ops::register_builtin_ops(void)'::`2'::<lambda_96>::operator()(struct qbrain::ops::OpContext &)const " (??R<lambda_96>@?1??register_builtin_ops@ops@qbrain@@YAXXZ@QEBA@AEAUOpContext@23@@Z) 中引用了该符号 [D:\Projects\Qbrain\build\cmake-pregate\qbrain.vcxproj]
+D:\Projects\Qbrain\build\cmake-pregate\Debug\qbrain.exe : fatal error LNK1120: 12 个无法解析的外部命令 [D:\Projects\Qbrain\build\cmake-pregate\qbrain.vcxproj]
+  Building Custom Rule D:/Projects/Qbrain/CMakeLists.txt
+  scan.cpp
+  qbrain_codeintel.vcxproj -> D:\Projects\Qbrain\build\cmake-pregate\Debug\qbrain_codeintel.lib
+  Building Custom Rule D:/Projects/Qbrain/CMakeLists.txt
+  test_main.cpp
+  test_rrf.cpp
+  test_vector.cpp
+  test_chunker.cpp
+  test_extract.cpp
+  test_storage.cpp
+  test_mcp.cpp
+D:\Projects\Qbrain\tests\test_mcp.cpp(8,10): error C1083: 无法打开包括文件: “nlohmann/json.hpp”: No such file or directory [D:\Projects\Qbrain\build\cmake-pregate\qbrain_tests.vcxproj]
+  test_rerank.cpp
+D:\Projects\Qbrain\tests\test_rerank.cpp(13,10): error C1083: 无法打开包括文件: “nlohmann/json.hpp”: No such file or directory [D:\Projects\Qbrain\build\cmake-pregate\qbrain_tests.vcxproj]
+  test_minions.cpp
+  test_migration_v6.cpp
+  test_n12_dream.cpp
+D:\Projects\Qbrain\tests\test_n12_dream.cpp(14,10): error C1083: 无法打开包括文件: “nlohmann/json.hpp”: No such file or directory [D:\Projects\Qbrain\build\cmake-pregate\qbrain_tests.vcxproj]
+  test_live_sync.cpp
+  test_n13.cpp
+D:\Projects\Qbrain\tests\test_n13.cpp(8,10): error C1083: 无法打开包括文件: “nlohmann/json.hpp”: No such file or directory [D:\Projects\Qbrain\build\cmake-pregate\qbrain_tests.vcxproj]
+  test_codeintel.cpp
+  test_analytics.cpp
+  test_n19.cpp
+D:\Projects\Qbrain\tests\test_n19.cpp(9,10): error C1083: 无法打开包括文件: “nlohmann/json.hpp”: No such file or directory [D:\Projects\Qbrain\build\cmake-pregate\qbrain_tests.vcxproj]
+  test_n20.cpp
+D:\Projects\Qbrain\tests\test_n20.cpp(10,10): error C1083: 无法打开包括文件: “nlohmann/json.hpp”: No such file or directory [D:\Projects\Qbrain\build\cmake-pregate\qbrain_tests.vcxproj]
+  test_n22.cpp
+D:\Projects\Qbrain\tests\test_n22.cpp(8,10): error C1083: 无法打开包括文件: “nlohmann/json.hpp”: No such file or directory [D:\Projects\Qbrain\build\cmake-pregate\qbrain_tests.vcxproj]
+  test_n23.cpp
+D:\Projects\Qbrain\tests\test_n23.cpp(8,10): error C1083: 无法打开包括文件: “nlohmann/json.hpp”: No such file or directory [D:\Projects\Qbrain\build\cmake-pregate\qbrain_tests.vcxproj]
+  test_n20_23.cpp
+  正在生成代码...
+  正在编译...
+  test_n24_25.cpp
+  test_n26_27.cpp
+  test_wave4.cpp
+D:\Projects\Qbrain\tests\test_wave4.cpp(11,10): error C1083: 无法打开包括文件: “nlohmann/json.hpp”: No such file or directory [D:\Projects\Qbrain\build\cmake-pregate\qbrain_tests.vcxproj]
+  test_wave5.cpp
+D:\Projects\Qbrain\tests\test_wave5.cpp(6,10): error C1083: 无法打开包括文件: “nlohmann/json.hpp”: No such file or directory [D:\Projects\Qbrain\build\cmake-pregate\qbrain_tests.vcxproj]
+  test_doctor.cpp
+D:\Projects\Qbrain\tests\test_doctor.cpp(6,10): error C1083: 无法打开包括文件: “nlohmann/json.hpp”: No such file or directory [D:\Projects\Qbrain\build\cmake-pregate\qbrain_tests.vcxproj]
+  test_n14.cpp
+D:\Projects\Qbrain\tests\test_n14.cpp(7,10): error C1083: 无法打开包括文件: “nlohmann/json.hpp”: No such file or directory [D:\Projects\Qbrain\build\cmake-pregate\qbrain_tests.vcxproj]
+  test_n15.cpp
+D:\Projects\Qbrain\tests\test_n15.cpp(9,10): error C1083: 无法打开包括文件: “nlohmann/json.hpp”: No such file or directory [D:\Projects\Qbrain\build\cmake-pregate\qbrain_tests.vcxproj]
+  test_n16.cpp
+D:\Projects\Qbrain\tests\test_n16.cpp(7,10): error C1083: 无法打开包括文件: “nlohmann/json.hpp”: No such file or directory [D:\Projects\Qbrain\build\cmake-pregate\qbrain_tests.vcxproj]
+  test_n17.cpp
+D:\Projects\Qbrain\tests\test_n17.cpp(8,10): error C1083: 无法打开包括文件: “nlohmann/json.hpp”: No such file or directory [D:\Projects\Qbrain\build\cmake-pregate\qbrain_tests.vcxproj]
+  test_n18.cpp
+D:\Projects\Qbrain\tests\test_n18.cpp(7,10): error C1083: 无法打开包括文件: “nlohmann/json.hpp”: No such file or directory [D:\Projects\Qbrain\build\cmake-pregate\qbrain_tests.vcxproj]
+  正在生成代码...
+cmake_exit=1

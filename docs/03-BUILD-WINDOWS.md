@@ -39,29 +39,30 @@ cmake -S . -B build -G "Visual Studio 18 2026" -A x64
 cmake --build build --config Release
 ```
 
-直接 cl（无 CMake）：
+直接 cl（无 CMake，项目当前验证路径）：
 
 ```powershell
-cmd /c scripts\build-cl-via-cmd.bat
+powershell -ExecutionPolicy Bypass -File .\scripts\build-cl.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\build-tests-cl.ps1
 ```
 
 ## 冒烟
 
 ```powershell
-.\build\Release\qbrain.exe init
-.\build\Release\qbrain.exe capture "hello"
-.\build\Release\qbrain.exe search hello --no-vector
-.\build\Release\qbrain.exe doctor
+.\build\cl\qbrain.exe init
+.\build\cl\qbrain.exe capture "hello"
+.\build\cl\qbrain.exe search hello --no-vector
+.\build\cl\qbrain.exe doctor --json
 ```
 
-## 已验证构建（2026-07-25）
+## 已验证构建（2026-07-28）
 
 SDK 补齐后可用直接 cl 构建：
 
 ```text
 产物: D:\Projects\Qbrain\build\cl\qbrain.exe
-单元测试: 5/5 PASS
-冒烟: init/capture/import/search/graph/doctor OK
+单元测试: 31/31 (N30, two rounds, both paths) PASS (scripts\build-tests-cl.ps1)
+冒烟: init/capture/import/search/doctor OK
 ```
 
 若 `vcvars` 后仍缺头文件，确认存在：
@@ -71,4 +72,4 @@ C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\ucrt\malloc.h
 C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\ucrt\x64
 ```
 
-无 CMake 时用 `cmd` + `cl` 批处理（见会话中的 `qbrain-cl3.bat` 模式）即可。
+若本地 MCP server 正运行在 `build\cl\qbrain.exe`，`scripts\build-cl.ps1` 会在链接前停止同一路径的本地 `qbrain.exe` 进程以释放文件锁。

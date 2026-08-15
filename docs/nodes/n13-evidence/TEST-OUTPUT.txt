@@ -1,0 +1,36 @@
+﻿[PASS] rrf
+[PASS] vector
+[PASS] chunker
+[PASS] extract
+[PASS] storage
+[PASS] mcp
+[INFO] silent_provider_elapsed_ms=4035
+[INFO] rerank_audit_sample={"doc_count":3,"failure_reason":"transport_timeout","fallback_taken":true,"query_hash":"7d54386ef4311cf169cdb352f2d3532a36fbd25b494399b4d4fa5c2e8c940d27","timestamp":"2026-07-30T10:40:12Z"}
+[PASS] rerank
+[INFO] minions_concurrent_claim winner=tok-race-B loser=sqlite_busy error=step: database is locked
+[PASS] minions
+[INFO] migration_v6_snapshot_sha256=d5a732e254146691eb59e885dda5c4e87238cdf6aa63c8e1f58c321ecf809ffc populated_v5_before_after=identical
+[INFO] migration_v6 populated_v5=preserved idempotent=noop rollback_after_first_ddl=clean rollback_after_marker=clean migrated_job_fence=pass fresh_shape=pass
+[PASS] migration_v6
+[INFO] dream_dry_run_snapshot_sha256=d24495ec0546759310d7eb1f5b3d8d2770d10f8292053ffbf2cb65a57cfdefd5 phases=orphans,extract_facts,consolidate,embed,purge unchanged=pass
+[INFO] dream_purge_snapshot_before_sha256=e01789d84936a53e9475dcf80db7e9ad3eedc1c9414155c5b5dc19a2253b167e after_sha256=34f5e430beeaec9db4d17d01c556b2351ea2aa5f12955cb9166deaefedcd149e mutations=7
+[INFO] mcp_write_deny_snapshot_sha256=f2294fc811412e6f924eba6189c21179eb03045ad12171f9643c2a6fb7e8c45e ops=submit_job,cancel_job,run_dream unchanged=pass
+[PASS] n12_dream
+[PASS] live_sync
+[INFO] live_sync cycle pages=1 scanned=3 skip=2
+[INFO] n13_live_sync first_pages=2 second_skipped=2 changed_pages=1 watch_once=1 source_isolation=pass
+[INFO] n13_source_cleanup rollback_unchanged=pass force_cleanup=pass
+[INFO] n13_graph neighbors_depth2=8 cycle_nodes=8 source_isolation=pass
+[INFO] n13_mcp_deny_snapshot_sha256=6645496a43a4f39f90bcd1fe8232a849f42ab90c802b99b17c17e2979b99fe5e unchanged=pass allow_write=pass read_ops=pass
+[PASS] n13
+[PASS] codeintel
+[PASS] analytics
+[PASS] n19
+[PASS] n20_23
+[PASS] n24_25
+[PASS] n26_27
+[PASS] wave4
+[PASS] wave5
+[PASS] doctor
+[WARN] live_sync: not a directory: C:\Users\ADMINI~1\AppData\Local\Temp\qbrain_live_sync_test\notes\..\..\should_not_matter
+[WARN] live_sync: invalid source_id: bad/id

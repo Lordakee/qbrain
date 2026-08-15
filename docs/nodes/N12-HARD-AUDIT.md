@@ -1,69 +1,73 @@
-# N12 HARD AUDIT
+# N12 Outcome Hard Audit
 
 **VERDICT: PASS**
-**Auditor**: Claude Code
-**Plan**: docs/nodes/N12-PLAN.md
-**Date**: 2026-07-26
-**Re-audit**: post-P0-fix
+**Auditor: Claude Code**
+**Approved plan**: `docs/nodes/N12-PLAN.md`
+**Plan audit**: `docs/nodes/N12-PLAN-AUDIT.md` (`VERDICT: PASS`)
+**Audit date**: 2026-07-29
+**Scope**: Read-only review of the current implementation, focused tests, native Windows/MSVC logs, and outcome evidence.
+**Historical audit**: The 2026-07-26 N12 audit was not used as this verdict and has been replaced by this fresh audit.
 
----
+## Audit Provenance
+
+Claude Code was invoked with model `claude-opus-5`, high effort, `Read` tools only, plan permission mode, no session persistence, and no file-edit authority. The first response reached `VERDICT: PASS` but was truncated during acceptance row 12, so it was not accepted as the gate artifact. A fresh concise Claude Code audit re-read the current files and returned every mandatory section.
+
+Raw responses:
+
+- `docs/nodes/n12-evidence/CLAUDE-N12-HARD-AUDIT-RESPONSE.txt` (truncated; provenance only)
+- `docs/nodes/n12-evidence/CLAUDE-N12-HARD-AUDIT-RESPONSE-2.txt` (complete; source of this audit)
 
 ## Acceptance Table
 
-| # | Criterion | Evidence | Result |
+| # | Assertion | Result | Claude Code evidence |
 |---|---|---|---|
-| 1 | Rerank fail-open never throws/empties on LLM failure | `test_rerank` PASS in unit suite; injected throw / empty / partial responses 鈫?result set size preserved, audit JSONL grows. Code: `apply_reranker` wraps the LLM call in an outer `try`, guards membership before reordering, never moves-from the head candidate into a fallible LLM call, and restores the original ordering on empty or size-mismatch responses. | **PASS** |
-| 2 | claim/complete token-fenced | `test_minions` PASS. Empty claim rejected (`claim_job` returns `nullopt` when `lock_token.empty()`); `complete` with wrong token fails (`WHERE lock_token = ?`); correct token completes; cancel works. `process_one` supplies a non-empty token. Live: `worker --once` exercised the claim path with the `cli-worker` token. | **PASS** |
-| 3 | dream dry-run writes nothing; `--apply` only selected phase | Dry-run JSON reports all 5 phases with `dry_run: true` and zero mutations. `doctor` snapshots bracketing the run: `pages\|chunks\|links` before `2\|2\|0`, after `2\|2\|0` 鈥?byte-identical. `dream --apply --phase consolidate` reported **only** `consolidate [ok] facts_titled=2 (102ms)`; no other phase appeared. | **PASS** |
-| 4 | schema >= 6 | `doctor` baseline: `schema: v6` on a freshly-initialized `n12verify` brain. 6 鈮?6. | **PASS** |
-
-**4 / 4 criteria satisfied.**
-
----
+| 1 | Rerank failure never throws, exits non-zero, or empties non-truncating results | **PASS** | `tests/test_rerank.cpp` throw injection and `docs/nodes/n12-evidence/TEST-OUTPUT.txt` `[PASS] rerank`. |
+| 2 | Fallback membership/count/scores match the no-LLM local baseline | **PASS** | `serialize_triples` equality in `tests/test_rerank.cpp`; finite `[0,1]` scoring in `src/qbrain/search/rerank.cpp`. |
+| 3 | Repeat triples are byte-identical; silent provider falls back below 10 seconds | **PASS** | Repeated baseline equality and the real silent-loopback assertion; final evidence records `silent_provider_elapsed_ms=3961`. |
+| 4 | Audit has only safe fields, a closed failure enum, no secret/payload, and 1 MiB rotation | **PASS** | Exact five-field JSON sample in `TEST-OUTPUT.txt`; closed-enum/redaction/rotation assertions in `tests/test_rerank.cpp`. |
+| 5 | No active double claim; wrong/stale token is rejected, including migrated-v5 jobs | **PASS** | Duplicate/wrong/stale token matrix in `tests/test_minions.cpp` and migrated job checks in `tests/test_migration_v6.cpp`. |
+| 6 | Reclaim increments once and clears its fence; terminal states hold; concurrent claim has one winner | **PASS** | Reclaim assertions plus final runtime marker `winner=tok-race-A loser=sqlite_busy error=step: database is locked`. |
+| 7 | Remote submit/cancel/dream writes are denied without allow-write and allowed explicitly | **PASS** | All three operations are local-only; `tests/test_n12_dream.cpp` proves identical full snapshots after each denied request; `tests/test_mcp.cpp` proves the allow-write path. |
+| 8 | Default dry-run reports all five phases with zero mutations and an unchanged full snapshot | **PASS** | Five isolated dry runs plus all-phase dry run; final full-table SHA-256 marker is recorded in `VERIFY-REPORT.md`. |
+| 9 | Selected non-purge phases reconcile mutation counts; mock embed mutates non-zero rows | **PASS** | Per-table deltas for orphans/extract/consolidate; `QBRAIN_EMBED_MOCK=1` completes two jobs with non-empty deterministic vectors. |
+| 10 | Apply without phase skips purge; explicit purge obeys eligibility, cascade, and retention bounds | **PASS** | `skipped_purge` implementation and purge fixture covering recent deleted, old active, cross-source same slug, references, and every numeric boundary. |
+| 11 | Every phase has isolated dry/apply coverage; invalid retention fails without mutation | **PASS** | Five-phase matrix and nonnumeric/decimal/positive-overflow/negative-overflow snapshot checks in `tests/test_n12_dream.cpp`. |
+| 12 | Populated v5 upgrades without content loss; v6 is nullable, transactional, idempotent, and fenced | **PASS** | Stable populated-v5 hash, second-run no-op, first-DDL and marker rollback injection, migrated-job lifecycle, and fresh shape checks. |
+| 13 | N1-N11 gates, MSVC metadata, `/std:c++20`, exact commands, and exact test count are recorded | **PASS** | `VERIFY-REPORT.md` records every dependency audit hash, MSVC 19.51 x64, native Windows, `/std:c++20`, commands, and 20 PASS / 0 FAIL. |
 
 ## Deliverables
 
-| Deliverable | State |
-|---|---|
-| Unit suite 8/8 | `rrf`, `vector`, `chunker`, `extract`, `storage`, `mcp`, `rerank`, `minions` 鈥?all `[PASS]` |
-| `tests/test_rerank.cpp` | New. Fault-injection: throw / empty / partial LLM responses; asserts size preservation + audit-trail growth |
-| `tests/test_minions.cpp` | New. Token-fence matrix: empty claim, wrong-token complete, correct-token complete, cancel |
-| `tests/test_mcp.cpp` | Extended. Job lifecycle `submit_job 鈫?list_jobs 鈫?get_job 鈫?cancel_job 鈫?run_dream` |
-| `src/qbrain/search/rerank.cpp` + `include/qbrain/search/rerank.hpp` | New. Fail-open reranker |
-| `src/qbrain/cycle/`, `include/qbrain/cycle/` | New. Dream cycle with dry-run and phase selection |
-| `src/qbrain/jobs/`, `include/qbrain/jobs/` | New. Minion job queue with token-fenced claim/complete |
-| `scripts/n12-verify.ps1` | New. Reproducible end-to-end verify harness |
-| `scripts/build-tests-cl.ps1` | New. MSVC test build |
-| `docs/nodes/N12-PLAN.md`, `docs/nodes/n12-evidence/` | New. Plan + captured evidence |
-| Schema migration to v6 | `src/qbrain/storage/migrate.cpp`, `include/qbrain/storage/schema_sql.hpp` |
-| CLI surface | `search --rerank --mode` accepted, emits `rerank_score`; `dream --apply --phase`; `worker --once` |
+**PASS.** Claude Code confirmed the hashed deliverables in `docs/nodes/n12-evidence/VERIFY-REPORT.md`:
 
----
+- Rerank/chat implementation with the 3000 ms bounded call, fail-open baseline, safe JSONL audit, and rotation.
+- Minion lifecycle with token fencing, bounded errors, reclaim accounting, and concurrent-claim behavior.
+- Five-phase dream implementation with mutation counters, strict retention parsing, explicit purge target set, and reference/cascade cleanup.
+- Transactional schema-v6 migration with populated-v5, idempotence, rollback-injection, and migrated-job tests.
+- Focused tests, canonical MSVC build registration, PowerShell verification harness, raw logs, and outcome evidence.
 
-## Findings
+No protected LLM provider, model, base URL, API key, reasoning, context, or compression configuration was changed.
 
-### P0 鈥?Blocking
-**None.** The two P0 defects that failed the prior audit are closed and independently re-verified:
+## P0
 
-- **P0-1 (rerank fault tolerance)** 鈥?closed. Outer `try` + membership guards + no move-from-head-into-fallible-call + original-order restore on empty/size-mismatch. Covered by `test_rerank`.
-- **P0-2 (dream dry-run inertness)** 鈥?closed. Confirmed at the DB level, not merely by the reporter's own claim: independent `doctor` snapshots before and after the dry-run are identical (`2|2|0`).
+None.
 
-### P1 鈥?Should fix
-1. **Dry-run inertness is verified only on page/chunk/link counts.** The `doctor` triple is a coarse fingerprint. A dry-run that mutated `facts`, `tags`, `versions`, or job rows without changing page/chunk/link cardinality would pass this check. *Recommendation:* extend the verify harness to a full-table row-count or content hash of `brain.db`.
-2. **Phase isolation tested on one phase only.** Only `--phase consolidate` was exercised. `orphans`, `extract_facts`, `embed`, and `purge` have no live `--apply` isolation evidence; `purge` in particular is destructive. *Recommendation:* loop the verify script over all five phases.
+## P1
 
-### P2 鈥?Nice to have
-1. **Rerank evidence is single-shot.** The `search --rerank` sample returned exactly one row with `rerank_score: 1.0` 鈥?a degenerate case where reordering is unobservable. A multi-row corpus would demonstrate that reordering actually occurs on the success path, not just that the field is emitted.
-2. **Worker token evidence is indirect.** The `worker --once` invocation produced empty stdout; the report attributes the `cli-worker` token to code inspection rather than an observed artifact. A log line or `list_jobs` snapshot showing the held token would make this directly observable.
-3. **Embed phase untested end-to-end.** The verify brain has `embedded=0` and no API key, so the `embed` phase reports `waiting_embed_jobs=0` and its real path is unexercised.
-4. **`dream` JSON carries `"schema_version": "1"`** as a string while the DB schema is v6. Unrelated namespaces, but the naming invites confusion in logs.
+None.
 
----
+## P2
+
+1. The exact concurrent loser in a race can be either the documented `no_job` result or a documented SQLite busy result. This run recorded `sqlite_busy`; a CI stress loop could improve repeatability evidence, but the one-winner product contract is already enforced.
+2. Schema v6 is additive and intentionally has no supported downgrade path. The documented mitigation is to take a pre-migration backup and restore it instead of attempting schema rollback.
+
+## Comparison To Approved Plan
+
+Claude Code found all 13 falsifiable acceptance assertions satisfied by current source and runtime evidence. The implementation remains within the approved rerank/minion/dream/migration/CLI-MCP/test scope, retains Windows-native C++20/MSVC operation, preserves MCP write default-deny, and introduces no provider/model configuration change.
+
+Remaining risk is limited to the two documented P2 observations. Neither weakens an acceptance contract or blocks completion.
 
 ## Conclusion
 
-All four acceptance criteria are satisfied by the supplied evidence, with the two previously-failing P0 items now backed by independent DB-level observation rather than self-reported status. The unit suite is green at 8/8, both new test files exercise the specific failure modes the criteria name, and the CLI surface behaves as specified in live runs.
+N12 matches the approved plan with 13/13 acceptance assertions PASS, all required deliverables present, native MSVC build evidence, 20/20 registered tests PASS, no P0 findings, and no P1 findings.
 
-Remaining findings are P1/P2 breadth-of-coverage gaps 鈥?the correctness of what was tested is not in question; the concern is what was *not* tested (four of five dream phases under `--apply`, dry-run inertness beyond three counters, multi-row rerank ordering). None of these block N12.
-
-**VERDICT: PASS** 鈥?proceed to N13. Fold P1-1 and P1-2 into the N13 verify harness.
+**VERDICT: PASS**

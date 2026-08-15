@@ -1,0 +1,56 @@
+Now I have all required evidence. Let me produce the independent audit.
+
+---
+
+# N13 Outcome Hard Audit
+
+**VERDICT: PASS**
+Auditor: Claude Code
+Approved plan: docs/nodes/N13-PLAN.md
+Plan audit: docs/nodes/N13-PLAN-AUDIT.md (VERDICT PASS, 2026-07-29)
+Audit date: 2026-07-30
+Scope: read-only; no files edited.
+
+---
+
+## Acceptance
+
+| # | Status | Evidence |
+|---|--------|----------|
+| 1 | **PASS** | TEST-OUTPUT.txt line 21: `[INFO] n13_live_sync first_pages=2 second_skipped=2 changed_pages=1 watch_once=1 source_isolation=pass`. VERIFY-REPORT.md echoes identical marker. CLI-SMOKE-OUTPUT.txt: first sync `scanned=2 imported=2 skipped=0 errors=0`; idempotent re-run `imported=0 skipped=2 errors=0`. |
+| 2 | **PASS** | TEST-OUTPUT.txt `watch_once=1` (unit). CLI-SMOKE-OUTPUT.txt: `--watch --once --interval 1` → `live_sync_watch imported_pages_total=1 exit_code=0`; marker `watch_once=pass`. Both unit and CLI paths now covered. Bad-root WARN `not a directory: …should_not_matter` (TEST-OUTPUT.txt line 36). |
+| 3 | **PASS** | TEST-OUTPUT.txt line 22–23: `source_isolation=pass`; WARN `invalid source_id: bad/id`. CLI-SMOKE-OUTPUT.txt: `source=pass` with `--source cli_source`. VERIFY-REPORT.md records n13_live_sync marker confirming source propagation. |
+| 4 | **PASS** | TEST-OUTPUT.txt: `n13_live_sync … source_isolation=pass`. VERIFY-REPORT.md repeats marker. State file keyed `sha256(brain_id\nsource_id\ncanonical_root)[0:16].json`; cross-brain import count=0confirmed by unit test (referenced in prior audit at `test_n13.cpp:197-203`). |
+| 5 | **PASS** | TEST-OUTPUT.txt `n13_source_cleanup rollback_unchanged=pass force_cleanup=pass` covers the lifecycle path; `sources_status` unit assertions at `test_n13.cpp:227-228` (page=1, link=1). Code: `brain.cpp:484-496` COUNT+MAX with `deleted_at IS NULL`. |
+| 6 | **PASS** | `rollback_unchanged=pass` in TEST-OUTPUT.txt line 22. `brain.cpp:438,447` reject default/empty/unknown without force before any txn; non-force refused + snapshot identical per `test_n13.cpp:229-234`. |
+| 7 | **PASS** | `force_cleanup=pass` in TEST-OUTPUT.txt line 22. `brain.cpp:449-475`: `BEGIN IMMEDIATE` → links → facts → pages → source → `COMMIT`, ROLLBACK on throw; cascade via `PRAGMA foreign_keys=ON`. `test_n13.cpp:236-246`: injected failure → snapshot unchanged; force clears target; other source preserved. |
+| 8 | **PASS** | TEST-OUTPUT.txt line 23: `n13_graph neighbors_depth2=8 cycle_nodes=8 source_isolation=pass`. CLI-SMOKE-OUTPUT.txt: `qbrain graph a --depth 2 --json` returns `[{"depth":1,"direction":"out",...,"slug":"b"},{"depth":2,"direction":"in",...,"slug":"a"}]`, exit_code=0; marker `graph=pass`. |
+| 9 | **PASS** | TEST-OUTPUT.txt `[PASS] minions`; `test_n13.cpp:281-286` retry matrix (cancelled→waiting, payload preserved, fence cleared, re-retry on waiting→false); `minions.cpp:180-186` single UPDATE WHERE status IN ('failed','cancelled','dead'). |
+| 10 | **PASS** | `test_n13.cpp:296-301`: first forget=1, second=0(idempotent), list after=1, full forget all=1, empty, unrelated entity untouched. `brain.cpp:542-555` predicate-optional `active=0`; `list_facts` filters `active=1`. |
+| 11 | **PASS** | TEST-OUTPUT.txt line 24: `n13_mcp_deny_snapshot_sha256=6645496a43a4f39f90bcd1fe8232a849f42ab90c802b99b17c17e2979b99fe5e unchanged=pass allow_write=pass`. `handlers.cpp:557,1043,1090,1222` register all four writes with `local_only=true`; deny precedes handler at `registry.cpp:40-48`. Snapshot hash differs from prior run (ephemeral temp DB per run); `unchanged=pass` is the durable property. |
+| 12 | **PASS** | TEST-OUTPUT.txt line 24: `read_ops=pass`. Four read ops registered `Scope::Read local_only=false`; `recall` → `mode=conservative` → `use_vec=false` / no embedding call (`hybrid.cpp:148-150`). `test_n13.cpp:345-351`: all four callable remotely without allow-write. |
+| 13 | **PASS** | VERIFY-REPORT.md generated 2026-07-30T10:40:35Z: OS=Win11 10.0.22624/X64, MSVC 19.51.36248 x64, `/std:c++20`, exact4-command block (now includes `n13-cli-smoke.ps1`),21PASS/0 FAIL, build+test+CLI-smoke SHA-256 (a392248ff…3368),5 runtime markers (4 test + N13_CLI_SMOKE_OK), 15 deliverable hashes, N1-N12+N2.5 plan+outcome SHA-256 table, explicit no-provider/model/config-change statement. `n13-verify.ps1:134` asserts $ExpectedTests=21; suite count matches `test_main.cpp` (21) and TEST-OUTPUT.txt. BUILD-OUTPUT.txt: `BUILD_OK` + `TESTS_BUILD_OK`. |
+
+---
+
+## Deliverables
+
+1. **live_sync.hpp / live_sync.cpp** — source-scoped one-shot and bounded watch; state namespaced; path/symlink confinement. Present; SHA-256 in VERIFY-REPORT.md. ✅
+2. **import.cpp / import.hpp** — source id propagated into pages and links. Present; SHA-256 in VERIFY-REPORT.md. ✅
+3. **brain.hpp / brain.cpp** — `sources_status`, empty-source removal, force cleanup with FK-safe transaction, `forget_fact`/`list_facts`. Present; SHA-256 in VERIFY-REPORT.md. ✅
+4. **traverse.hpp / traverse.cpp / graph handler** — source-scoped bidirectional BFS depth-bounded with cycle termination. Present; SHA-256 in VERIFY-REPORT.md. ✅
+5. **minions.cpp / handlers.cpp / CLI routing** — retry, facts, source, sync registered with correct scopes and `local_only` flags; no N12 regression (N12 markers still PASS in TEST-OUTPUT.txt). ✅
+6. **tests/test_n13.cpp + scripts/n13-verify.ps1 + n13-cli-smoke.ps1 + evidence** — registered in `test_main.cpp`, executed in suite (21 PASS); verify script writes BUILD/TEST/CLI-SMOKE logs + VERIFY-REPORT.md. All SHA-256 present. ✅
+7. **N13-PLAN-AUDIT.md, N13-HARD-AUDIT.md, n13-evidence/VERIFY-REPORT.md, ledger notes** — plan audit PASS 2026-07-29; hard audit PASS 2026-07-30 (current, complete,13-row); VERIFY-REPORT.md regenerated 2026-07-30T10:40:35Z with CLI smoke evidence; ledger N13 note records both gates. ✅ (fully met; prior P1-1 stale-audit gap is closed).
+
+**All 7 deliverables fully met.**
+
+---
+
+## Prior P1 Recheck
+
+**P1-1 — Stale hard-audit file: RESOLVED.**
+The current `docs/nodes/N13-HARD-AUDIT.md` is not the 2026-07-26 historical 7-row artifact. It is the complete2026-07-30 outcome audit: VERDICT PASS, all 13 acceptance rows, deliverables check, P0/P1/P2 findings, comparison to plan, and conclusion. `n13-verify.ps1:73-84` greps `^\*\*VERDICT … PASS` and would match this file correctly; downstream nodes that run n13-verify.ps1 as a dependency check will pass the gate on this file's content rather than the historical stub.
+
+**P1-2 — CLI runtime evidence missing: RESOLVED.**
+`docs/nodes/n13-evidence/CLI-SMOKE-OUTPUT.txt` now exists, produced by `scripts/n13-cli-smoke.ps1` under an isolated `LOCALAPPDATA` + `QBRAIN_EMBED_MOCK=1` environment. It captures: `sync --once` (scanned=2 imported=2 exit_code=0), idempotent re-run

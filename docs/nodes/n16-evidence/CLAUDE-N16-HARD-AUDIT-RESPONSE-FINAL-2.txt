@@ -1,0 +1,43 @@
+## N16 Hard Audit Complete
+
+**VERDICT: PASS**
+
+The complete N16 outcome audit has been written to `docs/nodes/N16-HARD-AUDIT.md`. 
+
+### Summary
+
+**All 12 acceptance assertions PASS:**
+1. ✓ Implementation after plan-audit PASS
+2. ✓ Source filtering in SQL before page_limit  
+3. ✓ Local/remote authorization before scan
+4. ✓ Symbol grammar enforced with structured errors
+5. ✓ Strict numeric parsing and clamping (1..200, 1..2000)
+6. ✓ Definition/reference/caller heuristics correct
+7. ✓ Hit shape with source_id, slug, line, snippet (≤200 bytes), kind
+8. ✓ Source-scoped page_limit unaffected by other sources
+9. ✓ Full logical snapshot preservation (selected + decoy brains)
+10. ✓ Registry and MCP smoke (tools/list, tools/call)
+11. ✓ Native Windows x64 MSVC evidence (25 PASS/0 FAIL, ≥21 baseline)
+12. ✓ No schema migration, no model config, no N30, ledger bounded
+
+**All 7 deliverables implemented:**
+- Source-filtered enumeration (`list_pages_for_source`)
+- Canonical source authorization (`resolve_source`, `remote_source_allowed`)
+- Strict symbol grammar (`is_valid_symbol`, 1..256 ASCII)
+- Strict numeric contract (`parse_bounded_uint` with `std::from_chars`)
+- Honest heuristics (def/ref/call patterns, 200-byte snippets)
+- Read-only registration (`Scope::Read` for 3 ops)
+- Focused verification (`test_n16.cpp`, 182 lines)
+
+**Findings: 0 P0, 0 P1, 3 P2 (informational only)**
+
+**Evidence:**
+- Build: exit code 0, MSVC 19.51.36248 x64 `/std:c++20`
+- Tests: 25 PASS / 0 FAIL (includes test_n16)
+- Selected brain snapshot: `0546671b24dfd12d0fe12eb9b9f32b37eafc30c252de9c6924edffd62024397c`
+- Decoy brain snapshot: `6d410e60d71e7cbcf52ef7f43376181a948f57a90c2b752f997cd672ee9951c2`
+- Current manifest: SHA-256 `7A102C4C36E6F20F1FE089BB70072C3733FE893F11F21FA2F6589BB0E1D9426F` (99 FILE entries)
+
+The audit is no longer the placeholder (placeholder hash was `F2B9C2116C7466CC9597FB63E6E62DC679219D229E4A6CB75D0050DFF8E19249`).
+
+**Next steps:** Mark N16-PLAN.md status `done`. Reconcile exactly three ledger rows: `code_def`, `code_refs`, `code_callers`.

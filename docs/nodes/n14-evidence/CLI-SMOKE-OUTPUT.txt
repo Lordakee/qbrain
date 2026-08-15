@@ -1,0 +1,119 @@
+﻿command[1]=qbrain doctor --json
+{
+  "checks": [
+    {
+      "name": "database",
+      "status": "OK"
+    },
+    {
+      "name": "schema",
+      "status": "OK"
+    },
+    {
+      "name": "critical_tables",
+      "status": "OK"
+    },
+    {
+      "name": "optional",
+      "status": "WARN"
+    }
+  ],
+  "notes": [
+    "empty brain: import or capture notes",
+    "no embedding API key (set OPENAI_API_KEY or qbrain config set embedding.api_key)"
+  ],
+  "ok": true,
+  "overall": "OK",
+  "schema_version": 12,
+  "stats": {
+    "chunks": 0,
+    "embedded_chunks": 0,
+    "links": 0,
+    "pages": 0
+  }
+}
+command[1]_exit=0
+command[2]=qbrain doctor --remediate --json
+{
+  "health": {
+    "checks": [
+      {
+        "name": "database",
+        "status": "OK"
+      },
+      {
+        "name": "schema",
+        "status": "OK"
+      },
+      {
+        "name": "critical_tables",
+        "status": "OK"
+      },
+      {
+        "name": "optional",
+        "status": "WARN"
+      }
+    ],
+    "notes": [
+      "empty brain: import or capture notes",
+      "no embedding API key (set OPENAI_API_KEY or qbrain config set embedding.api_key)"
+    ],
+    "ok": true,
+    "overall": "OK",
+    "schema_version": 12,
+    "stats": {
+      "chunks": 0,
+      "embedded_chunks": 0,
+      "links": 0,
+      "pages": 0
+    }
+  },
+  "ok": true,
+  "remediation": {
+    "api_key_present": false,
+    "default_source": true,
+    "embed_jobs_enqueued": 0,
+    "notes": [
+      "embedding unavailable; skipped embed re-enqueue",
+      "no chunks missing embeddings"
+    ],
+    "reclaimed": 0
+  }
+}
+command[2]_exit=0
+command[3]=qbrain doctor --json
+{
+  "checks": [
+    {
+      "name": "database",
+      "status": "OK"
+    },
+    {
+      "name": "schema",
+      "status": "OK"
+    },
+    {
+      "name": "critical_tables",
+      "status": "OK"
+    },
+    {
+      "name": "optional",
+      "status": "WARN"
+    }
+  ],
+  "notes": [
+    "empty brain: import or capture notes",
+    "no embedding API key (set OPENAI_API_KEY or qbrain config set embedding.api_key)"
+  ],
+  "ok": true,
+  "overall": "OK",
+  "schema_version": 12,
+  "stats": {
+    "chunks": 0,
+    "embedded_chunks": 0,
+    "links": 0,
+    "pages": 0
+  }
+}
+command[3]_exit=0
+N14_CLI_SMOKE_OK commands=3 json_parse=pass remediation_envelope=pass post_health=pass timeout=30s isolated_localappdata=pass config_unchanged=pass

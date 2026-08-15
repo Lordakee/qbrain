@@ -1,0 +1,41 @@
+## N14 Hard Audit Complete
+
+**VERDICT: PASS**
+
+I've completed the comprehensive outcome audit of N14 and written the results to `docs/nodes/N14-HARD-AUDIT.md`.
+
+### Summary
+
+All 15 acceptance assertions from the approved plan are satisfied with concrete evidence:
+
+✅ **Job control operations** (`pause_job`, `resume_job`): State transitions are strict, N12 token fence preserved, invalid inputs rejected without database mutation
+
+✅ **Progress monitoring** (`get_job_progress`): Returns exactly 6 safe fields, redacts credentials, never exposes payload/result/tokens
+
+✅ **Status snapshot** (`get_status_snapshot`): Reports selected-brain schema version, live page count, stored chunks/links, 4 job counters; fails gracefully on damaged tables
+
+✅ **Doctor remediation** (`doctor_remediate`): Restores canonical default source, reclaims expired default-queue jobs, enqueues embed jobs with parsed-integer deduplication, is idempotent and transactionally atomic
+
+### Security Contracts Verified
+
+- **MCP write default-deny**: All 3 Write ops rejected before handler when `allow_write=false`; byte-identical snapshot preservation proven
+- **N12 token fence**: Stale tokens cannot complete/fail after pause; new tokens assigned only via N12 claim path
+- **Progress redaction**: 14 credential markers filtered; 500-byte truncation; only 6 safe fields exposed
+- **Strict integer parsing**: `std::from_chars` with trailing-data rejection; no `"1junk"` → job 1 bypass possible
+- **Transaction atomicity**: Remediation rollback on injected failure proven with identical pre/post snapshots
+
+### Evidence Quality
+
+- **25/25 tests PASS** (≥21 baseline requirement)
+- Native Windows MSVC 19.51.36248 x64 with `/std:c++20`
+- All N1–N13 dependencies verified with PASS plan+outcome audits
+- Dedicated `n14-evidence/` directory with BUILD/TEST/CLI output captures
+- Runtime markers confirm all security properties
+
+### Findings
+
+- **P0:** None
+- **P1:** None  
+- **P2:** Two informational notes (stale ledger sub-count, no explicit page-1/page-10 fixture); neither blocks acceptance
+
+**N14 may be marked done and ledger rows finalized.**

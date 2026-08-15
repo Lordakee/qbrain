@@ -1,0 +1,66 @@
+command=powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-cl.ps1
+working_directory=D:/Projects/Qbrain
+started_utc=2026-08-04T13:20:21.6220207+00:00
+ended_utc=2026-08-04T13:29:12.4041649+00:00
+exit_code=0
+target_arch=x64
+language_mode=/std:c++20
+isolated_localappdata=true
+production_qbrain_data_touched=false
+artifact_sha256=f18679b9e0ca4f24e93dca5cdeba6de7d59ea81a9f7596cd4753edce9aee06b1
+**********************************************************************
+** Visual Studio 2026 Developer Command Prompt v18.7.3
+** Copyright (c) 2026 Microsoft Corporation
+**********************************************************************
+[vcvarsall.bat] Environment initialized for: 'x64'
+sqlite3.c
+paths.cpp
+hash.cpp
+log.cpp
+string_util.cpp
+time_util.cpp
+database.cpp
+migrate.cpp
+types.cpp
+brain.cpp
+extract.cpp
+traverse.cpp
+analytics.cpp
+scan.cpp
+packs.cpp
+lint.cpp
+store.cpp
+vector.cpp
+rrf.cpp
+hybrid.cpp
+rerank.cpp
+正在生成代码...
+正在编译...
+minions.cpp
+dream.cpp
+chunker.cpp
+markdown.cpp
+import.cpp
+http_client.cpp
+embed.cpp
+chat.cpp
+registry.cpp
+handlers.cpp
+inbox_watch.cpp
+live_sync.cpp
+jsonrpc.cpp
+server.cpp
+http_server.cpp
+app.cpp
+commands.cpp
+main.cpp
+正在生成代码...
+BUILD_OK
+ Volume in drive D has no label.
+ Volume Serial Number is 1077-94CA
+
+ Directory of D:\Projects\Qbrain\build\cl
+
+2026/08/04  21:29         3,094,528 qbrain.exe
+               1 File(s)      3,094,528 bytes
+               0 Dir(s)  515,558,256,640 bytes free

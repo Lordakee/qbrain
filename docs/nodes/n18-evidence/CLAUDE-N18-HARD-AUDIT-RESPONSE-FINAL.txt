@@ -1,0 +1,21 @@
+**N18 HARD AUDIT complete.**
+
+| Field | Value |
+|---|---|
+| **Verdict** | PASS |
+| **P0** | 0|
+| **P1** | 0 |
+| **P2** | 3 (non-blocking documentation notes) |
+| **Final hash** | `12e1beeb60de0b53478e1c9a4855bcf845b9da6e4d5a4d9e641b1c61542935a5` |
+| **Placeholder hash** | `A2EB2E...` — confirmed different |
+| **Reread** | Confirmed — first 50 lines re-read, all 16 acceptance rows and 8 deliverable rows present, verdict is PASS not PENDING |
+
+All 16 acceptance assertions and 8 deliverables passed. Key verification points:
+
+- **Source isolation**: `active_links` CTE joins origin on `source_id` and `deleted_at IS NULL`; broken-target subquery scopes to same source — cross-source targets cannot satisfy.
+- **Null-page facts**: `analytics.cpp:344-353` inner-joins `facts` through `pages` requiring `owner.id = f.page_id`, excluding `NULL` and dangling page_id at SQL join time without mutation.
+- **Prefix rule / double-prefix regression**: `unprefixed_base` at line 171 returns empty when the stripped base still has a negating prefix, so `not_not_x` never conflicts with `not_x`.
+- **Snapshot invariants**: Full logical snapshot captured before/after every call class; all match. Zero `INSERT/UPDATE/DELETE` in analytics code paths.
+- **25PASS / 0 FAIL** including dedicated `test_n18`, native MSVC x64 C++20, exact deliverable hashes match BUILD-MANIFEST.
+
+No files other than `docs/nodes/N18-HARD-AUDIT.md` were modified. No code, tests, plans, ledger, scripts, or configuration were touched.

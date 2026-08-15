@@ -1,0 +1,1760 @@
+{
+    "format_version":  1,
+    "node":  "N20",
+    "state":  "prepared-before-official-builds",
+    "prepared_utc":  "2026-08-04T12:47:29.7206552+00:00",
+    "gate":  {
+                 "path":  "docs/nodes/n20-evidence/PRE-IMPLEMENTATION-GATE.json",
+                 "file_sha256":  "db60b533ea14e99fdcd8971ee7bd13b30d8119c3de3953516c9777641ceecd16",
+                 "started_utc":  "2026-08-04T11:30:26.2351096+00:00",
+                 "completed_utc":  "2026-08-04T11:33:41.1404748+00:00",
+                 "approved_plan_sha256":  "147cc7d073d70d31184797cc7180f92cd8fa83d1ac134affd172dc4bbba77e11",
+                 "audited_draft_plan_sha256":  "d6600297081e983876894d9da893f2ff5769c518e74fb72483687eaae1f02787",
+                 "plan_audit_sha256":  "c3296b662fdd8e667de1e94bfa5838f141b3a4c249e0e2128e532bed5d506d66",
+                 "git_head":  "5ced8ccb511672536d0f9767a2bc1777baf561ab",
+                 "qbrain_sha256":  "0d5c63f98713268ba76452105f743c1597c25166fba01ea215924778e15c0bd6",
+                 "schema_version":  12,
+                 "baseline_manifest_sha256":  "3bafa9ba27d6271f21f761f1d5639c13662449a6f4edfd64c62a627a2b991c7e",
+                 "baseline_git_fingerprint_sha256":  "fb5efb1a1da069f9343c02f98cf2949eb0a91f602444f23807eef8b03d93d3b6",
+                 "baseline_inputs":  [
+                                         {
+                                             "path":  "CMakeLists.txt",
+                                             "sha256":  "24a4668591feb3b4a9ae1dba584c82dffe9f0d7c5f796fc6f0c31b631eced395",
+                                             "bytes":  5027,
+                                             "last_write_utc":  "2026-08-04T02:56:10.3052522Z",
+                                             "git_status":  " M CMakeLists.txt",
+                                             "git_diff_sha256":  "d740c62d9a81f531bcf5a759e068678af3476491d5e62df99cdffb9757008693"
+                                         },
+                                         {
+                                             "path":  "docs/nodes/N20-HARD-AUDIT.md",
+                                             "sha256":  "aaa85c7103f4d4c481019e6e57e55cb67b85b2140a1616721146847eb48a93e9",
+                                             "bytes":  375,
+                                             "last_write_utc":  "2026-07-27T01:05:30.2861362Z",
+                                             "git_status":  "",
+                                             "git_diff_sha256":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                                         },
+                                         {
+                                             "path":  "docs/OPS-PARITY-LEDGER.md",
+                                             "sha256":  "0c1d7f8771d2e0a86b4d89a2443738a20285786feca47b06cc985e29a06ca8c3",
+                                             "bytes":  12639,
+                                             "last_write_utc":  "2026-08-04T10:25:11.5471211Z",
+                                             "git_status":  " M docs/OPS-PARITY-LEDGER.md",
+                                             "git_diff_sha256":  "a00296fcaa5f5b8f19c1a6f1a367f00e0b672f8fc8707edac1b9fe7346349340"
+                                         },
+                                         {
+                                             "path":  "include/qbrain/core/brain.hpp",
+                                             "sha256":  "1aa7da46f32c3514320c9c878c0d57aae62721c59698fcfeb58c68ab98256229",
+                                             "bytes":  9272,
+                                             "last_write_utc":  "2026-08-04T02:30:50.3278606Z",
+                                             "git_status":  " M include/qbrain/core/brain.hpp",
+                                             "git_diff_sha256":  "fdf363db9511901c8c317671604cdf24c247ae0726316f27808304f8e5078695"
+                                         },
+                                         {
+                                             "path":  "include/qbrain/mcp/server.hpp",
+                                             "sha256":  "5a6fe4dfa6f2c288f17974541a61dbc546c0ae910ea7488250415740220ae4eb",
+                                             "bytes":  713,
+                                             "last_write_utc":  "2026-07-25T14:45:09.1987274Z",
+                                             "git_status":  "",
+                                             "git_diff_sha256":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                                         },
+                                         {
+                                             "path":  "include/qbrain/ops/registry.hpp",
+                                             "sha256":  "8318bd4e755d97de5c9c3a869b2592cdf4868511e110e3010cc2809982d1dad8",
+                                             "bytes":  1155,
+                                             "last_write_utc":  "2026-07-25T03:24:02.8394379Z",
+                                             "git_status":  "",
+                                             "git_diff_sha256":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                                         },
+                                         {
+                                             "path":  "include/qbrain/schema/packs.hpp",
+                                             "sha256":  "f177308e3a5878a85cedd6bd18776b79e37ba23b296096cbbaa1b787a1ff18ae",
+                                             "bytes":  730,
+                                             "last_write_utc":  "2026-07-27T08:33:53.0983703Z",
+                                             "git_status":  "",
+                                             "git_diff_sha256":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                                         },
+                                         {
+                                             "path":  "include/qbrain/storage/database.hpp",
+                                             "sha256":  "2f0ccf8035aa35f3ce69a12d42afa18015754efb4671d7c528b36bb4285de8fd",
+                                             "bytes":  2182,
+                                             "last_write_utc":  "2026-07-25T13:57:57.9637800Z",
+                                             "git_status":  "",
+                                             "git_diff_sha256":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                                         },
+                                         {
+                                             "path":  "include/qbrain/storage/schema_sql.hpp",
+                                             "sha256":  "7709912b2d792b6055c0b95d5c79a157b949669925242e7c840a256717c7a024",
+                                             "bytes":  4106,
+                                             "last_write_utc":  "2026-07-26T03:58:29.3031964Z",
+                                             "git_status":  "",
+                                             "git_diff_sha256":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                                         },
+                                         {
+                                             "path":  "include/qbrain/util/paths.hpp",
+                                             "sha256":  "631a93eb746fb92b2b0e5d20c2dc131cda0686127d68685a045f6cec4cdef0ce",
+                                             "bytes":  555,
+                                             "last_write_utc":  "2026-07-28T04:49:46.5566816Z",
+                                             "git_status":  " M include/qbrain/util/paths.hpp",
+                                             "git_diff_sha256":  "4018c063dd40fda3ac74a53ff255b6dce1382cd09a71137047ac2e0433c32142"
+                                         },
+                                         {
+                                             "path":  "scripts/build-cl.ps1",
+                                             "sha256":  "553a1989952d346fce8f836146377aec6d0db29e143893c3ac7fd28869b15070",
+                                             "bytes":  3605,
+                                             "last_write_utc":  "2026-07-31T07:19:01.5503413Z",
+                                             "git_status":  " M scripts/build-cl.ps1",
+                                             "git_diff_sha256":  "0619a99ebb7b51033a782e8f3441a6c39b3c37c6db25698a002ddff080633a9c"
+                                         },
+                                         {
+                                             "path":  "scripts/build-tests-cl.ps1",
+                                             "sha256":  "a682bb81ba366e7dc45eeee2825255f76b27c6db66b490791e4a1467c88f458e",
+                                             "bytes":  3243,
+                                             "last_write_utc":  "2026-08-04T02:56:10.3072375Z",
+                                             "git_status":  " M scripts/build-tests-cl.ps1",
+                                             "git_diff_sha256":  "fa087b04553c594e741608221bc5471bde6eb8b7bd576a4f434bfdf1d3514385"
+                                         },
+                                         {
+                                             "path":  "src/qbrain/core/brain.cpp",
+                                             "sha256":  "24bcd78978dc3aefb8bf7057def006f1fa049a8d63276402403f3b9a3740235b",
+                                             "bytes":  51109,
+                                             "last_write_utc":  "2026-08-04T02:49:08.5628934Z",
+                                             "git_status":  " M src/qbrain/core/brain.cpp",
+                                             "git_diff_sha256":  "e6f455454a66c5dc5ed1873a25705263b09e863a7c543f51ffd22f726bdb7940"
+                                         },
+                                         {
+                                             "path":  "src/qbrain/mcp/server.cpp",
+                                             "sha256":  "7515830e9d40c18580723567149569296b55d43a5e93615d7e5e35385564c4fd",
+                                             "bytes":  14383,
+                                             "last_write_utc":  "2026-08-04T02:49:08.5608620Z",
+                                             "git_status":  " M src/qbrain/mcp/server.cpp",
+                                             "git_diff_sha256":  "a31f0a61a408e1b2358add409af16e245efbdde8c6bab4fad061c221ff9a21de"
+                                         },
+                                         {
+                                             "path":  "src/qbrain/ops/handlers.cpp",
+                                             "sha256":  "e02c76b55410f4ac02bb973d6e83691ffe1b97856f3a4234cb3677cca3c7ad7e",
+                                             "bytes":  109093,
+                                             "last_write_utc":  "2026-08-04T03:02:52.5998474Z",
+                                             "git_status":  " M src/qbrain/ops/handlers.cpp",
+                                             "git_diff_sha256":  "f32b0a8106ac970578f4fd99f0c0002d3338626f4e21afd436818ceceb079da6"
+                                         },
+                                         {
+                                             "path":  "src/qbrain/ops/registry.cpp",
+                                             "sha256":  "e3fb8bad77a88677d6ae23a2eba626e98d47ab41c0659cbac1d724688b134a18",
+                                             "bytes":  1597,
+                                             "last_write_utc":  "2026-08-04T02:32:23.4419820Z",
+                                             "git_status":  " M src/qbrain/ops/registry.cpp",
+                                             "git_diff_sha256":  "1f563929edaf58e2c828f29da3e941f40015416e184b8065d066dec600453436"
+                                         },
+                                         {
+                                             "path":  "src/qbrain/schema/packs.cpp",
+                                             "sha256":  "cfc4d27ceb42c51113acde8c60eed2f4f1213409cbd24f5bd6112487bfc016bf",
+                                             "bytes":  4227,
+                                             "last_write_utc":  "2026-07-27T08:34:20.4997910Z",
+                                             "git_status":  "",
+                                             "git_diff_sha256":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                                         },
+                                         {
+                                             "path":  "src/qbrain/storage/database.cpp",
+                                             "sha256":  "bda29c5926936979102fd1078044b8ee76c250ae34707f4f4fda42ab4d32dacb",
+                                             "bytes":  4570,
+                                             "last_write_utc":  "2026-08-01T14:28:47.9815206Z",
+                                             "git_status":  " M src/qbrain/storage/database.cpp",
+                                             "git_diff_sha256":  "dbdd8f9ae1be0e94d28efd7e881cfe01aa8a52c2183c41346ea3c38ca44e6477"
+                                         },
+                                         {
+                                             "path":  "src/qbrain/storage/migrate.cpp",
+                                             "sha256":  "d775529ff6f89d520f15a3fee30f0e180a2011646516de0a620e1870d538ec45",
+                                             "bytes":  15352,
+                                             "last_write_utc":  "2026-08-04T02:52:10.8856654Z",
+                                             "git_status":  " M src/qbrain/storage/migrate.cpp",
+                                             "git_diff_sha256":  "c62ef5839bee1862bd04bc4fd62b8976235080f8d28d5cb22df94da348a73787"
+                                         },
+                                         {
+                                             "path":  "src/qbrain/util/paths.cpp",
+                                             "sha256":  "f7c3522070c601635b385f8d68bfee898e6b70cad2e2acc5a25d9e2f90b2488f",
+                                             "bytes":  3352,
+                                             "last_write_utc":  "2026-07-31T06:00:48.8548756Z",
+                                             "git_status":  " M src/qbrain/util/paths.cpp",
+                                             "git_diff_sha256":  "dc76b734da15487c24e4096e459cea8363cf00794d7963c516aaba8d000d74a1"
+                                         },
+                                         {
+                                             "path":  "tests/test_main.cpp",
+                                             "sha256":  "e47ab53280eb82f29ba189d022e174ee8300a683eef2134accb14758dfd12600",
+                                             "bytes":  2656,
+                                             "last_write_utc":  "2026-08-04T02:56:10.3032348Z",
+                                             "git_status":  " M tests/test_main.cpp",
+                                             "git_diff_sha256":  "a998d5a551da6867a4b86d6c1917bc3d6eff13cab29a686882c8939af3283dde"
+                                         },
+                                         {
+                                             "path":  "tests/test_mcp.cpp",
+                                             "sha256":  "8745ba5691dfb7d7d794f9fd9a8c43837e7cbed83a98f29f3d77a59bb8478052",
+                                             "bytes":  11182,
+                                             "last_write_utc":  "2026-07-28T05:25:46.9905226Z",
+                                             "git_status":  " M tests/test_mcp.cpp",
+                                             "git_diff_sha256":  "d696016899fedd5d223ce1a120bb67c22af4307520e30974985dbb5b1f892873"
+                                         },
+                                         {
+                                             "path":  "tests/test_n20_23.cpp",
+                                             "sha256":  "a8c068df0544c90e6dd6b2dce213878381ecf37637a087ca9afc81dc2e799f3b",
+                                             "bytes":  4235,
+                                             "last_write_utc":  "2026-07-28T15:44:49.8341354Z",
+                                             "git_status":  " M tests/test_n20_23.cpp",
+                                             "git_diff_sha256":  "16d6892841b699af2c20f7e8b1ed819871f19da50299aeb9ec7049a1573d7c5a"
+                                         },
+                                         {
+                                             "path":  "tests/test_storage.cpp",
+                                             "sha256":  "2e7eb17de213045625f9c0ae3f224142c5fbb5e2ae6c8d946e369fdff5b54095",
+                                             "bytes":  4233,
+                                             "last_write_utc":  "2026-07-28T02:27:49.1339436Z",
+                                             "git_status":  " M tests/test_storage.cpp",
+                                             "git_diff_sha256":  "2da17e308e7eab2fc02016c9f4d3725b842cad647618f6d135290efcf9449e95"
+                                         },
+                                         {
+                                             "path":  "tests/wave3_test_support.hpp",
+                                             "sha256":  "9a4f94093a6e64b6a3f2021b52cefa23cd06d0223803d4e6bda3ea7ec9c301a6",
+                                             "bytes":  5290,
+                                             "last_write_utc":  "2026-07-31T11:56:04.6025513Z",
+                                             "git_status":  "?? tests/wave3_test_support.hpp",
+                                             "git_diff_sha256":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                                         },
+                                         {
+                                             "path":  "third_party/nlohmann/json.hpp",
+                                             "sha256":  "010009e60834fccd54247fd3709ca44f604e125751b9ad7ffb780420d1067f7c",
+                                             "bytes":  919977,
+                                             "last_write_utc":  "2026-07-24T17:04:24.1971683Z",
+                                             "git_status":  "",
+                                             "git_diff_sha256":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                                         },
+                                         {
+                                             "path":  "third_party/sqlite/sqlite-amalgamation-3460100/sqlite3.c",
+                                             "sha256":  "6c35bc5f7f85eac9c49928bacbb02bb694b547aabf69197e058cca245ad80e83",
+                                             "bytes":  9089564,
+                                             "last_write_utc":  "2024-08-13T10:02:58.0000000Z",
+                                             "git_status":  "",
+                                             "git_diff_sha256":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                                         },
+                                         {
+                                             "path":  "third_party/sqlite/sqlite-amalgamation-3460100/sqlite3.h",
+                                             "sha256":  "89b62c671c5964e137409ce034941b7b05a3af2c9875aba41f47f9483d0c2515",
+                                             "bytes":  644069,
+                                             "last_write_utc":  "2024-08-13T10:02:58.0000000Z",
+                                             "git_status":  "",
+                                             "git_diff_sha256":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                                         }
+                                     ],
+                 "baseline_input_map":  {
+                                            "include/qbrain/storage/schema_sql.hpp":  {
+                                                                                          "path":  "include/qbrain/storage/schema_sql.hpp",
+                                                                                          "sha256":  "7709912b2d792b6055c0b95d5c79a157b949669925242e7c840a256717c7a024",
+                                                                                          "bytes":  4106,
+                                                                                          "last_write_utc":  "2026-07-26T03:58:29.3031964Z",
+                                                                                          "git_status":  "",
+                                                                                          "git_diff_sha256":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                                                                                      },
+                                            "docs/OPS-PARITY-LEDGER.md":  {
+                                                                              "path":  "docs/OPS-PARITY-LEDGER.md",
+                                                                              "sha256":  "0c1d7f8771d2e0a86b4d89a2443738a20285786feca47b06cc985e29a06ca8c3",
+                                                                              "bytes":  12639,
+                                                                              "last_write_utc":  "2026-08-04T10:25:11.5471211Z",
+                                                                              "git_status":  " M docs/OPS-PARITY-LEDGER.md",
+                                                                              "git_diff_sha256":  "a00296fcaa5f5b8f19c1a6f1a367f00e0b672f8fc8707edac1b9fe7346349340"
+                                                                          },
+                                            "third_party/sqlite/sqlite-amalgamation-3460100/sqlite3.h":  {
+                                                                                                             "path":  "third_party/sqlite/sqlite-amalgamation-3460100/sqlite3.h",
+                                                                                                             "sha256":  "89b62c671c5964e137409ce034941b7b05a3af2c9875aba41f47f9483d0c2515",
+                                                                                                             "bytes":  644069,
+                                                                                                             "last_write_utc":  "2024-08-13T10:02:58.0000000Z",
+                                                                                                             "git_status":  "",
+                                                                                                             "git_diff_sha256":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                                                                                                         },
+                                            "include/qbrain/core/brain.hpp":  {
+                                                                                  "path":  "include/qbrain/core/brain.hpp",
+                                                                                  "sha256":  "1aa7da46f32c3514320c9c878c0d57aae62721c59698fcfeb58c68ab98256229",
+                                                                                  "bytes":  9272,
+                                                                                  "last_write_utc":  "2026-08-04T02:30:50.3278606Z",
+                                                                                  "git_status":  " M include/qbrain/core/brain.hpp",
+                                                                                  "git_diff_sha256":  "fdf363db9511901c8c317671604cdf24c247ae0726316f27808304f8e5078695"
+                                                                              },
+                                            "src/qbrain/ops/handlers.cpp":  {
+                                                                                "path":  "src/qbrain/ops/handlers.cpp",
+                                                                                "sha256":  "e02c76b55410f4ac02bb973d6e83691ffe1b97856f3a4234cb3677cca3c7ad7e",
+                                                                                "bytes":  109093,
+                                                                                "last_write_utc":  "2026-08-04T03:02:52.5998474Z",
+                                                                                "git_status":  " M src/qbrain/ops/handlers.cpp",
+                                                                                "git_diff_sha256":  "f32b0a8106ac970578f4fd99f0c0002d3338626f4e21afd436818ceceb079da6"
+                                                                            },
+                                            "tests/test_mcp.cpp":  {
+                                                                       "path":  "tests/test_mcp.cpp",
+                                                                       "sha256":  "8745ba5691dfb7d7d794f9fd9a8c43837e7cbed83a98f29f3d77a59bb8478052",
+                                                                       "bytes":  11182,
+                                                                       "last_write_utc":  "2026-07-28T05:25:46.9905226Z",
+                                                                       "git_status":  " M tests/test_mcp.cpp",
+                                                                       "git_diff_sha256":  "d696016899fedd5d223ce1a120bb67c22af4307520e30974985dbb5b1f892873"
+                                                                   },
+                                            "scripts/build-cl.ps1":  {
+                                                                         "path":  "scripts/build-cl.ps1",
+                                                                         "sha256":  "553a1989952d346fce8f836146377aec6d0db29e143893c3ac7fd28869b15070",
+                                                                         "bytes":  3605,
+                                                                         "last_write_utc":  "2026-07-31T07:19:01.5503413Z",
+                                                                         "git_status":  " M scripts/build-cl.ps1",
+                                                                         "git_diff_sha256":  "0619a99ebb7b51033a782e8f3441a6c39b3c37c6db25698a002ddff080633a9c"
+                                                                     },
+                                            "tests/test_main.cpp":  {
+                                                                        "path":  "tests/test_main.cpp",
+                                                                        "sha256":  "e47ab53280eb82f29ba189d022e174ee8300a683eef2134accb14758dfd12600",
+                                                                        "bytes":  2656,
+                                                                        "last_write_utc":  "2026-08-04T02:56:10.3032348Z",
+                                                                        "git_status":  " M tests/test_main.cpp",
+                                                                        "git_diff_sha256":  "a998d5a551da6867a4b86d6c1917bc3d6eff13cab29a686882c8939af3283dde"
+                                                                    },
+                                            "include/qbrain/ops/registry.hpp":  {
+                                                                                    "path":  "include/qbrain/ops/registry.hpp",
+                                                                                    "sha256":  "8318bd4e755d97de5c9c3a869b2592cdf4868511e110e3010cc2809982d1dad8",
+                                                                                    "bytes":  1155,
+                                                                                    "last_write_utc":  "2026-07-25T03:24:02.8394379Z",
+                                                                                    "git_status":  "",
+                                                                                    "git_diff_sha256":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                                                                                },
+                                            "src/qbrain/core/brain.cpp":  {
+                                                                              "path":  "src/qbrain/core/brain.cpp",
+                                                                              "sha256":  "24bcd78978dc3aefb8bf7057def006f1fa049a8d63276402403f3b9a3740235b",
+                                                                              "bytes":  51109,
+                                                                              "last_write_utc":  "2026-08-04T02:49:08.5628934Z",
+                                                                              "git_status":  " M src/qbrain/core/brain.cpp",
+                                                                              "git_diff_sha256":  "e6f455454a66c5dc5ed1873a25705263b09e863a7c543f51ffd22f726bdb7940"
+                                                                          },
+                                            "docs/nodes/N20-HARD-AUDIT.md":  {
+                                                                                 "path":  "docs/nodes/N20-HARD-AUDIT.md",
+                                                                                 "sha256":  "aaa85c7103f4d4c481019e6e57e55cb67b85b2140a1616721146847eb48a93e9",
+                                                                                 "bytes":  375,
+                                                                                 "last_write_utc":  "2026-07-27T01:05:30.2861362Z",
+                                                                                 "git_status":  "",
+                                                                                 "git_diff_sha256":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                                                                             },
+                                            "include/qbrain/util/paths.hpp":  {
+                                                                                  "path":  "include/qbrain/util/paths.hpp",
+                                                                                  "sha256":  "631a93eb746fb92b2b0e5d20c2dc131cda0686127d68685a045f6cec4cdef0ce",
+                                                                                  "bytes":  555,
+                                                                                  "last_write_utc":  "2026-07-28T04:49:46.5566816Z",
+                                                                                  "git_status":  " M include/qbrain/util/paths.hpp",
+                                                                                  "git_diff_sha256":  "4018c063dd40fda3ac74a53ff255b6dce1382cd09a71137047ac2e0433c32142"
+                                                                              },
+                                            "include/qbrain/mcp/server.hpp":  {
+                                                                                  "path":  "include/qbrain/mcp/server.hpp",
+                                                                                  "sha256":  "5a6fe4dfa6f2c288f17974541a61dbc546c0ae910ea7488250415740220ae4eb",
+                                                                                  "bytes":  713,
+                                                                                  "last_write_utc":  "2026-07-25T14:45:09.1987274Z",
+                                                                                  "git_status":  "",
+                                                                                  "git_diff_sha256":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                                                                              },
+                                            "src/qbrain/mcp/server.cpp":  {
+                                                                              "path":  "src/qbrain/mcp/server.cpp",
+                                                                              "sha256":  "7515830e9d40c18580723567149569296b55d43a5e93615d7e5e35385564c4fd",
+                                                                              "bytes":  14383,
+                                                                              "last_write_utc":  "2026-08-04T02:49:08.5608620Z",
+                                                                              "git_status":  " M src/qbrain/mcp/server.cpp",
+                                                                              "git_diff_sha256":  "a31f0a61a408e1b2358add409af16e245efbdde8c6bab4fad061c221ff9a21de"
+                                                                          },
+                                            "scripts/build-tests-cl.ps1":  {
+                                                                               "path":  "scripts/build-tests-cl.ps1",
+                                                                               "sha256":  "a682bb81ba366e7dc45eeee2825255f76b27c6db66b490791e4a1467c88f458e",
+                                                                               "bytes":  3243,
+                                                                               "last_write_utc":  "2026-08-04T02:56:10.3072375Z",
+                                                                               "git_status":  " M scripts/build-tests-cl.ps1",
+                                                                               "git_diff_sha256":  "fa087b04553c594e741608221bc5471bde6eb8b7bd576a4f434bfdf1d3514385"
+                                                                           },
+                                            "include/qbrain/schema/packs.hpp":  {
+                                                                                    "path":  "include/qbrain/schema/packs.hpp",
+                                                                                    "sha256":  "f177308e3a5878a85cedd6bd18776b79e37ba23b296096cbbaa1b787a1ff18ae",
+                                                                                    "bytes":  730,
+                                                                                    "last_write_utc":  "2026-07-27T08:33:53.0983703Z",
+                                                                                    "git_status":  "",
+                                                                                    "git_diff_sha256":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                                                                                },
+                                            "src/qbrain/ops/registry.cpp":  {
+                                                                                "path":  "src/qbrain/ops/registry.cpp",
+                                                                                "sha256":  "e3fb8bad77a88677d6ae23a2eba626e98d47ab41c0659cbac1d724688b134a18",
+                                                                                "bytes":  1597,
+                                                                                "last_write_utc":  "2026-08-04T02:32:23.4419820Z",
+                                                                                "git_status":  " M src/qbrain/ops/registry.cpp",
+                                                                                "git_diff_sha256":  "1f563929edaf58e2c828f29da3e941f40015416e184b8065d066dec600453436"
+                                                                            },
+                                            "third_party/sqlite/sqlite-amalgamation-3460100/sqlite3.c":  {
+                                                                                                             "path":  "third_party/sqlite/sqlite-amalgamation-3460100/sqlite3.c",
+                                                                                                             "sha256":  "6c35bc5f7f85eac9c49928bacbb02bb694b547aabf69197e058cca245ad80e83",
+                                                                                                             "bytes":  9089564,
+                                                                                                             "last_write_utc":  "2024-08-13T10:02:58.0000000Z",
+                                                                                                             "git_status":  "",
+                                                                                                             "git_diff_sha256":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                                                                                                         },
+                                            "src/qbrain/schema/packs.cpp":  {
+                                                                                "path":  "src/qbrain/schema/packs.cpp",
+                                                                                "sha256":  "cfc4d27ceb42c51113acde8c60eed2f4f1213409cbd24f5bd6112487bfc016bf",
+                                                                                "bytes":  4227,
+                                                                                "last_write_utc":  "2026-07-27T08:34:20.4997910Z",
+                                                                                "git_status":  "",
+                                                                                "git_diff_sha256":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                                                                            },
+                                            "third_party/nlohmann/json.hpp":  {
+                                                                                  "path":  "third_party/nlohmann/json.hpp",
+                                                                                  "sha256":  "010009e60834fccd54247fd3709ca44f604e125751b9ad7ffb780420d1067f7c",
+                                                                                  "bytes":  919977,
+                                                                                  "last_write_utc":  "2026-07-24T17:04:24.1971683Z",
+                                                                                  "git_status":  "",
+                                                                                  "git_diff_sha256":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                                                                              },
+                                            "tests/test_n20_23.cpp":  {
+                                                                          "path":  "tests/test_n20_23.cpp",
+                                                                          "sha256":  "a8c068df0544c90e6dd6b2dce213878381ecf37637a087ca9afc81dc2e799f3b",
+                                                                          "bytes":  4235,
+                                                                          "last_write_utc":  "2026-07-28T15:44:49.8341354Z",
+                                                                          "git_status":  " M tests/test_n20_23.cpp",
+                                                                          "git_diff_sha256":  "16d6892841b699af2c20f7e8b1ed819871f19da50299aeb9ec7049a1573d7c5a"
+                                                                      },
+                                            "src/qbrain/storage/database.cpp":  {
+                                                                                    "path":  "src/qbrain/storage/database.cpp",
+                                                                                    "sha256":  "bda29c5926936979102fd1078044b8ee76c250ae34707f4f4fda42ab4d32dacb",
+                                                                                    "bytes":  4570,
+                                                                                    "last_write_utc":  "2026-08-01T14:28:47.9815206Z",
+                                                                                    "git_status":  " M src/qbrain/storage/database.cpp",
+                                                                                    "git_diff_sha256":  "dbdd8f9ae1be0e94d28efd7e881cfe01aa8a52c2183c41346ea3c38ca44e6477"
+                                                                                },
+                                            "tests/test_storage.cpp":  {
+                                                                           "path":  "tests/test_storage.cpp",
+                                                                           "sha256":  "2e7eb17de213045625f9c0ae3f224142c5fbb5e2ae6c8d946e369fdff5b54095",
+                                                                           "bytes":  4233,
+                                                                           "last_write_utc":  "2026-07-28T02:27:49.1339436Z",
+                                                                           "git_status":  " M tests/test_storage.cpp",
+                                                                           "git_diff_sha256":  "2da17e308e7eab2fc02016c9f4d3725b842cad647618f6d135290efcf9449e95"
+                                                                       },
+                                            "include/qbrain/storage/database.hpp":  {
+                                                                                        "path":  "include/qbrain/storage/database.hpp",
+                                                                                        "sha256":  "2f0ccf8035aa35f3ce69a12d42afa18015754efb4671d7c528b36bb4285de8fd",
+                                                                                        "bytes":  2182,
+                                                                                        "last_write_utc":  "2026-07-25T13:57:57.9637800Z",
+                                                                                        "git_status":  "",
+                                                                                        "git_diff_sha256":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                                                                                    },
+                                            "src/qbrain/util/paths.cpp":  {
+                                                                              "path":  "src/qbrain/util/paths.cpp",
+                                                                              "sha256":  "f7c3522070c601635b385f8d68bfee898e6b70cad2e2acc5a25d9e2f90b2488f",
+                                                                              "bytes":  3352,
+                                                                              "last_write_utc":  "2026-07-31T06:00:48.8548756Z",
+                                                                              "git_status":  " M src/qbrain/util/paths.cpp",
+                                                                              "git_diff_sha256":  "dc76b734da15487c24e4096e459cea8363cf00794d7963c516aaba8d000d74a1"
+                                                                          },
+                                            "src/qbrain/storage/migrate.cpp":  {
+                                                                                   "path":  "src/qbrain/storage/migrate.cpp",
+                                                                                   "sha256":  "d775529ff6f89d520f15a3fee30f0e180a2011646516de0a620e1870d538ec45",
+                                                                                   "bytes":  15352,
+                                                                                   "last_write_utc":  "2026-08-04T02:52:10.8856654Z",
+                                                                                   "git_status":  " M src/qbrain/storage/migrate.cpp",
+                                                                                   "git_diff_sha256":  "c62ef5839bee1862bd04bc4fd62b8976235080f8d28d5cb22df94da348a73787"
+                                                                               },
+                                            "tests/wave3_test_support.hpp":  {
+                                                                                 "path":  "tests/wave3_test_support.hpp",
+                                                                                 "sha256":  "9a4f94093a6e64b6a3f2021b52cefa23cd06d0223803d4e6bda3ea7ec9c301a6",
+                                                                                 "bytes":  5290,
+                                                                                 "last_write_utc":  "2026-07-31T11:56:04.6025513Z",
+                                                                                 "git_status":  "?? tests/wave3_test_support.hpp",
+                                                                                 "git_diff_sha256":  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                                                                             },
+                                            "CMakeLists.txt":  {
+                                                                   "path":  "CMakeLists.txt",
+                                                                   "sha256":  "24a4668591feb3b4a9ae1dba584c82dffe9f0d7c5f796fc6f0c31b631eced395",
+                                                                   "bytes":  5027,
+                                                                   "last_write_utc":  "2026-08-04T02:56:10.3052522Z",
+                                                                   "git_status":  " M CMakeLists.txt",
+                                                                   "git_diff_sha256":  "d740c62d9a81f531bcf5a759e068678af3476491d5e62df99cdffb9757008693"
+                                                               }
+                                        },
+                 "dependency_contracts":  [
+                                              {
+                                                  "node":  "N1",
+                                                  "kind":  "plan",
+                                                  "path":  "docs/nodes/N1-PLAN-AUDIT.md",
+                                                  "sha256":  "9fd6df77ad905463f34e6873c2220849003679a64c869e5fb1eaffba470f95e6",
+                                                  "auditor":  "Claude Code",
+                                                  "verdict":  "PASS"
+                                              },
+                                              {
+                                                  "node":  "N1",
+                                                  "kind":  "outcome",
+                                                  "path":  "docs/nodes/N1-HARD-AUDIT.md",
+                                                  "sha256":  "93f112c13d01864aa701683e2a4dbb3726a763d90b7a113c07dc543af4d31141",
+                                                  "auditor":  "Claude Code",
+                                                  "verdict":  "PASS"
+                                              },
+                                              {
+                                                  "node":  "N2",
+                                                  "kind":  "plan",
+                                                  "path":  "docs/nodes/N2-PLAN-AUDIT.md",
+                                                  "sha256":  "c34fede88989a9847dd3cad0bf719b6476c28bbfb124cb094d4afbe24d90fb85",
+                                                  "auditor":  "Claude Code",
+                                                  "verdict":  "PASS"
+                                              },
+                                              {
+                                                  "node":  "N2",
+                                                  "kind":  "outcome",
+                                                  "path":  "docs/nodes/N2-HARD-AUDIT.md",
+                                                  "sha256":  "e9dc809dcdb73c0757708f81d53daf2fc89394c12cf953e86c0e9de5923a3413",
+                                                  "auditor":  "Claude Code",
+                                                  "verdict":  "PASS"
+                                              },
+                                              {
+                                                  "node":  "N2.5",
+                                                  "kind":  "plan",
+                                                  "path":  "docs/nodes/N2.5-PLAN-AUDIT.md",
+                                                  "sha256":  "bd0cf1b5f4dddb9af40168a89d1a87be84d5a4eb2f99872d3389880523617953",
+                                                  "auditor":  "Claude Code",
+                                                  "verdict":  "PASS"
+                                              },
+                                              {
+                                                  "node":  "N2.5",
+                                                  "kind":  "outcome",
+                                                  "path":  "docs/nodes/N2.5-HARD-AUDIT.md",
+                                                  "sha256":  "dd6e404ab7583af8c6cbecd86179baba3401a1d5ef10f559b2067229a208c8ff",
+                                                  "auditor":  "Claude Code",
+                                                  "verdict":  "PASS"
+                                              },
+                                              {
+                                                  "node":  "N7",
+                                                  "kind":  "plan",
+                                                  "path":  "docs/nodes/N7-PLAN-AUDIT.md",
+                                                  "sha256":  "929970318d8fb3043371f82a9208360db7e38e6dd058e37f0eef515534f26d39",
+                                                  "auditor":  "Claude Code",
+                                                  "verdict":  "PASS"
+                                              },
+                                              {
+                                                  "node":  "N7",
+                                                  "kind":  "outcome",
+                                                  "path":  "docs/nodes/N7-HARD-AUDIT.md",
+                                                  "sha256":  "307226705f0dc7495b0aa7aeebf88bd807c0216c19cab059cd23d01dd6835421",
+                                                  "auditor":  "Claude Code",
+                                                  "verdict":  "PASS"
+                                              },
+                                              {
+                                                  "node":  "N8",
+                                                  "kind":  "plan",
+                                                  "path":  "docs/nodes/N8-PLAN-AUDIT.md",
+                                                  "sha256":  "7f16263f786315420ed42a7c79350add553ad84b11ce4cd6dbc21b0fdc320570",
+                                                  "auditor":  "Claude Code",
+                                                  "verdict":  "PASS"
+                                              },
+                                              {
+                                                  "node":  "N8",
+                                                  "kind":  "outcome",
+                                                  "path":  "docs/nodes/N8-HARD-AUDIT.md",
+                                                  "sha256":  "7970e96af49bbc86f6e71785409a68b482f24e8b2f08a42c2993bbc93c14a8f9",
+                                                  "auditor":  "Claude Code",
+                                                  "verdict":  "PASS"
+                                              },
+                                              {
+                                                  "node":  "N11",
+                                                  "kind":  "plan",
+                                                  "path":  "docs/nodes/N11-PLAN-AUDIT.md",
+                                                  "sha256":  "e157d9f3b6dcbc276b782d960c237d50fed9d4ff5614473678813e27541844a7",
+                                                  "auditor":  "Claude Code",
+                                                  "verdict":  "PASS"
+                                              },
+                                              {
+                                                  "node":  "N11",
+                                                  "kind":  "outcome",
+                                                  "path":  "docs/nodes/N11-HARD-AUDIT.md",
+                                                  "sha256":  "bdefcf26d138b658d31df0b8525c46b776aa5e9086796bcd16696d8b783f2012",
+                                                  "auditor":  "Claude Code",
+                                                  "verdict":  "PASS"
+                                              },
+                                              {
+                                                  "node":  "N15",
+                                                  "kind":  "plan",
+                                                  "path":  "docs/nodes/N15-PLAN-AUDIT.md",
+                                                  "sha256":  "01e95a0cc55e4d0580562008a65de2ee941a13a8b37f4fd730389937d5abaef1",
+                                                  "auditor":  "Claude Code",
+                                                  "verdict":  "PASS"
+                                              },
+                                              {
+                                                  "node":  "N15",
+                                                  "kind":  "outcome",
+                                                  "path":  "docs/nodes/N15-HARD-AUDIT.md",
+                                                  "sha256":  "9f5f14ab7ed2cf4da50b597f8f861061948d9b65331091a017d677f7b4968c59",
+                                                  "auditor":  "Claude Code",
+                                                  "verdict":  "PASS"
+                                              },
+                                              {
+                                                  "node":  "N18",
+                                                  "kind":  "plan",
+                                                  "path":  "docs/nodes/N18-PLAN-AUDIT.md",
+                                                  "sha256":  "87db9821c255555ab6a42aab8d22cac945a5e0141aeeb3dd02e76a07e743af6d",
+                                                  "auditor":  "Claude Code",
+                                                  "verdict":  "PASS"
+                                              },
+                                              {
+                                                  "node":  "N18",
+                                                  "kind":  "outcome",
+                                                  "path":  "docs/nodes/N18-HARD-AUDIT.md",
+                                                  "sha256":  "f09971ecf44ab66129f33ee3b7dad91515aac39d6d330b725916983fcb408053",
+                                                  "auditor":  "Claude Code",
+                                                  "verdict":  "PASS"
+                                              },
+                                              {
+                                                  "node":  "N19",
+                                                  "kind":  "plan",
+                                                  "path":  "docs/nodes/N19-PLAN-AUDIT.md",
+                                                  "sha256":  "e5c603efbfecb5603a0fd068dd2a0b39e7a75abac5fd116634adc397d9b7e470",
+                                                  "auditor":  "Claude Code",
+                                                  "verdict":  "PASS"
+                                              },
+                                              {
+                                                  "node":  "N19",
+                                                  "kind":  "outcome",
+                                                  "path":  "docs/nodes/N19-HARD-AUDIT.md",
+                                                  "sha256":  "d4ee4ad14e3768b5470865f092a783ba0d10b9e9155bfb17c4bd5ce594ad4f24",
+                                                  "auditor":  "Claude Code",
+                                                  "verdict":  "PASS"
+                                              }
+                                          ],
+                 "production_root_not_used":  true,
+                 "protected_model_configuration_changed":  false,
+                 "live_network_or_provider_call":  false,
+                 "commit_or_push_executed":  false
+             },
+    "governance":  {
+                       "approved_plan_sha256":  "147cc7d073d70d31184797cc7180f92cd8fa83d1ac134affd172dc4bbba77e11",
+                       "audited_draft_plan_sha256":  "d6600297081e983876894d9da893f2ff5769c518e74fb72483687eaae1f02787",
+                       "plan_audit_sha256":  "c3296b662fdd8e667de1e94bfa5838f141b3a4c249e0e2128e532bed5d506d66",
+                       "plan_status":  "approved",
+                       "plan_audit_verdict":  "PASS",
+                       "plan_auditor":  "Claude Code",
+                       "outcome_audit":  "pending"
+                   },
+    "dependency_contracts":  [
+                                 {
+                                     "node":  "N1",
+                                     "kind":  "plan",
+                                     "path":  "docs/nodes/N1-PLAN-AUDIT.md",
+                                     "sha256":  "9fd6df77ad905463f34e6873c2220849003679a64c869e5fb1eaffba470f95e6",
+                                     "auditor":  "Claude Code",
+                                     "verdict":  "PASS"
+                                 },
+                                 {
+                                     "node":  "N1",
+                                     "kind":  "outcome",
+                                     "path":  "docs/nodes/N1-HARD-AUDIT.md",
+                                     "sha256":  "93f112c13d01864aa701683e2a4dbb3726a763d90b7a113c07dc543af4d31141",
+                                     "auditor":  "Claude Code",
+                                     "verdict":  "PASS"
+                                 },
+                                 {
+                                     "node":  "N2",
+                                     "kind":  "plan",
+                                     "path":  "docs/nodes/N2-PLAN-AUDIT.md",
+                                     "sha256":  "c34fede88989a9847dd3cad0bf719b6476c28bbfb124cb094d4afbe24d90fb85",
+                                     "auditor":  "Claude Code",
+                                     "verdict":  "PASS"
+                                 },
+                                 {
+                                     "node":  "N2",
+                                     "kind":  "outcome",
+                                     "path":  "docs/nodes/N2-HARD-AUDIT.md",
+                                     "sha256":  "e9dc809dcdb73c0757708f81d53daf2fc89394c12cf953e86c0e9de5923a3413",
+                                     "auditor":  "Claude Code",
+                                     "verdict":  "PASS"
+                                 },
+                                 {
+                                     "node":  "N2.5",
+                                     "kind":  "plan",
+                                     "path":  "docs/nodes/N2.5-PLAN-AUDIT.md",
+                                     "sha256":  "bd0cf1b5f4dddb9af40168a89d1a87be84d5a4eb2f99872d3389880523617953",
+                                     "auditor":  "Claude Code",
+                                     "verdict":  "PASS"
+                                 },
+                                 {
+                                     "node":  "N2.5",
+                                     "kind":  "outcome",
+                                     "path":  "docs/nodes/N2.5-HARD-AUDIT.md",
+                                     "sha256":  "dd6e404ab7583af8c6cbecd86179baba3401a1d5ef10f559b2067229a208c8ff",
+                                     "auditor":  "Claude Code",
+                                     "verdict":  "PASS"
+                                 },
+                                 {
+                                     "node":  "N7",
+                                     "kind":  "plan",
+                                     "path":  "docs/nodes/N7-PLAN-AUDIT.md",
+                                     "sha256":  "929970318d8fb3043371f82a9208360db7e38e6dd058e37f0eef515534f26d39",
+                                     "auditor":  "Claude Code",
+                                     "verdict":  "PASS"
+                                 },
+                                 {
+                                     "node":  "N7",
+                                     "kind":  "outcome",
+                                     "path":  "docs/nodes/N7-HARD-AUDIT.md",
+                                     "sha256":  "307226705f0dc7495b0aa7aeebf88bd807c0216c19cab059cd23d01dd6835421",
+                                     "auditor":  "Claude Code",
+                                     "verdict":  "PASS"
+                                 },
+                                 {
+                                     "node":  "N8",
+                                     "kind":  "plan",
+                                     "path":  "docs/nodes/N8-PLAN-AUDIT.md",
+                                     "sha256":  "7f16263f786315420ed42a7c79350add553ad84b11ce4cd6dbc21b0fdc320570",
+                                     "auditor":  "Claude Code",
+                                     "verdict":  "PASS"
+                                 },
+                                 {
+                                     "node":  "N8",
+                                     "kind":  "outcome",
+                                     "path":  "docs/nodes/N8-HARD-AUDIT.md",
+                                     "sha256":  "7970e96af49bbc86f6e71785409a68b482f24e8b2f08a42c2993bbc93c14a8f9",
+                                     "auditor":  "Claude Code",
+                                     "verdict":  "PASS"
+                                 },
+                                 {
+                                     "node":  "N11",
+                                     "kind":  "plan",
+                                     "path":  "docs/nodes/N11-PLAN-AUDIT.md",
+                                     "sha256":  "e157d9f3b6dcbc276b782d960c237d50fed9d4ff5614473678813e27541844a7",
+                                     "auditor":  "Claude Code",
+                                     "verdict":  "PASS"
+                                 },
+                                 {
+                                     "node":  "N11",
+                                     "kind":  "outcome",
+                                     "path":  "docs/nodes/N11-HARD-AUDIT.md",
+                                     "sha256":  "bdefcf26d138b658d31df0b8525c46b776aa5e9086796bcd16696d8b783f2012",
+                                     "auditor":  "Claude Code",
+                                     "verdict":  "PASS"
+                                 },
+                                 {
+                                     "node":  "N15",
+                                     "kind":  "plan",
+                                     "path":  "docs/nodes/N15-PLAN-AUDIT.md",
+                                     "sha256":  "01e95a0cc55e4d0580562008a65de2ee941a13a8b37f4fd730389937d5abaef1",
+                                     "auditor":  "Claude Code",
+                                     "verdict":  "PASS"
+                                 },
+                                 {
+                                     "node":  "N15",
+                                     "kind":  "outcome",
+                                     "path":  "docs/nodes/N15-HARD-AUDIT.md",
+                                     "sha256":  "9f5f14ab7ed2cf4da50b597f8f861061948d9b65331091a017d677f7b4968c59",
+                                     "auditor":  "Claude Code",
+                                     "verdict":  "PASS"
+                                 },
+                                 {
+                                     "node":  "N18",
+                                     "kind":  "plan",
+                                     "path":  "docs/nodes/N18-PLAN-AUDIT.md",
+                                     "sha256":  "87db9821c255555ab6a42aab8d22cac945a5e0141aeeb3dd02e76a07e743af6d",
+                                     "auditor":  "Claude Code",
+                                     "verdict":  "PASS"
+                                 },
+                                 {
+                                     "node":  "N18",
+                                     "kind":  "outcome",
+                                     "path":  "docs/nodes/N18-HARD-AUDIT.md",
+                                     "sha256":  "f09971ecf44ab66129f33ee3b7dad91515aac39d6d330b725916983fcb408053",
+                                     "auditor":  "Claude Code",
+                                     "verdict":  "PASS"
+                                 },
+                                 {
+                                     "node":  "N19",
+                                     "kind":  "plan",
+                                     "path":  "docs/nodes/N19-PLAN-AUDIT.md",
+                                     "sha256":  "e5c603efbfecb5603a0fd068dd2a0b39e7a75abac5fd116634adc397d9b7e470",
+                                     "auditor":  "Claude Code",
+                                     "verdict":  "PASS"
+                                 },
+                                 {
+                                     "node":  "N19",
+                                     "kind":  "outcome",
+                                     "path":  "docs/nodes/N19-HARD-AUDIT.md",
+                                     "sha256":  "d4ee4ad14e3768b5470865f092a783ba0d10b9e9155bfb17c4bd5ce594ad4f24",
+                                     "auditor":  "Claude Code",
+                                     "verdict":  "PASS"
+                                 }
+                             ],
+    "corrective_boundary":  {
+                                "expected_changed_baseline_paths":  [
+                                                                        "CMakeLists.txt",
+                                                                        "include/qbrain/schema/packs.hpp",
+                                                                        "scripts/build-tests-cl.ps1",
+                                                                        "src/qbrain/mcp/server.cpp",
+                                                                        "src/qbrain/ops/handlers.cpp",
+                                                                        "src/qbrain/schema/packs.cpp",
+                                                                        "tests/test_main.cpp"
+                                                                    ],
+                                "changed_baseline_inputs":  [
+                                                                {
+                                                                    "path":  "CMakeLists.txt",
+                                                                    "gate_sha256":  "24a4668591feb3b4a9ae1dba584c82dffe9f0d7c5f796fc6f0c31b631eced395",
+                                                                    "current_sha256":  "a0896b126ddff6ac075e5e501187ec148eb3caeccd55fc30d60d58fcaddea628",
+                                                                    "current_bytes":  5237,
+                                                                    "current_last_write_utc":  "2026-08-04T12:35:34.3581894Z"
+                                                                },
+                                                                {
+                                                                    "path":  "include/qbrain/schema/packs.hpp",
+                                                                    "gate_sha256":  "f177308e3a5878a85cedd6bd18776b79e37ba23b296096cbbaa1b787a1ff18ae",
+                                                                    "current_sha256":  "3cbefc32cea456bdfdc19e9b9788912a8e0501c532aa9be4aac95433ed684da1",
+                                                                    "current_bytes":  2439,
+                                                                    "current_last_write_utc":  "2026-08-04T11:58:18.6552165Z"
+                                                                },
+                                                                {
+                                                                    "path":  "scripts/build-tests-cl.ps1",
+                                                                    "gate_sha256":  "a682bb81ba366e7dc45eeee2825255f76b27c6db66b490791e4a1467c88f458e",
+                                                                    "current_sha256":  "f5e9d43230957d845723ee62e0939c903c246d51cbd4ceead077f50a5638a63d",
+                                                                    "current_bytes":  3315,
+                                                                    "current_last_write_utc":  "2026-08-04T12:35:34.3582840Z"
+                                                                },
+                                                                {
+                                                                    "path":  "src/qbrain/mcp/server.cpp",
+                                                                    "gate_sha256":  "7515830e9d40c18580723567149569296b55d43a5e93615d7e5e35385564c4fd",
+                                                                    "current_sha256":  "3ebce0364d301968da50e2fd1f406564c18f50621183a87451919afe18c4d5a0",
+                                                                    "current_bytes":  17731,
+                                                                    "current_last_write_utc":  "2026-08-04T12:39:12.5319250Z"
+                                                                },
+                                                                {
+                                                                    "path":  "src/qbrain/ops/handlers.cpp",
+                                                                    "gate_sha256":  "e02c76b55410f4ac02bb973d6e83691ffe1b97856f3a4234cb3677cca3c7ad7e",
+                                                                    "current_sha256":  "6bf36bc288e64aa641c4cbfe57b07f89bc364d7b6a4f74072a229dd7ba42da04",
+                                                                    "current_bytes":  126538,
+                                                                    "current_last_write_utc":  "2026-08-04T12:37:59.7377056Z"
+                                                                },
+                                                                {
+                                                                    "path":  "src/qbrain/schema/packs.cpp",
+                                                                    "gate_sha256":  "cfc4d27ceb42c51113acde8c60eed2f4f1213409cbd24f5bd6112487bfc016bf",
+                                                                    "current_sha256":  "2962992a2b829946e90bc26df176ede4bd57d9093d1ab7ed0342cf5787e5b5f1",
+                                                                    "current_bytes":  30414,
+                                                                    "current_last_write_utc":  "2026-08-04T11:58:18.6573567Z"
+                                                                },
+                                                                {
+                                                                    "path":  "tests/test_main.cpp",
+                                                                    "gate_sha256":  "e47ab53280eb82f29ba189d022e174ee8300a683eef2134accb14758dfd12600",
+                                                                    "current_sha256":  "27f76a7e7e4042baa2f8035e083e2036ff74a6da2f8b10e6b2b39251bee75957",
+                                                                    "current_bytes":  2782,
+                                                                    "current_last_write_utc":  "2026-08-04T12:35:34.3513203Z"
+                                                                }
+                                                            ],
+                                "expected_concurrent_baseline_paths":  [
+                                                                           "include/qbrain/core/brain.hpp",
+                                                                           "src/qbrain/core/brain.cpp"
+                                                                       ],
+                                "concurrent_wave_baseline_inputs":  [
+                                                                        {
+                                                                            "path":  "include/qbrain/core/brain.hpp",
+                                                                            "gate_sha256":  "1aa7da46f32c3514320c9c878c0d57aae62721c59698fcfeb58c68ab98256229",
+                                                                            "current_sha256":  "3f90a4b547e390d2e2522ec3734f329ec0a47039e59af914690118e409182ec9",
+                                                                            "current_bytes":  10461,
+                                                                            "current_last_write_utc":  "2026-08-04T11:40:17.8904684Z"
+                                                                        },
+                                                                        {
+                                                                            "path":  "src/qbrain/core/brain.cpp",
+                                                                            "gate_sha256":  "24bcd78978dc3aefb8bf7057def006f1fa049a8d63276402403f3b9a3740235b",
+                                                                            "current_sha256":  "1fceb88261afd04536b747e41bb51a2ab02199e3be65f749360e5637ad9ac23b",
+                                                                            "current_bytes":  56260,
+                                                                            "current_last_write_utc":  "2026-08-04T12:00:46.1758053Z"
+                                                                        }
+                                                                    ],
+                                "unchanged_baseline_input_count":  19,
+                                "expected_new_implementation_paths":  [
+                                                                          "scripts/n20-verify.ps1",
+                                                                          "tests/test_n20.cpp"
+                                                                      ],
+                                "new_implementation_files":  [
+                                                                 {
+                                                                     "role":  "new-n20-implementation",
+                                                                     "path":  "scripts/n20-verify.ps1",
+                                                                     "sha256":  "52160c845f3c9f7896751c13f4402d7bf4818e30c3f6e391bac5f31c5d73790b",
+                                                                     "bytes":  90319,
+                                                                     "last_write_utc":  "2026-08-04T12:46:57.0214615Z"
+                                                                 },
+                                                                 {
+                                                                     "role":  "new-n20-implementation",
+                                                                     "path":  "tests/test_n20.cpp",
+                                                                     "sha256":  "31ddab710fadeb74a43fe60ba2786c18e9e1715ea83501453f6783b40d2c33c7",
+                                                                     "bytes":  71272,
+                                                                     "last_write_utc":  "2026-08-04T12:28:45.0160428Z"
+                                                                 }
+                                                             ],
+                                "gate_completed_before_all_corrective_files":  true,
+                                "schema_or_migration_input_changed":  false,
+                                "ledger_changed":  false,
+                                "historical_outcome_audit_changed":  false
+                            },
+    "suite_baseline":  {
+                           "completed_registered_tests":  26,
+                           "required_minimum_registered_tests":  27,
+                           "expected_registered_tests":  29,
+                           "registered_test_names":  [
+                                                         "rrf",
+                                                         "vector",
+                                                         "chunker",
+                                                         "extract",
+                                                         "storage",
+                                                         "mcp",
+                                                         "rerank",
+                                                         "minions",
+                                                         "migration_v6",
+                                                         "n12_dream",
+                                                         "live_sync",
+                                                         "n13",
+                                                         "codeintel",
+                                                         "analytics",
+                                                         "n19",
+                                                         "n20",
+                                                         "n22",
+                                                         "n23",
+                                                         "n20_23",
+                                                         "n24_25",
+                                                         "n26_27",
+                                                         "wave4",
+                                                         "wave5",
+                                                         "doctor",
+                                                         "n14",
+                                                         "n15",
+                                                         "n16",
+                                                         "n17",
+                                                         "n18"
+                                                     ],
+                           "dedicated_n20_registration_count":  1,
+                           "retained_n20_23_registration_count":  1
+                       },
+    "native_build_inputs":  [
+                                {
+                                    "role":  "n20-governance-input",
+                                    "path":  "AGENTS.md",
+                                    "sha256":  "71d174e725e6df4cda2767fa6aaf96c2f4f3316e1798ec419b18081e496ea1e2",
+                                    "bytes":  5718,
+                                    "last_write_utc":  "2026-07-27T09:04:30.5616693Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "CMakeLists.txt",
+                                    "sha256":  "a0896b126ddff6ac075e5e501187ec148eb3caeccd55fc30d60d58fcaddea628",
+                                    "bytes":  5237,
+                                    "last_write_utc":  "2026-08-04T12:35:34.3581894Z"
+                                },
+                                {
+                                    "role":  "n20-governance-input",
+                                    "path":  "docs/nodes/n20-evidence/PRE-IMPLEMENTATION-GATE.json",
+                                    "sha256":  "db60b533ea14e99fdcd8971ee7bd13b30d8119c3de3953516c9777641ceecd16",
+                                    "bytes":  16521,
+                                    "last_write_utc":  "2026-08-04T11:36:19.9518980Z"
+                                },
+                                {
+                                    "role":  "n20-governance-input",
+                                    "path":  "docs/nodes/N20-PLAN.md",
+                                    "sha256":  "147cc7d073d70d31184797cc7180f92cd8fa83d1ac134affd172dc4bbba77e11",
+                                    "bytes":  43329,
+                                    "last_write_utc":  "2026-08-04T11:20:33.7578142Z"
+                                },
+                                {
+                                    "role":  "n20-governance-input",
+                                    "path":  "docs/nodes/N20-PLAN-AUDIT.md",
+                                    "sha256":  "c3296b662fdd8e667de1e94bfa5838f141b3a4c249e0e2128e532bed5d506d66",
+                                    "bytes":  9003,
+                                    "last_write_utc":  "2026-08-04T11:20:19.0377705Z"
+                                },
+                                {
+                                    "role":  "n20-governance-input",
+                                    "path":  "docs/nodes/README.md",
+                                    "sha256":  "b7543d860eabe39c95b738d8682771e6883b246ddba2a143d07f7b2924023a80",
+                                    "bytes":  1605,
+                                    "last_write_utc":  "2026-07-27T09:04:03.4970306Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "include/qbrain/ai/chat.hpp",
+                                    "sha256":  "581b40d0b931c2d3876584d120936d5c4e92655a17084804f08ead59f9280bc7",
+                                    "bytes":  674,
+                                    "last_write_utc":  "2026-07-29T14:58:12.1314093Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "include/qbrain/ai/embed.hpp",
+                                    "sha256":  "a0b12ad0031da3e1755d26ad38ce87dd6d4271e68a33da766ab7ad3f6f209487",
+                                    "bytes":  347,
+                                    "last_write_utc":  "2026-07-24T17:08:58.2332654Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "include/qbrain/ai/http_client.hpp",
+                                    "sha256":  "bd42457d3d382e0cff714d7f316a7b521cd22968f25095233234cf88224c98d3",
+                                    "bytes":  410,
+                                    "last_write_utc":  "2026-07-24T17:08:56.7208803Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "include/qbrain/cli/app.hpp",
+                                    "sha256":  "b496252cecf6ad3ffb9f7e85deb51e96d49f305f8f2dc3e5b268ab5e68bde6fd",
+                                    "bytes":  204,
+                                    "last_write_utc":  "2026-07-28T04:52:09.9897842Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "include/qbrain/codeintel/scan.hpp",
+                                    "sha256":  "ec2e546f8fa8a75a4e8026e240a8790cb7638bce4daca2e5038c3017fbbc57fc",
+                                    "bytes":  3213,
+                                    "last_write_utc":  "2026-08-04T11:38:56.5493059Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "include/qbrain/core/brain.hpp",
+                                    "sha256":  "3f90a4b547e390d2e2522ec3734f329ec0a47039e59af914690118e409182ec9",
+                                    "bytes":  10461,
+                                    "last_write_utc":  "2026-08-04T11:40:17.8904684Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "include/qbrain/core/types.hpp",
+                                    "sha256":  "35472c36ff62bec42b282b987d2c39b4315f09ac29ff78883be7076898dbd6f3",
+                                    "bytes":  2177,
+                                    "last_write_utc":  "2026-07-26T03:56:37.9848101Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "include/qbrain/cycle/dream.hpp",
+                                    "sha256":  "6003aa8383cef1a4f3c8cd8e8779b1c9f995bc94c9e78ca8649826daec5a5ebe",
+                                    "bytes":  1018,
+                                    "last_write_utc":  "2026-07-29T17:28:11.3554728Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "include/qbrain/files/store.hpp",
+                                    "sha256":  "a91e30539a4a69337616c9595cc898b80710c3ea096ee17e85fc821a3073cee2",
+                                    "bytes":  661,
+                                    "last_write_utc":  "2026-07-27T01:08:54.0906717Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "include/qbrain/graph/analytics.hpp",
+                                    "sha256":  "d1d8f63081179dc49c1f46b5a4789445203eeddc0fabe63516fd72e373feb381",
+                                    "bytes":  1068,
+                                    "last_write_utc":  "2026-07-31T04:26:09.0605121Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "include/qbrain/graph/extract.hpp",
+                                    "sha256":  "61f9956fe0802c9bf1c79a38033dec13631a7fdbc3f71ed1b9366c4cc46366e3",
+                                    "bytes":  323,
+                                    "last_write_utc":  "2026-07-24T17:08:42.6209067Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "include/qbrain/graph/traverse.hpp",
+                                    "sha256":  "b157649a23642e4932689d2e105040eb9754848faa0ca7d9afed2ed537f1a0f2",
+                                    "bytes":  457,
+                                    "last_write_utc":  "2026-07-30T00:13:59.1373449Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "include/qbrain/ingest/chunker.hpp",
+                                    "sha256":  "5f4cb34c2ae142b86fb94e8f3a01cd70677224a9bab627d4f57093a34776b7d5",
+                                    "bytes":  343,
+                                    "last_write_utc":  "2026-07-24T17:08:51.4711275Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "include/qbrain/ingest/import.hpp",
+                                    "sha256":  "467ec1da3c7e77107104c5b44203cf55da97f3614c0c1c4aa3a4e6a9fadfc7c9",
+                                    "bytes":  504,
+                                    "last_write_utc":  "2026-08-01T17:01:45.0400307Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "include/qbrain/ingest/markdown.hpp",
+                                    "sha256":  "89551956b4774111e52935791997ca3137cbdd5b11ffaa1f5a9acec94651c7cb",
+                                    "bytes":  372,
+                                    "last_write_utc":  "2026-07-24T17:08:53.1478455Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "include/qbrain/jobs/minions.hpp",
+                                    "sha256":  "00da6811c7e0c41ac93b6b50e8e126b8d2dbf15e19b4f149a1116c108b52abe4",
+                                    "bytes":  5038,
+                                    "last_write_utc":  "2026-08-04T01:58:48.3134020Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "include/qbrain/mcp/jsonrpc.hpp",
+                                    "sha256":  "0aa1dca4121ac2235245f13468daf801fc381f0a100d8ce38be57c35552f3010",
+                                    "bytes":  524,
+                                    "last_write_utc":  "2026-07-25T03:25:07.2046136Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "include/qbrain/mcp/server.hpp",
+                                    "sha256":  "5a6fe4dfa6f2c288f17974541a61dbc546c0ae910ea7488250415740220ae4eb",
+                                    "bytes":  713,
+                                    "last_write_utc":  "2026-07-25T14:45:09.1987274Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "include/qbrain/ops/registry.hpp",
+                                    "sha256":  "8318bd4e755d97de5c9c3a869b2592cdf4868511e110e3010cc2809982d1dad8",
+                                    "bytes":  1155,
+                                    "last_write_utc":  "2026-07-25T03:24:02.8394379Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "include/qbrain/schema/lint.hpp",
+                                    "sha256":  "eafe8ac9e846750f36790805b0e2b1f0624de4c3b0150d0999440ad19d88dfe2",
+                                    "bytes":  667,
+                                    "last_write_utc":  "2026-07-27T01:09:11.0596285Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "include/qbrain/schema/packs.hpp",
+                                    "sha256":  "3cbefc32cea456bdfdc19e9b9788912a8e0501c532aa9be4aac95433ed684da1",
+                                    "bytes":  2439,
+                                    "last_write_utc":  "2026-08-04T11:58:18.6552165Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "include/qbrain/search/hybrid.hpp",
+                                    "sha256":  "45072d707a65485f355b22fa64ed662d9a1439703224224faad03fd9a5f00034",
+                                    "bytes":  1181,
+                                    "last_write_utc":  "2026-07-28T04:49:46.5933919Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "include/qbrain/search/rerank.hpp",
+                                    "sha256":  "7486917838473af720043e9cb6b71752ac950e3693de26f6aeae69b0ceb33148",
+                                    "bytes":  1399,
+                                    "last_write_utc":  "2026-07-29T14:58:12.1314093Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "include/qbrain/search/rrf.hpp",
+                                    "sha256":  "1f996af434ae1e8fd39e341f50a914e62094bba59e700dfd78c8e0cd461a166e",
+                                    "bytes":  603,
+                                    "last_write_utc":  "2026-07-26T02:18:08.7084793Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "include/qbrain/search/vector.hpp",
+                                    "sha256":  "f7d5ff18e87c1be9232d314fdbde9a485d56bab28fecdf95f8a7007f788be251",
+                                    "bytes":  337,
+                                    "last_write_utc":  "2026-07-24T17:08:45.6317668Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "include/qbrain/service/inbox_watch.hpp",
+                                    "sha256":  "89b3b4c0851a13104c704d1f9bf46b8bf41bf31a54bd5bbf3a7dbbfca7d72181",
+                                    "bytes":  202,
+                                    "last_write_utc":  "2026-07-25T14:44:40.7140692Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "include/qbrain/service/live_sync.hpp",
+                                    "sha256":  "9cc6c61e26565aaca5294e263f6ef3b36b2040ed7b9d3ed8ebabf0dc35f7d4ba",
+                                    "bytes":  934,
+                                    "last_write_utc":  "2026-07-30T00:13:24.2533447Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "include/qbrain/storage/database.hpp",
+                                    "sha256":  "2f0ccf8035aa35f3ce69a12d42afa18015754efb4671d7c528b36bb4285de8fd",
+                                    "bytes":  2182,
+                                    "last_write_utc":  "2026-07-25T13:57:57.9637800Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "include/qbrain/storage/schema_sql.hpp",
+                                    "sha256":  "7709912b2d792b6055c0b95d5c79a157b949669925242e7c840a256717c7a024",
+                                    "bytes":  4106,
+                                    "last_write_utc":  "2026-07-26T03:58:29.3031964Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "include/qbrain/util/hash.hpp",
+                                    "sha256":  "f5a02bc2dc179bc01a6598c8e91183b057c41c400839c1eceb9abaaeb2f04250",
+                                    "bytes":  268,
+                                    "last_write_utc":  "2026-07-24T17:08:09.1459945Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "include/qbrain/util/log.hpp",
+                                    "sha256":  "35da3c86a9068bd6b00484a096cf63b90b34ed1f3ce0cbb4e727b45d8ce2e856",
+                                    "bytes":  464,
+                                    "last_write_utc":  "2026-07-24T17:08:10.9799508Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "include/qbrain/util/paths.hpp",
+                                    "sha256":  "631a93eb746fb92b2b0e5d20c2dc131cda0686127d68685a045f6cec4cdef0ce",
+                                    "bytes":  555,
+                                    "last_write_utc":  "2026-07-28T04:49:46.5566816Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "include/qbrain/util/string_util.hpp",
+                                    "sha256":  "9394742e0a5ba2da8a83748e4afcf90fee400d473abe1db23b971faf905511e3",
+                                    "bytes":  521,
+                                    "last_write_utc":  "2026-07-24T17:08:12.6988728Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "include/qbrain/util/time_util.hpp",
+                                    "sha256":  "78390f81b3a583fd7e3b0ce3b62e7f4405ef3e0947b266a0e5fb4066b68b8cb3",
+                                    "bytes":  335,
+                                    "last_write_utc":  "2026-08-04T02:30:50.3328270Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "scripts/build-cl.ps1",
+                                    "sha256":  "553a1989952d346fce8f836146377aec6d0db29e143893c3ac7fd28869b15070",
+                                    "bytes":  3605,
+                                    "last_write_utc":  "2026-07-31T07:19:01.5503413Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "scripts/build-tests-cl.ps1",
+                                    "sha256":  "f5e9d43230957d845723ee62e0939c903c246d51cbd4ceead077f50a5638a63d",
+                                    "bytes":  3315,
+                                    "last_write_utc":  "2026-08-04T12:35:34.3582840Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "scripts/n20-verify.ps1",
+                                    "sha256":  "52160c845f3c9f7896751c13f4402d7bf4818e30c3f6e391bac5f31c5d73790b",
+                                    "bytes":  90319,
+                                    "last_write_utc":  "2026-08-04T12:46:57.0214615Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/ai/chat.cpp",
+                                    "sha256":  "d140568bb6977668c5912c39a32e5399ecf47ad843047fce777d1ec1be397191",
+                                    "bytes":  2393,
+                                    "last_write_utc":  "2026-07-29T15:01:59.3294233Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/ai/embed.cpp",
+                                    "sha256":  "4893549c139dffb7e909352dde6cb87fd32fb5ca3285c2058f0fe24ee93824c8",
+                                    "bytes":  1922,
+                                    "last_write_utc":  "2026-07-28T04:52:09.9982506Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/ai/http_client.cpp",
+                                    "sha256":  "9b442c82abf2fca866b81d8b9dc7a0919269e755e784d0cefcfc3232eb8261e9",
+                                    "bytes":  4537,
+                                    "last_write_utc":  "2026-07-24T17:12:45.3959622Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/cli/app.cpp",
+                                    "sha256":  "5a8eb76fa3845d39af3940377ce9ac8b2f2056cfe46775462cbdbc570903262e",
+                                    "bytes":  157,
+                                    "last_write_utc":  "2026-07-24T17:15:03.6021262Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/cli/commands.cpp",
+                                    "sha256":  "d02428ddcc80191ce4058423d212a2b0a2fb37dc7e9f0643786f4f868c54c41f",
+                                    "bytes":  19909,
+                                    "last_write_utc":  "2026-08-01T18:28:26.6411947Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/codeintel/scan.cpp",
+                                    "sha256":  "fd538237f83aff57da596b9d85571611b913a511b9bbb5563693c1ee3fa6853c",
+                                    "bytes":  25144,
+                                    "last_write_utc":  "2026-08-04T12:19:37.6664544Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/core/brain.cpp",
+                                    "sha256":  "1fceb88261afd04536b747e41bb51a2ab02199e3be65f749360e5637ad9ac23b",
+                                    "bytes":  56260,
+                                    "last_write_utc":  "2026-08-04T12:00:46.1758053Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/core/types.cpp",
+                                    "sha256":  "e3aeea582bac116e01f44aceef6c3f9b18235b7572291a3547a935912f7da262",
+                                    "bytes":  136,
+                                    "last_write_utc":  "2026-07-24T17:10:02.9799988Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/cycle/dream.cpp",
+                                    "sha256":  "e7c6d107e3d9c64526a6e9c428ebff27d5ce89a7545321412bd23ab3ed0e3a21",
+                                    "bytes":  12815,
+                                    "last_write_utc":  "2026-07-29T16:23:46.3324686Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/files/store.cpp",
+                                    "sha256":  "3e20f5e999721d129f2ae62fbab37c7be5ed5e605e73663ba108f79ae08f758c",
+                                    "bytes":  3823,
+                                    "last_write_utc":  "2026-07-27T01:10:02.9351902Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/graph/analytics.cpp",
+                                    "sha256":  "2ad297757745bec4707616374db628a52754390791d21489a7a425e6a7cf2c93",
+                                    "bytes":  20344,
+                                    "last_write_utc":  "2026-08-01T17:12:25.9863378Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/graph/extract.cpp",
+                                    "sha256":  "2a71b0c4d39fad1be8e1d11c23c0c902c19500994758c8300b62c773c01c363a",
+                                    "bytes":  2048,
+                                    "last_write_utc":  "2026-07-24T17:14:08.8510873Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/graph/traverse.cpp",
+                                    "sha256":  "9b9eeecff60a720f480f79c4d010369e7ed6984589e9210af1da4e935de4f5e4",
+                                    "bytes":  1135,
+                                    "last_write_utc":  "2026-07-30T00:13:59.1403550Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/ingest/chunker.cpp",
+                                    "sha256":  "08c0436d12333fbd46a98fb883b2673c4e4b525105ac50a57feef8f50dcca145",
+                                    "bytes":  1576,
+                                    "last_write_utc":  "2026-07-24T17:11:53.5681315Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/ingest/import.cpp",
+                                    "sha256":  "a51304a9dbbfe234d3f8b6cd39174c59a5a36f747644af03a22852bbc8f61819",
+                                    "bytes":  4407,
+                                    "last_write_utc":  "2026-08-01T17:01:45.0452253Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/ingest/markdown.cpp",
+                                    "sha256":  "3fca4a706193e4618a8a2941678e25c4856618d505315fe48ada2397dd3b3e89",
+                                    "bytes":  2435,
+                                    "last_write_utc":  "2026-07-25T02:50:58.4058602Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/jobs/minions.cpp",
+                                    "sha256":  "245b7bae5589947b3aaf03698f12c54959c62535439f781c8daa782bf0123806",
+                                    "bytes":  22100,
+                                    "last_write_utc":  "2026-08-04T04:35:57.0945264Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/main.cpp",
+                                    "sha256":  "72e0b8bb649e462617f2056bec417df4d4a4704f0d7b29acc883630868d54462",
+                                    "bytes":  106,
+                                    "last_write_utc":  "2026-07-24T17:15:04.3165537Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/mcp/http_server.cpp",
+                                    "sha256":  "9f488eb7ebe2f71f90bffa7462303684e1f115ff97a3b0e07d4959f2f456a25d",
+                                    "bytes":  10833,
+                                    "last_write_utc":  "2026-08-01T17:48:55.0037393Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/mcp/jsonrpc.cpp",
+                                    "sha256":  "30988951fc045e7a7a0f2b5819cd8122ba992b5cec400d7212989d9e69a74836",
+                                    "bytes":  2625,
+                                    "last_write_utc":  "2026-07-25T04:21:01.8345652Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/mcp/server.cpp",
+                                    "sha256":  "3ebce0364d301968da50e2fd1f406564c18f50621183a87451919afe18c4d5a0",
+                                    "bytes":  17731,
+                                    "last_write_utc":  "2026-08-04T12:39:12.5319250Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/ops/handlers.cpp",
+                                    "sha256":  "6bf36bc288e64aa641c4cbfe57b07f89bc364d7b6a4f74072a229dd7ba42da04",
+                                    "bytes":  126538,
+                                    "last_write_utc":  "2026-08-04T12:37:59.7377056Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/ops/registry.cpp",
+                                    "sha256":  "e3fb8bad77a88677d6ae23a2eba626e98d47ab41c0659cbac1d724688b134a18",
+                                    "bytes":  1597,
+                                    "last_write_utc":  "2026-08-04T02:32:23.4419820Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/schema/lint.cpp",
+                                    "sha256":  "a1771eda869a6d6407ed611d2f1efe540652dc18e973572a1fa680e31fe89f67",
+                                    "bytes":  3900,
+                                    "last_write_utc":  "2026-07-27T01:09:11.3084175Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/schema/packs.cpp",
+                                    "sha256":  "2962992a2b829946e90bc26df176ede4bd57d9093d1ab7ed0342cf5787e5b5f1",
+                                    "bytes":  30414,
+                                    "last_write_utc":  "2026-08-04T11:58:18.6573567Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/search/hybrid.cpp",
+                                    "sha256":  "2a74917efc8e6ceffd8800ab2548fd4ce3c1065671d53dc174bc4bd190b74508",
+                                    "bytes":  7734,
+                                    "last_write_utc":  "2026-08-04T04:36:31.5992803Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/search/rerank.cpp",
+                                    "sha256":  "67d87412d90d14c79e1f44b19262917105d7433c66264e170f910c97a8dbb505",
+                                    "bytes":  14885,
+                                    "last_write_utc":  "2026-07-29T16:44:49.4485610Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/search/rrf.cpp",
+                                    "sha256":  "7df0be7c8f36e5c1f4ab76af16b2fd77f75d01d1ce1afd326a4ef5fbf044efc3",
+                                    "bytes":  1761,
+                                    "last_write_utc":  "2026-07-26T02:18:11.3056362Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/search/vector.cpp",
+                                    "sha256":  "313e930afdd5a6897d37650ec7c99b5dd87a4d11fd9953e6f4e2d8e5bdebbc11",
+                                    "bytes":  1017,
+                                    "last_write_utc":  "2026-07-24T17:11:24.3043148Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/service/inbox_watch.cpp",
+                                    "sha256":  "76cb8edab0e4691faa46cf7d5bc74e87c0432f948947df27ad24be4de330b84e",
+                                    "bytes":  1546,
+                                    "last_write_utc":  "2026-07-28T02:39:15.1520290Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/service/live_sync.cpp",
+                                    "sha256":  "35302192d0c1fdfb0515115945fc2419cf26f8ec450af9e7bb929bddc3cf7c4f",
+                                    "bytes":  6099,
+                                    "last_write_utc":  "2026-07-31T05:46:38.5447731Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/storage/database.cpp",
+                                    "sha256":  "bda29c5926936979102fd1078044b8ee76c250ae34707f4f4fda42ab4d32dacb",
+                                    "bytes":  4570,
+                                    "last_write_utc":  "2026-08-01T14:28:47.9815206Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/storage/migrate.cpp",
+                                    "sha256":  "d775529ff6f89d520f15a3fee30f0e180a2011646516de0a620e1870d538ec45",
+                                    "bytes":  15352,
+                                    "last_write_utc":  "2026-08-04T02:52:10.8856654Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/util/hash.cpp",
+                                    "sha256":  "00c8e73e28481e5be961470caaa27c68521cc767dee7f2335f96ab02a793a3a3",
+                                    "bytes":  1653,
+                                    "last_write_utc":  "2026-07-24T17:09:25.5491754Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/util/log.cpp",
+                                    "sha256":  "ecbf5cfcfef182f9645f2b4e9186b612f76f507f408b3c9a57843b80097900f5",
+                                    "bytes":  583,
+                                    "last_write_utc":  "2026-07-24T17:09:28.0068785Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/util/paths.cpp",
+                                    "sha256":  "f7c3522070c601635b385f8d68bfee898e6b70cad2e2acc5a25d9e2f90b2488f",
+                                    "bytes":  3352,
+                                    "last_write_utc":  "2026-07-31T06:00:48.8548756Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/util/string_util.cpp",
+                                    "sha256":  "3a6dbdd4c8c02f79e411e48b71fbc607355569f51089e90d779c5818b2065662",
+                                    "bytes":  1981,
+                                    "last_write_utc":  "2026-07-24T17:09:35.5228232Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "src/qbrain/util/time_util.cpp",
+                                    "sha256":  "cb315dc6c50958c6a69270b130a9757881a9030cd27b8b730626d6e296ffe217",
+                                    "bytes":  1215,
+                                    "last_write_utc":  "2026-08-04T02:30:50.3358267Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "tests/test_analytics.cpp",
+                                    "sha256":  "ba017586f00cf0d195cc142d4dd646f7c7197ae0c29f1cfbef678121ca350855",
+                                    "bytes":  5076,
+                                    "last_write_utc":  "2026-07-31T04:47:23.2644927Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "tests/test_chunker.cpp",
+                                    "sha256":  "31f47c8dc66538d2dae0bd3ca55a78311b2b61ec1365ee047e7d4ca305a14bf0",
+                                    "bytes":  742,
+                                    "last_write_utc":  "2026-07-24T17:15:19.9903566Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "tests/test_codeintel.cpp",
+                                    "sha256":  "a35c91419718f0be05a1b5da26a6a1c47d692ab7c23d29dda0154395e0b84013",
+                                    "bytes":  2635,
+                                    "last_write_utc":  "2026-07-26T07:53:16.4985120Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "tests/test_doctor.cpp",
+                                    "sha256":  "70483d7e12a0bd8f6304ffdf5e48647ce43ddfc9238507325a8c1f8fa7b88cf4",
+                                    "bytes":  4003,
+                                    "last_write_utc":  "2026-07-28T11:48:57.4821261Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "tests/test_extract.cpp",
+                                    "sha256":  "883d78e8afb18715e36fe328195b6ecae6a52951bd7c2546576289037dcc0eb0",
+                                    "bytes":  1156,
+                                    "last_write_utc":  "2026-07-27T15:02:20.3923200Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "tests/test_live_sync.cpp",
+                                    "sha256":  "947fbfb8fe32dded9e5c17cbcdf9acba2df51ef54bd87625bf8b3f0e213b9dde",
+                                    "bytes":  1981,
+                                    "last_write_utc":  "2026-07-28T02:39:15.0539462Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "tests/test_main.cpp",
+                                    "sha256":  "27f76a7e7e4042baa2f8035e083e2036ff74a6da2f8b10e6b2b39251bee75957",
+                                    "bytes":  2782,
+                                    "last_write_utc":  "2026-08-04T12:35:34.3513203Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "tests/test_mcp.cpp",
+                                    "sha256":  "8745ba5691dfb7d7d794f9fd9a8c43837e7cbed83a98f29f3d77a59bb8478052",
+                                    "bytes":  11182,
+                                    "last_write_utc":  "2026-07-28T05:25:46.9905226Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "tests/test_migration_v6.cpp",
+                                    "sha256":  "8b0c7e8fd1cd716ae2a7ae1a921098a2b48e99a5ad3029efc24f89697b908880",
+                                    "bytes":  13332,
+                                    "last_write_utc":  "2026-07-29T18:30:11.4292911Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "tests/test_minions.cpp",
+                                    "sha256":  "b3367ef79accf53f1da33a88d05f4948e65b9eb20bf4c95abb316f2d8282750a",
+                                    "bytes":  12145,
+                                    "last_write_utc":  "2026-08-04T03:29:44.9223266Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "tests/test_n12_dream.cpp",
+                                    "sha256":  "23350c06a9ded7ca637410770f342a1488ffc98143dc4bd04a3e30fb03e4b329",
+                                    "bytes":  22662,
+                                    "last_write_utc":  "2026-07-29T18:30:11.4292911Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "tests/test_n13.cpp",
+                                    "sha256":  "34ae2de83bc54b1fcd9611d7982ada6704617e3c02ce132be5bf807171425dec",
+                                    "bytes":  16133,
+                                    "last_write_utc":  "2026-07-30T08:55:15.6622521Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "tests/test_n14.cpp",
+                                    "sha256":  "3b4a69f3b4c2d282069ca81d8be6421d3a09a48a8ce61d71cf761f296eb97785",
+                                    "bytes":  43337,
+                                    "last_write_utc":  "2026-08-02T08:22:18.6410640Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "tests/test_n15.cpp",
+                                    "sha256":  "ad709351520f1f48f16fcbd6392ee8a93f886c10e92f70054b24f6b231cc9078",
+                                    "bytes":  69183,
+                                    "last_write_utc":  "2026-08-03T05:00:39.6149216Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "tests/test_n16.cpp",
+                                    "sha256":  "9653f1bfa0f3e0493e1017d88466b7e45cbdf16901a2eea5a2c58b77387c3ee7",
+                                    "bytes":  24969,
+                                    "last_write_utc":  "2026-08-03T04:26:45.7150689Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "tests/test_n17.cpp",
+                                    "sha256":  "e4fe3eaa144209e8a7e64b6f5251bf863514a05c1d5e6ae5109b118b112bcdac",
+                                    "bytes":  64178,
+                                    "last_write_utc":  "2026-08-04T04:37:19.2365998Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "tests/test_n18.cpp",
+                                    "sha256":  "4781d0029a8fd7d9a0cb298d4ac935bb36fc23e2612e51f562c5d7e33a87f9ea",
+                                    "bytes":  69108,
+                                    "last_write_utc":  "2026-08-04T06:29:48.7418787Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "tests/test_n19.cpp",
+                                    "sha256":  "27023d52d3c637b081747d1e66c2a86c84a21c0628fb413d6301af8e00e6d8e9",
+                                    "bytes":  58903,
+                                    "last_write_utc":  "2026-08-04T09:05:29.5273994Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "tests/test_n20.cpp",
+                                    "sha256":  "31ddab710fadeb74a43fe60ba2786c18e9e1715ea83501453f6783b40d2c33c7",
+                                    "bytes":  71272,
+                                    "last_write_utc":  "2026-08-04T12:28:45.0160428Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "tests/test_n20_23.cpp",
+                                    "sha256":  "a8c068df0544c90e6dd6b2dce213878381ecf37637a087ca9afc81dc2e799f3b",
+                                    "bytes":  4235,
+                                    "last_write_utc":  "2026-07-28T15:44:49.8341354Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "tests/test_n22.cpp",
+                                    "sha256":  "fb4b647f013c816ad0c0ffbbbe48f1d4ab477bca75a40fdf7b11069085f5c566",
+                                    "bytes":  65528,
+                                    "last_write_utc":  "2026-08-04T11:51:18.6638264Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "tests/test_n23.cpp",
+                                    "sha256":  "d4dbb3e0e2d330adde43d928f21334561127c29afac84f97d546e5c9bfe7ad99",
+                                    "bytes":  32027,
+                                    "last_write_utc":  "2026-08-04T12:02:37.0243134Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "tests/test_n24_25.cpp",
+                                    "sha256":  "443a2591fcefc00c714b14290ac00664d945e6db464b770d46f4cce98d484101",
+                                    "bytes":  2302,
+                                    "last_write_utc":  "2026-07-27T01:10:21.4075041Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "tests/test_n26_27.cpp",
+                                    "sha256":  "1fc30bcabd8388b3437cbed696212e6b354950b700f6e6e5d4ac38106775a2fe",
+                                    "bytes":  2457,
+                                    "last_write_utc":  "2026-07-27T08:34:33.6082064Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "tests/test_rerank.cpp",
+                                    "sha256":  "64a91574e2a56433392b39e52a74a101a09487ff1e6c772cb432da1a3e90ff06",
+                                    "bytes":  17068,
+                                    "last_write_utc":  "2026-07-29T18:30:11.4292911Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "tests/test_rrf.cpp",
+                                    "sha256":  "d18a5bd90fae53b71ab69c3f4242e0a7f1ef5bf4a101be50fd3eee5cd856a79d",
+                                    "bytes":  879,
+                                    "last_write_utc":  "2026-07-24T17:15:13.9816849Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "tests/test_storage.cpp",
+                                    "sha256":  "2e7eb17de213045625f9c0ae3f224142c5fbb5e2ae6c8d946e369fdff5b54095",
+                                    "bytes":  4233,
+                                    "last_write_utc":  "2026-07-28T02:27:49.1339436Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "tests/test_vector.cpp",
+                                    "sha256":  "a6ba9e5a02d88ca3d105a1174ee8ead1d4960417ce778c10dff012e71524cc76",
+                                    "bytes":  874,
+                                    "last_write_utc":  "2026-07-24T17:15:17.5448423Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "tests/test_wave4.cpp",
+                                    "sha256":  "1c6f6bc082a267c113b35ce840fb9f93e16f6930e22a1a1633f9667a76731c50",
+                                    "bytes":  9973,
+                                    "last_write_utc":  "2026-07-28T05:23:36.6354439Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "tests/test_wave5.cpp",
+                                    "sha256":  "0fb95676920eeb0d33a7f3c8afc20d913bd209fdc71bc6f5830063fdd511a45e",
+                                    "bytes":  4557,
+                                    "last_write_utc":  "2026-07-28T05:53:25.4434147Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "tests/wave3_test_support.hpp",
+                                    "sha256":  "9a4f94093a6e64b6a3f2021b52cefa23cd06d0223803d4e6bda3ea7ec9c301a6",
+                                    "bytes":  5290,
+                                    "last_write_utc":  "2026-07-31T11:56:04.6025513Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "third_party/nlohmann/json.hpp",
+                                    "sha256":  "010009e60834fccd54247fd3709ca44f604e125751b9ad7ffb780420d1067f7c",
+                                    "bytes":  919977,
+                                    "last_write_utc":  "2026-07-24T17:04:24.1971683Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "third_party/sqlite/sqlite-amalgamation-3460100/sqlite3.c",
+                                    "sha256":  "6c35bc5f7f85eac9c49928bacbb02bb694b547aabf69197e058cca245ad80e83",
+                                    "bytes":  9089564,
+                                    "last_write_utc":  "2024-08-13T10:02:58.0000000Z"
+                                },
+                                {
+                                    "role":  "native-build-input",
+                                    "path":  "third_party/sqlite/sqlite-amalgamation-3460100/sqlite3.h",
+                                    "sha256":  "89b62c671c5964e137409ce034941b7b05a3af2c9875aba41f47f9483d0c2515",
+                                    "bytes":  644069,
+                                    "last_write_utc":  "2024-08-13T10:02:58.0000000Z"
+                                }
+                            ],
+    "protected_repo_files":  [
+
+                             ],
+    "protected_configuration_policy":  {
+                                           "changed_path_count":  237,
+                                           "protected_path_change_count":  0,
+                                           "protected_setting_change_count":  0
+                                       },
+    "git":  {
+                "head":  "5ced8ccb511672536d0f9767a2bc1777baf561ab",
+                "reference_log_fingerprint_sha256":  "9a363f95cf5acf4232e913cb7103dd41eee54fe89f1808d890851889a726234e"
+            },
+    "scoped_diff":  {
+                        "diff_sha256":  "80cdcd1a078b202e4a1021578003b30d667821330ce8292522fcb341f0982917",
+                        "tracked_changed_path_count":  7,
+                        "protected_path_change_count":  0,
+                        "protected_assignment_change_count":  0,
+                        "later_node_artifact_count":  0,
+                        "n30_artifact_count":  0
+                    },
+    "output_policy":  {
+                          "generated_paths":  [
+                                                  "docs/nodes/n20-evidence/PREBUILD-MANIFEST.json",
+                                                  "docs/nodes/n20-evidence/EVIDENCE-MANIFEST.json",
+                                                  "docs/nodes/n20-evidence/VERIFY-REPORT.md"
+                                              ],
+                          "audit_verdict_written":  false,
+                          "node_or_ledger_status_written":  false
+                      },
+    "later_node_specific_evidence_count":  0,
+    "n30_artifact_count":  0
+}

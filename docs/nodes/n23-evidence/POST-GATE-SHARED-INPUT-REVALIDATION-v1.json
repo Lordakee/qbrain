@@ -1,0 +1,118 @@
+{
+  "format_version": 1,
+  "node": "N23",
+  "artifact_type": "post-gate-shared-input-revalidation",
+  "state": "captured",
+  "artifact_id": "n23-shared-input-v1-0f93bb460cd94247859d24aec1da329d",
+  "captured_started_utc": "2026-08-08T05:29:02.9830597+00:00",
+  "captured_completed_utc": "2026-08-08T05:29:02.9830597+00:00",
+  "immutable_gate": {
+    "path": "docs/nodes/n23-evidence/PRE-CORRECTIVE-SCHEMA-GATE.json",
+    "sha256": "06c1d9fb4527993267534afe3780ce5ac5c2ead5e12f6e2018c471aad2839122",
+    "completed_utc": "2026-08-04T11:22:39.4268265+00:00",
+    "input_manifest_sha256": "acb0ece63c81e933b5c579d9bbb6ecc5b5f221daa2673059c2126c0d423d5eac",
+    "git_head": "5ced8ccb511672536d0f9767a2bc1777baf561ab"
+  },
+  "historical_governance": {
+    "approved_plan_archive": {
+      "path": "docs/nodes/n23-evidence/N23-PLAN-APPROVED-BASELINE.md",
+      "sha256": "4301f77a8a7b427a3d27bd883ce21d0316a94a5261a10541f9b0a2a3f6942a17",
+      "bytes": 25416
+    },
+    "plan_audit_archive": {
+      "path": "docs/nodes/n23-evidence/N23-PLAN-AUDIT-BASELINE.md",
+      "sha256": "0bff70920652adbe9929d0cd76697fadaa9912a9014ae6b41ddccb648c869aef",
+      "bytes": 14220
+    },
+    "outcome_audit_archive": {
+      "path": "docs/nodes/n23-evidence/N23-HARD-AUDIT-BASELINE.md",
+      "sha256": "0ab5517a77331de181550b4365244a86a8d0c4c9a9883b267837df017a579ebb",
+      "bytes": 1722
+    }
+  },
+  "current_governance": {
+    "plan_path": "docs/nodes/N23-PLAN.md",
+    "plan_sha256": "72186f2fdcc2289eda49b69e1cb56367537bc27691fdec7ea9377884afcad2fa",
+    "audited_draft_sha256": "9601d6bc7665b52ac5871073d900c6b61763d1c5c440d88df68c8fbd6397a940",
+    "plan_audit_path": "docs/nodes/N23-PLAN-AUDIT.md",
+    "plan_audit_sha256": "8da7e7af958e4d776885970c4cfddc581376582e94c3797b9309a43a5297b714",
+    "status": "approved",
+    "auditor": "Claude Code",
+    "audit_verdict": "PASS"
+  },
+  "original_corrective_inputs": [
+    "CMakeLists.txt",
+    "include/qbrain/core/brain.hpp",
+    "scripts/build-tests-cl.ps1",
+    "src/qbrain/core/brain.cpp",
+    "src/qbrain/mcp/server.cpp",
+    "src/qbrain/ops/handlers.cpp",
+    "tests/test_main.cpp",
+    "tests/test_n20_23.cpp"
+  ],
+  "allowed_change_set": [
+    {
+      "path": "scripts/build-cl.ps1",
+      "classification": "independent-shared-build-safety-hardening",
+      "gate_baseline": {
+        "sha256": "553a1989952d346fce8f836146377aec6d0db29e143893c3ac7fd28869b15070",
+        "bytes": 3605
+      },
+      "pre_safe_edit": {
+        "sha256": "68da7dac59f989de658fe09fd86e20bc19632c64af65ff6edab10de0fcedabc8",
+        "bytes": 3611,
+        "last_write_utc": "2026-08-06T13:46:44.5746590Z"
+      },
+      "after_safe_edit": {
+        "sha256": "37f33e653079ebee5acac171470ea963cf6e73c2e82d7aa940a825385660f4ad",
+        "bytes": 3375,
+        "creation_utc": "2026-07-24T17:24:37.2800362Z",
+        "last_write_utc": "2026-08-08T05:19:46.2938219Z",
+        "attributes": "Archive"
+      },
+      "delta": {
+        "format": "reconstructed-single-line-removal-v1",
+        "anchor": "link /nologo /OUT:qbrain.exe",
+        "reconstructed_pre_safe_sha256": "68da7dac59f989de658fe09fd86e20bc19632c64af65ff6edab10de0fcedabc8",
+        "removed_line_sha256": "1d055ad47d7a9fd643957271a3cc26571648dd1e7a88dbc96f47751a027a6706",
+        "canonical_utf8_sha256": "6bd2d3d8246e7769eddc7d6e7cafbb75620a1a27155c532ce1d3aae0cdfab1d0",
+        "canonical_utf8_bytes": 328,
+        "forbidden_tokens": [
+          "Get-CimInstance",
+          "Win32_Process",
+          "Stop-Process"
+        ],
+        "required_tokens": [
+          "[string[]]$SourceFiles",
+          "$productionSources",
+          "/std:c++20",
+          "/OUT:qbrain.exe",
+          "cmd /d /s /c $batPath",
+          "BUILD_OK"
+        ]
+      }
+    },
+    {
+      "path": "src/qbrain/ops/registry.cpp",
+      "classification": "independent-shared-registry-boundary",
+      "gate_baseline": {
+        "sha256": "e3fb8bad77a88677d6ae23a2eba626e98d47ab41c0659cbac1d724688b134a18",
+        "bytes": 1597
+      },
+      "after": {
+        "sha256": "f96f1b1ec44fb9ad8e5a1b0e5922d3592b226053da306c7f3ff6c738ec91d7ff",
+        "bytes": 1559,
+        "creation_utc": "2026-07-24T17:13:00.4833941Z",
+        "last_write_utc": "2026-08-04T19:53:02.6779343Z",
+        "attributes": "Archive"
+      },
+      "n23_edit_allowed": false
+    }
+  ],
+  "safeguards": {
+    "build_script_process_termination_removed": true,
+    "registry_n23_edit_allowed": false,
+    "sidecar_overwrite_forbidden": true,
+    "n30_path_component_forbidden": true
+  }
+}

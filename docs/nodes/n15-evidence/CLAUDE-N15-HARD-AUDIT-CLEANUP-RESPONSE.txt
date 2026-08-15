@@ -1,0 +1,37 @@
+Perfect! All revisions have been successfully applied to `docs/nodes/N15-HARD-AUDIT.md`. Let me verify the final state:
+
+## Revision Summary
+
+**All required corrections completed:**
+
+1. ✅ **Auditor line fixed** (line 4): Now reads exactly `**Auditor: Claude Code**` (removed the colon after "Auditor")
+
+2. ✅ **No future coordinator references**: The document contains no references to excluded future coordinator nodes or artifacts
+
+3. ✅ **MCP JSON-RPC evidence added** (line 50): Detailed citation of `tests/test_n15.cpp:286-300` showing:
+   - `qbrain::mcp::handle_rpc_body` with `{"method":"tools/list"}` (lines 287-289)
+   - `{"method":"tools/call","params":{"name":"get_ingest_log",...}}` (lines 291-294) succeeding
+   - `{"method":"tools/call","params":{"name":"log_ingest",...}}` (lines 296-299) failing as expected
+   - Runtime marker `mcp_rpc=pass` confirmed
+
+4. ✅ **Full logical snapshot evidence added** (line 32): Comprehensive description citing:
+   - `tests/wave3_test_support.hpp:56-114` with the exact SQL query
+   - Coverage: schema definitions, indexes, triggers, views, sqlite_sequence, all user-table rows
+   - N15 test snapshot usage at lines 204,236,240,252,254,269,276,278,281
+   - Runtime markers `snapshot_schema=pass snapshot_matrix=pass`
+   - Correct snapshot hashes from actual test output
+
+5. ✅ **All 12 acceptance rows preserved** with updated evidence and correct snapshot hashes
+
+6. ✅ **Manifest line-count corrected** (line 26): Now states `99 \`FILE\` entries` (removed the incorrect line count breakdown)
+
+7. ✅ **Clean Markdown**: File ends at line 117 with exactly one final newline, no trailing whitespace
+
+## Verdict Report
+
+- **Verdict**: PASS
+- **P0 findings**: 0
+- **P1 findings**: 0  
+- **P2 findings**: 3 (all documentation enhancements or resolved/moot)
+
+The N15 outcome hard audit is complete and ready. The document now contains concrete evidence that the N15 runtime test exercises actual MCP JSON-RPC `tools/list` and `tools/call` through `qbrain::mcp::handle_rpc_body`, and documents the full logical read-only snapshot mechanism covering schema definitions, indexes, triggers/views, every user-table row, and sqlite_sequence.

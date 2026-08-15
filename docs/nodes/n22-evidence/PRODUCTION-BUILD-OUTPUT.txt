@@ -1,0 +1,77 @@
+command=powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File scripts/build-cl.ps1
+working_directory=D:/Projects/Qbrain
+started_utc=2026-08-07T12:40:19.4081977+00:00
+stage=production-build
+target_arch=x64
+language_mode=/std:c++20
+windows_build=Microsoft Windows 11 专业工作站版 10.0.22624 build 22624
+child_environment_policy=remove-qbrain-provider-secret-and-proxy-overrides
+publication_nonce=0a52857e556345e0bbdd8b83e0f467c4
+isolated_localappdata=true
+production_data_access_telemetry=not-collected
+isolated_localappdata_tree_before_sha256=absent
+isolated_localappdata_tree_after_sha256=absent
+isolated_localappdata_tree_changed=false
+isolated_test_config_count=0
+isolated_test_config_sha256=absent
+artifact_sha256=84c3427a349fa5bb16819639229694fadc4f80011ee0cff03a2ca5ec5096f71a
+stdout_begin
+**********************************************************************
+** Visual Studio 2026 Developer Command Prompt v18.7.3
+** Copyright (c) 2026 Microsoft Corporation
+**********************************************************************
+[vcvarsall.bat] Environment initialized for: 'x64'
+sqlite3.c
+paths.cpp
+hash.cpp
+log.cpp
+string_util.cpp
+time_util.cpp
+database.cpp
+migrate.cpp
+types.cpp
+brain.cpp
+extract.cpp
+traverse.cpp
+analytics.cpp
+scan.cpp
+packs.cpp
+lint.cpp
+store.cpp
+vector.cpp
+rrf.cpp
+hybrid.cpp
+rerank.cpp
+�������ɴ���...
+���ڱ���...
+minions.cpp
+dream.cpp
+chunker.cpp
+markdown.cpp
+import.cpp
+http_client.cpp
+embed.cpp
+chat.cpp
+registry.cpp
+handlers.cpp
+inbox_watch.cpp
+live_sync.cpp
+jsonrpc.cpp
+server.cpp
+http_server.cpp
+app.cpp
+commands.cpp
+main.cpp
+�������ɴ���...
+BUILD_OK
+ ������ D �еľ�û�б�ǩ��
+ ������к��� 1077-94CA
+ D:\Projects\Qbrain\build\cl ��Ŀ¼
+2026/08/07  20:50         3,139,584 qbrain.exe
+               1 ���ļ�      3,139,584 �ֽ�
+               0 ��Ŀ¼ 514,534,481,920 �����ֽ�
+stdout_end
+stderr_begin
+stderr_end
+ended_utc=2026-08-07T12:50:28.4332161+00:00
+exit_code=0

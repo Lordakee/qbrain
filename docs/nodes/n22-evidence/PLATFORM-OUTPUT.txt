@@ -1,0 +1,7 @@
+os=Microsoft Windows 11 专业工作站版 10.0.22624 build 22624
+windows_build=Microsoft Windows 11 专业工作站版 10.0.22624 build 22624
+architecture=x64
+language_mode=/std:c++20
+child_environment_policy=remove-qbrain-provider-secret-and-proxy-overrides
+publication_nonce=0a52857e556345e0bbdd8b83e0f467c4
+compiler=Microsoft (R) C/C++ Optimizing Compiler Version 19.51.36248 for x64

@@ -1,0 +1,2746 @@
+{
+  "deliverable": "N30 D1 - changeset disposition manifest",
+  "generated_utc": "2026-08-15T06:10:26Z",
+  "generator": "N30 subagent A (governance/docs slice)",
+  "git_head": "5ced8ccb511672536d0f9767a2bc1777baf561ab",
+  "snapshot_command": "git status --porcelain=v1 -uall",
+  "snapshot_note": "270 entries = 93 modified (M) + 177 untracked (??); untracked directories expanded with -uall. Includes the 5 n30-evidence PRE-GATE* files created by the parent after plan approval (implementation-period additions).",
+  "exclusions": {
+    "patterns": [
+      "build/",
+      ".git/",
+      "third_party/",
+      "gbrain-upstream/"
+    ],
+    "files_excluded": 0,
+    "note": "No changeset entries existed under excluded paths at snapshot time."
+  },
+  "self_exclusions": [
+    "docs/nodes/n30-evidence/CHANGESET-MANIFEST.json",
+    "docs/nodes/n30-evidence/NODE-RECONCILIATION-MATRIX.json",
+    "docs/nodes/n30-evidence/D10-DOC-SYNC-PROPOSAL.md"
+  ],
+  "self_exclusion_note": "This manifest and the other two D1/D2/D10 deliverables are created after the snapshot and are self-referential; they must appear in the parent final re-scan before commit.",
+  "counts": {
+    "total": 270,
+    "by_git_status": {
+      "M": 93,
+      "??": 177
+    },
+    "by_category": {
+      "accepted-product": 41,
+      "doc-correction": 188,
+      "accepted-test-evidence": 40,
+      "duplicate-stale": 1
+    },
+    "disposition_rules": {
+      "accepted-product": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "accepted-test-evidence": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "doc-correction": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "duplicate-stale": "keep uncommitted; do not commit (superseded by current artifacts)",
+      "rejected": "keep uncommitted; never commit; never delete"
+    }
+  },
+  "secrets_scan": {
+    "patterns": [
+      "sk-[A-Za-z0-9_-]{10,} (openai-style key)",
+      "api[_-]?key (case-insensitive)",
+      "token =",
+      "password =",
+      "-----BEGIN ... PRIVATE KEY-----",
+      "AKIA[0-9A-Z]{16} (AWS access key id)",
+      "aws secret/api long-value",
+      "bearer <long-value>"
+    ],
+    "files_scanned": 270,
+    "raw_pattern_hits": 99,
+    "hits_by_pattern": {
+      "api_key": 92,
+      "token_eq": 6,
+      "openai-sk": 1
+    },
+    "assessed_genuine_secrets": 0,
+    "verdict": "0 genuine secrets. All 99 raw hits are code identifiers (e.g. resolve_api_key, api_key_present), environment-variable names (OPENAI_API_KEY, QBRAIN_API_KEY), governance prose mentioning API-key/token, redaction sentinel strings (DUMMY_API_KEY_SENTINEL), and credential-scrubber marker lists in src/qbrain/jobs/minions.cpp. No file is rejected on secrets grounds.",
+    "notable_exempt_hit": {
+      "file": "tests/test_n14.cpp",
+      "line": 675,
+      "match": "sk-proj-0123456789abcdef",
+      "assessment": "synthetic dummy fixture exercising the error-message credential scrubber (asserts the key never reaches job progress output); not a real credential"
+    },
+    "per_file_exemptions": [
+      {
+        "file": "docs/nodes/N14-HARD-AUDIT.md",
+        "pattern_hits": {
+          "api_key": 2
+        },
+        "assessment": "non-secret: identifier names / env-var references / doc prose / redaction-sentinel strings / secret-scrubber marker lists; no credential VALUE present"
+      },
+      {
+        "file": "docs/nodes/N14-PLAN.md",
+        "pattern_hits": {
+          "api_key": 2
+        },
+        "assessment": "non-secret: identifier names / env-var references / doc prose / redaction-sentinel strings / secret-scrubber marker lists; no credential VALUE present"
+      },
+      {
+        "file": "docs/nodes/N18-PLAN-AUDIT.md",
+        "pattern_hits": {
+          "api_key": 1
+        },
+        "assessment": "non-secret: identifier names / env-var references / doc prose / redaction-sentinel strings / secret-scrubber marker lists; no credential VALUE present"
+      },
+      {
+        "file": "docs/nodes/N19-PLAN.md",
+        "pattern_hits": {
+          "api_key": 1
+        },
+        "assessment": "non-secret: identifier names / env-var references / doc prose / redaction-sentinel strings / secret-scrubber marker lists; no credential VALUE present"
+      },
+      {
+        "file": "docs/nodes/N20-PLAN.md",
+        "pattern_hits": {
+          "api_key": 2
+        },
+        "assessment": "non-secret: identifier names / env-var references / doc prose / redaction-sentinel strings / secret-scrubber marker lists; no credential VALUE present"
+      },
+      {
+        "file": "docs/nodes/N23-PLAN-AUDIT.md",
+        "pattern_hits": {
+          "api_key": 1
+        },
+        "assessment": "non-secret: identifier names / env-var references / doc prose / redaction-sentinel strings / secret-scrubber marker lists; no credential VALUE present"
+      },
+      {
+        "file": "docs/nodes/N23-PLAN.md",
+        "pattern_hits": {
+          "api_key": 1
+        },
+        "assessment": "non-secret: identifier names / env-var references / doc prose / redaction-sentinel strings / secret-scrubber marker lists; no credential VALUE present"
+      },
+      {
+        "file": "docs/nodes/N7-PLAN.md",
+        "pattern_hits": {
+          "token_eq": 2
+        },
+        "assessment": "non-secret: identifier names / env-var references / doc prose / redaction-sentinel strings / secret-scrubber marker lists; no credential VALUE present"
+      },
+      {
+        "file": "docs/nodes/n12-evidence/CLAUDE-N12-HARD-AUDIT-RESPONSE.txt",
+        "pattern_hits": {
+          "api_key": 1
+        },
+        "assessment": "non-secret: identifier names / env-var references / doc prose / redaction-sentinel strings / secret-scrubber marker lists; no credential VALUE present"
+      },
+      {
+        "file": "docs/nodes/n13-evidence/VERIFY-REPORT.md",
+        "pattern_hits": {
+          "api_key": 1
+        },
+        "assessment": "non-secret: identifier names / env-var references / doc prose / redaction-sentinel strings / secret-scrubber marker lists; no credential VALUE present"
+      },
+      {
+        "file": "docs/nodes/n14-evidence/CLI-SMOKE-OUTPUT.txt",
+        "pattern_hits": {
+          "api_key": 7
+        },
+        "assessment": "non-secret: identifier names / env-var references / doc prose / redaction-sentinel strings / secret-scrubber marker lists; no credential VALUE present"
+      },
+      {
+        "file": "docs/nodes/n15-evidence/CLI-SMOKE-OUTPUT.txt",
+        "pattern_hits": {
+          "api_key": 2
+        },
+        "assessment": "non-secret: identifier names / env-var references / doc prose / redaction-sentinel strings / secret-scrubber marker lists; no credential VALUE present"
+      },
+      {
+        "file": "docs/nodes/n16-evidence/CLI-SMOKE-OUTPUT.txt",
+        "pattern_hits": {
+          "api_key": 2
+        },
+        "assessment": "non-secret: identifier names / env-var references / doc prose / redaction-sentinel strings / secret-scrubber marker lists; no credential VALUE present"
+      },
+      {
+        "file": "docs/nodes/n17-evidence/CLI-SMOKE-OUTPUT.txt",
+        "pattern_hits": {
+          "api_key": 2
+        },
+        "assessment": "non-secret: identifier names / env-var references / doc prose / redaction-sentinel strings / secret-scrubber marker lists; no credential VALUE present"
+      },
+      {
+        "file": "docs/nodes/n18-evidence/CLI-SMOKE-OUTPUT.txt",
+        "pattern_hits": {
+          "api_key": 2
+        },
+        "assessment": "non-secret: identifier names / env-var references / doc prose / redaction-sentinel strings / secret-scrubber marker lists; no credential VALUE present"
+      },
+      {
+        "file": "docs/nodes/n22-evidence/DOCTOR-SCHEMA-EVIDENCE.json",
+        "pattern_hits": {
+          "api_key": 2
+        },
+        "assessment": "non-secret: identifier names / env-var references / doc prose / redaction-sentinel strings / secret-scrubber marker lists; no credential VALUE present"
+      },
+      {
+        "file": "docs/nodes/n22-evidence/EVIDENCE-MANIFEST.json",
+        "pattern_hits": {
+          "api_key": 2
+        },
+        "assessment": "non-secret: identifier names / env-var references / doc prose / redaction-sentinel strings / secret-scrubber marker lists; no credential VALUE present"
+      },
+      {
+        "file": "docs/nodes/n23-evidence/N23-PLAN-APPROVED-BASELINE.md",
+        "pattern_hits": {
+          "api_key": 1
+        },
+        "assessment": "non-secret: identifier names / env-var references / doc prose / redaction-sentinel strings / secret-scrubber marker lists; no credential VALUE present"
+      },
+      {
+        "file": "include/qbrain/core/brain.hpp",
+        "pattern_hits": {
+          "api_key": 2
+        },
+        "assessment": "non-secret: identifier names / env-var references / doc prose / redaction-sentinel strings / secret-scrubber marker lists; no credential VALUE present"
+      },
+      {
+        "file": "scripts/n12-verify.ps1",
+        "pattern_hits": {
+          "api_key": 1
+        },
+        "assessment": "non-secret: identifier names / env-var references / doc prose / redaction-sentinel strings / secret-scrubber marker lists; no credential VALUE present"
+      },
+      {
+        "file": "scripts/n13-verify.ps1",
+        "pattern_hits": {
+          "api_key": 1
+        },
+        "assessment": "non-secret: identifier names / env-var references / doc prose / redaction-sentinel strings / secret-scrubber marker lists; no credential VALUE present"
+      },
+      {
+        "file": "scripts/n22-verify.ps1",
+        "pattern_hits": {
+          "api_key": 1,
+          "token_eq": 1
+        },
+        "assessment": "non-secret: identifier names / env-var references / doc prose / redaction-sentinel strings / secret-scrubber marker lists; no credential VALUE present"
+      },
+      {
+        "file": "scripts/n23-verify.ps1",
+        "pattern_hits": {
+          "api_key": 1
+        },
+        "assessment": "non-secret: identifier names / env-var references / doc prose / redaction-sentinel strings / secret-scrubber marker lists; no credential VALUE present"
+      },
+      {
+        "file": "src/qbrain/ai/chat.cpp",
+        "pattern_hits": {
+          "api_key": 1
+        },
+        "assessment": "non-secret: identifier names / env-var references / doc prose / redaction-sentinel strings / secret-scrubber marker lists; no credential VALUE present"
+      },
+      {
+        "file": "src/qbrain/ai/embed.cpp",
+        "pattern_hits": {
+          "api_key": 1
+        },
+        "assessment": "non-secret: identifier names / env-var references / doc prose / redaction-sentinel strings / secret-scrubber marker lists; no credential VALUE present"
+      },
+      {
+        "file": "src/qbrain/cli/commands.cpp",
+        "pattern_hits": {
+          "api_key": 5
+        },
+        "assessment": "non-secret: identifier names / env-var references / doc prose / redaction-sentinel strings / secret-scrubber marker lists; no credential VALUE present"
+      },
+      {
+        "file": "src/qbrain/core/brain.cpp",
+        "pattern_hits": {
+          "api_key": 31
+        },
+        "assessment": "non-secret: identifier names / env-var references / doc prose / redaction-sentinel strings / secret-scrubber marker lists; no credential VALUE present"
+      },
+      {
+        "file": "src/qbrain/jobs/minions.cpp",
+        "pattern_hits": {
+          "api_key": 3,
+          "token_eq": 2
+        },
+        "assessment": "non-secret: identifier names / env-var references / doc prose / redaction-sentinel strings / secret-scrubber marker lists; no credential VALUE present"
+      },
+      {
+        "file": "src/qbrain/ops/handlers.cpp",
+        "pattern_hits": {
+          "api_key": 2
+        },
+        "assessment": "non-secret: identifier names / env-var references / doc prose / redaction-sentinel strings / secret-scrubber marker lists; no credential VALUE present"
+      },
+      {
+        "file": "src/qbrain/search/hybrid.cpp",
+        "pattern_hits": {
+          "api_key": 1
+        },
+        "assessment": "non-secret: identifier names / env-var references / doc prose / redaction-sentinel strings / secret-scrubber marker lists; no credential VALUE present"
+      },
+      {
+        "file": "src/qbrain/search/rerank.cpp",
+        "pattern_hits": {
+          "token_eq": 1
+        },
+        "assessment": "non-secret: identifier names / env-var references / doc prose / redaction-sentinel strings / secret-scrubber marker lists; no credential VALUE present"
+      },
+      {
+        "file": "tests/test_n14.cpp",
+        "pattern_hits": {
+          "api_key": 5,
+          "openai-sk": 1
+        },
+        "assessment": "non-secret: identifier names / env-var references / doc prose / redaction-sentinel strings / secret-scrubber marker lists; no credential VALUE present"
+      },
+      {
+        "file": "tests/test_n23.cpp",
+        "pattern_hits": {
+          "api_key": 1
+        },
+        "assessment": "non-secret: identifier names / env-var references / doc prose / redaction-sentinel strings / secret-scrubber marker lists; no credential VALUE present"
+      },
+      {
+        "file": "tests/test_rerank.cpp",
+        "pattern_hits": {
+          "api_key": 4
+        },
+        "assessment": "non-secret: identifier names / env-var references / doc prose / redaction-sentinel strings / secret-scrubber marker lists; no credential VALUE present"
+      }
+    ]
+  },
+  "files": [
+    {
+      "path": "CMakeLists.txt",
+      "status": "M",
+      "size": 5266,
+      "sha256": "a08b3c58c687499b789ba808f9e23613dd7b652dacefd0161322b3ef18684f49",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Build definition modified by changeset. Direct MSVC build PASS (n30-evidence/PREGATE-BUILD-CL.txt); CMake path currently FAILS (n30-evidence/PREGATE-BUILD-CMAKE.txt) - missing files/store.cpp link and related issues are the known P1 finding scheduled for N30 D7. Accepted as product work with known P1 defect to be fixed before N30 commits."
+    },
+    {
+      "path": "docs/03-BUILD-WINDOWS.md",
+      "status": "M",
+      "size": 2047,
+      "sha256": "47a3885d7128fbd19bd3ac4dc5fb0f3c8976fac01fc67d8e95d31f6b283f8618",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/08-MASTER-PLAN-GBRAIN-PARITY.md",
+      "status": "M",
+      "size": 10612,
+      "sha256": "f0c0d48597787e406851cc26f9db91bb0c4b28b0016e8385f9e319b58d01be11",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/09-PROJECT-COMPLETION.md",
+      "status": "M",
+      "size": 2880,
+      "sha256": "c6c624ed16793bda1371700fb341f187fc20234c0d9901801ed4108bf39ed5e5",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/OPS-PARITY-LEDGER.md",
+      "status": "M",
+      "size": 13445,
+      "sha256": "f2cd1f13221ace95faff569ae71074296a4e169deca007752e144aee5e6c6bfe",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N1-HARD-AUDIT.md",
+      "status": "M",
+      "size": 2020,
+      "sha256": "93f112c13d01864aa701683e2a4dbb3726a763d90b7a113c07dc543af4d31141",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N1-PLAN.md",
+      "status": "M",
+      "size": 1864,
+      "sha256": "7fc14a6921984f850fdf82b77e8042827de1bd8e97505df5938ce55d4d6a614a",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N12-HARD-AUDIT.md",
+      "status": "M",
+      "size": 6271,
+      "sha256": "66709f852022c205e9651a89dc92373e57f278a3a13a52b01b0f2071d6dac2c2",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N12-PLAN.md",
+      "status": "M",
+      "size": 14879,
+      "sha256": "b13487bbf3b179258419a3f56423780dffd537c7c0c7dfcfe79491617944adee",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N13-HARD-AUDIT.md",
+      "status": "M",
+      "size": 4137,
+      "sha256": "49a73387886dfa34fe7226b944d2db0ea94f3a3414735d6378889e7afda02744",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N13-PLAN.md",
+      "status": "M",
+      "size": 9871,
+      "sha256": "25315eb930d89084676e941055bf3e4f0941818cd46d0d13a50081bff9cb75ad",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N14-HARD-AUDIT.md",
+      "status": "M",
+      "size": 16895,
+      "sha256": "15c9b5a0886e6b9406b6bbe6ed2cd12e12ffa1b732768193a4e281355b1f3c2b",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N14-PLAN.md",
+      "status": "M",
+      "size": 16494,
+      "sha256": "541260ed29e9a8f50ea5c69a11abea78e401f284793f8bfe5083a248fa2a593e",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N15-HARD-AUDIT.md",
+      "status": "M",
+      "size": 17848,
+      "sha256": "9f5f14ab7ed2cf4da50b597f8f861061948d9b65331091a017d677f7b4968c59",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N15-PLAN.md",
+      "status": "M",
+      "size": 17452,
+      "sha256": "1ea4a30a2c82b54adf1a1c2722168c9d82e187165214de27606b9a82f6fc88c8",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N16-HARD-AUDIT.md",
+      "status": "M",
+      "size": 25781,
+      "sha256": "591865f6647e175c4aa02ec90abad1075c554eca49e3a15e5f63ad1639c24aba",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N16-PLAN.md",
+      "status": "M",
+      "size": 20528,
+      "sha256": "1603b52ff6f8daa83b7804e62b575a9a9ca154e47326ea04d83449ff1b3841db",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N17-HARD-AUDIT.md",
+      "status": "M",
+      "size": 16973,
+      "sha256": "766e4c6e0cf889ccbc6c0830754b537bd6be478cda6ee173d9d56c5b8bd11fca",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N17-PLAN.md",
+      "status": "M",
+      "size": 36400,
+      "sha256": "2ec493de60e5aca9cf0ee85fce4aa1ca6f1bfd751e1e487ce25ff41ada491a67",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N18-HARD-AUDIT.md",
+      "status": "M",
+      "size": 23559,
+      "sha256": "f09971ecf44ab66129f33ee3b7dad91515aac39d6d330b725916983fcb408053",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N18-PLAN.md",
+      "status": "M",
+      "size": 25873,
+      "sha256": "17831d5165a02ed0fe6ceb2d74597258c77ac349c8b4faeb1c7e00149ff8020a",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N19-HARD-AUDIT.md",
+      "status": "M",
+      "size": 16903,
+      "sha256": "d4ee4ad14e3768b5470865f092a783ba0d10b9e9155bfb17c4bd5ce594ad4f24",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N19-PLAN.md",
+      "status": "M",
+      "size": 41111,
+      "sha256": "61b1553403b7afcb1411b6e62ce9788e73981d0c2d00b94135704ed5a32bebb3",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N2-HARD-AUDIT.md",
+      "status": "M",
+      "size": 1218,
+      "sha256": "e9dc809dcdb73c0757708f81d53daf2fc89394c12cf953e86c0e9de5923a3413",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N2-PLAN.md",
+      "status": "M",
+      "size": 3829,
+      "sha256": "9a4f99cfd9385e8e245d9828d74ac4ac54bf15320877cb6da0fab7060e149b72",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N2.5-HARD-AUDIT.md",
+      "status": "M",
+      "size": 1333,
+      "sha256": "dd6e404ab7583af8c6cbecd86179baba3401a1d5ef10f559b2067229a208c8ff",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N20-PLAN.md",
+      "status": "M",
+      "size": 43329,
+      "sha256": "147cc7d073d70d31184797cc7180f92cd8fa83d1ac134affd172dc4bbba77e11",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N21-HARD-AUDIT.md",
+      "status": "M",
+      "size": 1733,
+      "sha256": "f5c361cf4522123226437ffab342d483d623d0b6c7538111083d3b283797e952",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N21-PLAN.md",
+      "status": "M",
+      "size": 31295,
+      "sha256": "3a52587e393926ee68d5ca9f6fb6ced07d2904948774f75d1941bce7982f969b",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N22-HARD-AUDIT.md",
+      "status": "M",
+      "size": 21769,
+      "sha256": "657601adc61d88fdb9b7e356fc3d764641312f0eb763b47d61b9a1d9a20cdcda",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N22-PLAN.md",
+      "status": "M",
+      "size": 28999,
+      "sha256": "8964e9e7fd543e60c0aebc9d1028cf54f3ee58d430cb02d8a07a7a4ff179562e",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N23-HARD-AUDIT.md",
+      "status": "M",
+      "size": 1722,
+      "sha256": "0ab5517a77331de181550b4365244a86a8d0c4c9a9883b267837df017a579ebb",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N23-PLAN.md",
+      "status": "M",
+      "size": 30293,
+      "sha256": "72186f2fdcc2289eda49b69e1cb56367537bc27691fdec7ea9377884afcad2fa",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N3-HARD-AUDIT.md",
+      "status": "M",
+      "size": 1585,
+      "sha256": "2ca977089b0564f7ff60752c8cff4b968e1f528163239ef4c19e1bd22c094d24",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N4-HARD-AUDIT.md",
+      "status": "M",
+      "size": 868,
+      "sha256": "fe422f63e3cf686b3ebe7b85d8e04c4717df855d590a19aae59b4a9d96dc2065",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N5-HARD-AUDIT.md",
+      "status": "M",
+      "size": 1046,
+      "sha256": "d179a16ed21a3c7b67f28fde061c403b0414e6e783e45319bb99e316ee57eb18",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N6-HARD-AUDIT.md",
+      "status": "M",
+      "size": 1319,
+      "sha256": "637636d4ae57aa9087abba66abe1864f766c167d9a78e7e5954913a9dae5e9c9",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N7-HARD-AUDIT.md",
+      "status": "M",
+      "size": 1087,
+      "sha256": "307226705f0dc7495b0aa7aeebf88bd807c0216c19cab059cd23d01dd6835421",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N8-N11-HARD-AUDIT.md",
+      "status": "M",
+      "size": 659,
+      "sha256": "057c7b088f327f33e1c2640434fa17d8c1506f57deaa906171aeaf2e696726ea",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Historical combined wave audit (tracked file, modified by changeset). Coexists with newer per-node N8/N9/N10/N11-HARD-AUDIT.md artifacts from the 2026-07-28 retrofit; parent should decide whether to label it superseded during D10 doc reconciliation."
+    },
+    {
+      "path": "docs/nodes/n12-evidence/VERIFY-REPORT.md",
+      "status": "M",
+      "size": 6594,
+      "sha256": "fe88dad925d9649c6433af36f56172cec839cb274d54e3073154d28a7208cbc2",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n13-evidence/VERIFY-REPORT.md",
+      "status": "M",
+      "size": 6175,
+      "sha256": "25d45924d0659752aa1ed93af411fb107f7bf539a8b01f7c69827fc39a99feac",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "include/qbrain/ai/chat.hpp",
+      "status": "M",
+      "size": 674,
+      "sha256": "581b40d0b931c2d3876584d120936d5c4e92655a17084804f08ead59f9280bc7",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "include/qbrain/cli/app.hpp",
+      "status": "M",
+      "size": 204,
+      "sha256": "b496252cecf6ad3ffb9f7e85deb51e96d49f305f8f2dc3e5b268ab5e68bde6fd",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "include/qbrain/codeintel/scan.hpp",
+      "status": "M",
+      "size": 3277,
+      "sha256": "ebf603557b30afa3554bfe906b2f21c3debbc96b74056151cf1f2c84bec138e2",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "include/qbrain/core/brain.hpp",
+      "status": "M",
+      "size": 10523,
+      "sha256": "627ab35208f4a24b3803011289e7af142ff52caa2dfae9043b3a601fbdf0ba9e",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "include/qbrain/cycle/dream.hpp",
+      "status": "M",
+      "size": 1018,
+      "sha256": "6003aa8383cef1a4f3c8cd8e8779b1c9f995bc94c9e78ca8649826daec5a5ebe",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "include/qbrain/graph/analytics.hpp",
+      "status": "M",
+      "size": 1068,
+      "sha256": "d1d8f63081179dc49c1f46b5a4789445203eeddc0fabe63516fd72e373feb381",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "include/qbrain/graph/traverse.hpp",
+      "status": "M",
+      "size": 457,
+      "sha256": "b157649a23642e4932689d2e105040eb9754848faa0ca7d9afed2ed537f1a0f2",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "include/qbrain/ingest/import.hpp",
+      "status": "M",
+      "size": 504,
+      "sha256": "467ec1da3c7e77107104c5b44203cf55da97f3614c0c1c4aa3a4e6a9fadfc7c9",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "include/qbrain/jobs/minions.hpp",
+      "status": "M",
+      "size": 5038,
+      "sha256": "00da6811c7e0c41ac93b6b50e8e126b8d2dbf15e19b4f149a1116c108b52abe4",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "include/qbrain/schema/packs.hpp",
+      "status": "M",
+      "size": 2439,
+      "sha256": "3cbefc32cea456bdfdc19e9b9788912a8e0501c532aa9be4aac95433ed684da1",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "include/qbrain/search/hybrid.hpp",
+      "status": "M",
+      "size": 1181,
+      "sha256": "45072d707a65485f355b22fa64ed662d9a1439703224224faad03fd9a5f00034",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "include/qbrain/search/rerank.hpp",
+      "status": "M",
+      "size": 1399,
+      "sha256": "7486917838473af720043e9cb6b71752ac950e3693de26f6aeae69b0ceb33148",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "include/qbrain/service/live_sync.hpp",
+      "status": "M",
+      "size": 934,
+      "sha256": "9cc6c61e26565aaca5294e263f6ef3b36b2040ed7b9d3ed8ebabf0dc35f7d4ba",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "include/qbrain/util/paths.hpp",
+      "status": "M",
+      "size": 555,
+      "sha256": "631a93eb746fb92b2b0e5d20c2dc131cda0686127d68685a045f6cec4cdef0ce",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "include/qbrain/util/time_util.hpp",
+      "status": "M",
+      "size": 335,
+      "sha256": "78390f81b3a583fd7e3b0ce3b62e7f4405ef3e0947b266a0e5fb4066b68b8cb3",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "scripts/build-cl.ps1",
+      "status": "M",
+      "size": 3375,
+      "sha256": "37f33e653079ebee5acac171470ea963cf6e73c2e82d7aa940a825385660f4ad",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Product build tooling (modified). Direct path built production+test binaries successfully at N30 pre-gate (PREGATE-BUILD-CL.txt / PREGATE-BUILD-TESTS.txt). Hardcoded machine paths / stale objects / -TestSources handling are the known P1 finding scheduled for N30 D7 (MSVC discovery: vswhere -> BuildTools fallback -> explicit error)."
+    },
+    {
+      "path": "scripts/build-tests-cl.ps1",
+      "status": "M",
+      "size": 3321,
+      "sha256": "f0bfa1610bdef802e4466a581f61e455f28a96fa1c873ff1504f42e7ebd6066f",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Product build tooling (modified). Direct path built production+test binaries successfully at N30 pre-gate (PREGATE-BUILD-CL.txt / PREGATE-BUILD-TESTS.txt). Hardcoded machine paths / stale objects / -TestSources handling are the known P1 finding scheduled for N30 D7 (MSVC discovery: vswhere -> BuildTools fallback -> explicit error)."
+    },
+    {
+      "path": "scripts/n12-verify.ps1",
+      "status": "M",
+      "size": 12694,
+      "sha256": "3dbad7765580f282f56d446d72053ab610010b458b19b8d398da3991153441d9",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Node verification / audit tooling (new, untracked). Produces the per-node evidence runs referenced by n*-evidence artifacts and exercises registered behavior. Accepted as test-evidence tooling."
+    },
+    {
+      "path": "src/qbrain/ai/chat.cpp",
+      "status": "M",
+      "size": 2393,
+      "sha256": "d140568bb6977668c5912c39a32e5399ecf47ad843047fce777d1ec1be397191",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "src/qbrain/ai/embed.cpp",
+      "status": "M",
+      "size": 1922,
+      "sha256": "4893549c139dffb7e909352dde6cb87fd32fb5ca3285c2058f0fe24ee93824c8",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "src/qbrain/cli/commands.cpp",
+      "status": "M",
+      "size": 19909,
+      "sha256": "d02428ddcc80191ce4058423d212a2b0a2fb37dc7e9f0643786f4f868c54c41f",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "src/qbrain/codeintel/scan.cpp",
+      "status": "M",
+      "size": 33354,
+      "sha256": "543bdd47d7e582ad50b3677e7c61bbd14e42c977bfb0f8bcfafd8c6830e101a3",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "src/qbrain/core/brain.cpp",
+      "status": "M",
+      "size": 59518,
+      "sha256": "305a26baa435bcd7d0d317d0b3b3359d1e6eacc9d9920ab85362b8c4e74b08de",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "src/qbrain/cycle/dream.cpp",
+      "status": "M",
+      "size": 12815,
+      "sha256": "e7c6d107e3d9c64526a6e9c428ebff27d5ce89a7545321412bd23ab3ed0e3a21",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "src/qbrain/graph/analytics.cpp",
+      "status": "M",
+      "size": 20344,
+      "sha256": "2ad297757745bec4707616374db628a52754390791d21489a7a425e6a7cf2c93",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "src/qbrain/graph/traverse.cpp",
+      "status": "M",
+      "size": 1135,
+      "sha256": "9b9eeecff60a720f480f79c4d010369e7ed6984589e9210af1da4e935de4f5e4",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "src/qbrain/ingest/import.cpp",
+      "status": "M",
+      "size": 4407,
+      "sha256": "a51304a9dbbfe234d3f8b6cd39174c59a5a36f747644af03a22852bbc8f61819",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "src/qbrain/jobs/minions.cpp",
+      "status": "M",
+      "size": 22100,
+      "sha256": "245b7bae5589947b3aaf03698f12c54959c62535439f781c8daa782bf0123806",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "src/qbrain/mcp/http_server.cpp",
+      "status": "M",
+      "size": 10833,
+      "sha256": "9f488eb7ebe2f71f90bffa7462303684e1f115ff97a3b0e07d4959f2f456a25d",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "src/qbrain/mcp/server.cpp",
+      "status": "M",
+      "size": 18436,
+      "sha256": "0c5fa96fe52de06280ad21ab7550cbd66835a764203f4d22353296af6bda894c",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "src/qbrain/ops/handlers.cpp",
+      "status": "M",
+      "size": 131625,
+      "sha256": "f147f8f02e985ab3e957e10df456b9df13d641842a4456f77fee9489b6cfe46e",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "src/qbrain/ops/registry.cpp",
+      "status": "M",
+      "size": 1559,
+      "sha256": "f96f1b1ec44fb9ad8e5a1b0e5922d3592b226053da306c7f3ff6c738ec91d7ff",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "src/qbrain/schema/packs.cpp",
+      "status": "M",
+      "size": 38549,
+      "sha256": "893c71db1beff94490c1f395abb31deb60812506ef14c0d87bf9e6643e9e2d9c",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "src/qbrain/search/hybrid.cpp",
+      "status": "M",
+      "size": 7734,
+      "sha256": "2a74917efc8e6ceffd8800ab2548fd4ce3c1065671d53dc174bc4bd190b74508",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "src/qbrain/search/rerank.cpp",
+      "status": "M",
+      "size": 14885,
+      "sha256": "67d87412d90d14c79e1f44b19262917105d7433c66264e170f910c97a8dbb505",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "src/qbrain/service/inbox_watch.cpp",
+      "status": "M",
+      "size": 1546,
+      "sha256": "76cb8edab0e4691faa46cf7d5bc74e87c0432f948947df27ad24be4de330b84e",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "src/qbrain/service/live_sync.cpp",
+      "status": "M",
+      "size": 6099,
+      "sha256": "35302192d0c1fdfb0515115945fc2419cf26f8ec450af9e7bb929bddc3cf7c4f",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "src/qbrain/storage/database.cpp",
+      "status": "M",
+      "size": 4570,
+      "sha256": "bda29c5926936979102fd1078044b8ee76c250ae34707f4f4fda42ab4d32dacb",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "src/qbrain/storage/migrate.cpp",
+      "status": "M",
+      "size": 15352,
+      "sha256": "d775529ff6f89d520f15a3fee30f0e180a2011646516de0a620e1870d538ec45",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "src/qbrain/util/paths.cpp",
+      "status": "M",
+      "size": 3352,
+      "sha256": "f7c3522070c601635b385f8d68bfee898e6b70cad2e2acc5a25d9e2f90b2488f",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "src/qbrain/util/time_util.cpp",
+      "status": "M",
+      "size": 1215,
+      "sha256": "cb315dc6c50958c6a69270b130a9757881a9030cd27b8b730626d6e296ffe217",
+      "category": "accepted-product",
+      "disposition": "commit: accepted source/build slice (subject to N30 D3-D9 fixes, green suite, and N30 outcome audit)",
+      "reason": "Production C++ source/header modified by changeset. Direct MSVC build PASS and suite 28/29 PASS at N30 pre-gate (n30-evidence/PREGATE-TEST-RUN.txt). Known P0/P1 security+integrity findings (central scope enforcement, remote path disclosure, HTTP substring routing, uncaught stoi, migrate coverage, pack atomicity) are scheduled for N30 D3-D9 fixes before commit."
+    },
+    {
+      "path": "tests/test_analytics.cpp",
+      "status": "M",
+      "size": 5076,
+      "sha256": "ba017586f00cf0d195cc142d4dd646f7c7197ae0c29f1cfbef678121ca350855",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Test source (modified). Suite registers 29 tests (tests/test_main.cpp); pre-gate run: 28 PASS + 1 FAIL (n20, expected-deny check at tests/test_n20.cpp:570), two rounds (n30-evidence/PREGATE-TEST-RUN.txt). Accepted as test evidence."
+    },
+    {
+      "path": "tests/test_extract.cpp",
+      "status": "M",
+      "size": 1156,
+      "sha256": "883d78e8afb18715e36fe328195b6ecae6a52951bd7c2546576289037dcc0eb0",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Test source (modified). Suite registers 29 tests (tests/test_main.cpp); pre-gate run: 28 PASS + 1 FAIL (n20, expected-deny check at tests/test_n20.cpp:570), two rounds (n30-evidence/PREGATE-TEST-RUN.txt). Accepted as test evidence."
+    },
+    {
+      "path": "tests/test_live_sync.cpp",
+      "status": "M",
+      "size": 1981,
+      "sha256": "947fbfb8fe32dded9e5c17cbcdf9acba2df51ef54bd87625bf8b3f0e213b9dde",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Test source (modified). Suite registers 29 tests (tests/test_main.cpp); pre-gate run: 28 PASS + 1 FAIL (n20, expected-deny check at tests/test_n20.cpp:570), two rounds (n30-evidence/PREGATE-TEST-RUN.txt). Accepted as test evidence."
+    },
+    {
+      "path": "tests/test_main.cpp",
+      "status": "M",
+      "size": 2782,
+      "sha256": "27f76a7e7e4042baa2f8035e083e2036ff74a6da2f8b10e6b2b39251bee75957",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Test registration hub (modified). Currently registers exactly 29 tests (rrf..n18, incl. dedicated n20/n22/n23); pre-gate run: 28 PASS + 1 FAIL (n20). Will grow to >=30 with tests/test_n30.cpp (D11). Accepted as test evidence."
+    },
+    {
+      "path": "tests/test_mcp.cpp",
+      "status": "M",
+      "size": 11182,
+      "sha256": "8745ba5691dfb7d7d794f9fd9a8c43837e7cbed83a98f29f3d77a59bb8478052",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Test source (modified). Suite registers 29 tests (tests/test_main.cpp); pre-gate run: 28 PASS + 1 FAIL (n20, expected-deny check at tests/test_n20.cpp:570), two rounds (n30-evidence/PREGATE-TEST-RUN.txt). Accepted as test evidence."
+    },
+    {
+      "path": "tests/test_minions.cpp",
+      "status": "M",
+      "size": 12145,
+      "sha256": "b3367ef79accf53f1da33a88d05f4948e65b9eb20bf4c95abb316f2d8282750a",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Test source (modified). Suite registers 29 tests (tests/test_main.cpp); pre-gate run: 28 PASS + 1 FAIL (n20, expected-deny check at tests/test_n20.cpp:570), two rounds (n30-evidence/PREGATE-TEST-RUN.txt). Accepted as test evidence."
+    },
+    {
+      "path": "tests/test_n19.cpp",
+      "status": "M",
+      "size": 58903,
+      "sha256": "27023d52d3c637b081747d1e66c2a86c84a21c0628fb413d6301af8e00e6d8e9",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Test source (modified). Suite registers 29 tests (tests/test_main.cpp); pre-gate run: 28 PASS + 1 FAIL (n20, expected-deny check at tests/test_n20.cpp:570), two rounds (n30-evidence/PREGATE-TEST-RUN.txt). Accepted as test evidence."
+    },
+    {
+      "path": "tests/test_n20_23.cpp",
+      "status": "M",
+      "size": 9263,
+      "sha256": "6ee5db59a896357a3023094fd54e6f45392e88443a7a508186b4749ff4cd3287",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Test source (modified). Suite registers 29 tests (tests/test_main.cpp); pre-gate run: 28 PASS + 1 FAIL (n20, expected-deny check at tests/test_n20.cpp:570), two rounds (n30-evidence/PREGATE-TEST-RUN.txt). Accepted as test evidence."
+    },
+    {
+      "path": "tests/test_n26_27.cpp",
+      "status": "M",
+      "size": 2477,
+      "sha256": "8ad922a764264fc4b66e5c77cc79dad551c83212e940e83a4dc9817007376237",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Test source (modified). Suite registers 29 tests (tests/test_main.cpp); pre-gate run: 28 PASS + 1 FAIL (n20, expected-deny check at tests/test_n20.cpp:570), two rounds (n30-evidence/PREGATE-TEST-RUN.txt). Accepted as test evidence."
+    },
+    {
+      "path": "tests/test_rerank.cpp",
+      "status": "M",
+      "size": 17068,
+      "sha256": "64a91574e2a56433392b39e52a74a101a09487ff1e6c772cb432da1a3e90ff06",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Test source (modified). Suite registers 29 tests (tests/test_main.cpp); pre-gate run: 28 PASS + 1 FAIL (n20, expected-deny check at tests/test_n20.cpp:570), two rounds (n30-evidence/PREGATE-TEST-RUN.txt). Accepted as test evidence."
+    },
+    {
+      "path": "tests/test_storage.cpp",
+      "status": "M",
+      "size": 4233,
+      "sha256": "2e7eb17de213045625f9c0ae3f224142c5fbb5e2ae6c8d946e369fdff5b54095",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Test source (modified). Suite registers 29 tests (tests/test_main.cpp); pre-gate run: 28 PASS + 1 FAIL (n20, expected-deny check at tests/test_n20.cpp:570), two rounds (n30-evidence/PREGATE-TEST-RUN.txt). Accepted as test evidence."
+    },
+    {
+      "path": "docs/RESOLUTION-2026-08-15.md",
+      "status": "??",
+      "size": 30445,
+      "sha256": "7d5d2341ed11459a6537afe9bcfc1e535eb378d0c5b690c83ba0d91b6df7c803",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Three-party resolution record (Iron Law Article 5) governing Phase 2 (AMD-1..AMD-11) and the N30 plan. Governance document."
+    },
+    {
+      "path": "docs/nodes/N1-PLAN-AUDIT.md",
+      "status": "??",
+      "size": 1082,
+      "sha256": "9fd6df77ad905463f34e6873c2220849003679a64c869e5fb1eaffba470f95e6",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N10-HARD-AUDIT.md",
+      "status": "??",
+      "size": 1447,
+      "sha256": "27c4c3d389fbeadf2bf04c5d73827135baed7e09d912afd71cf85219b6e4d244",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N10-PLAN-AUDIT.md",
+      "status": "??",
+      "size": 1315,
+      "sha256": "912e1953d6bf2a871fca1ca7b6d50986154e4ec28830d65927be81ae00c45c2a",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N10-PLAN.md",
+      "status": "??",
+      "size": 4836,
+      "sha256": "506174271523c9ed51530717a91da8d2fdc1877dfd9514fb5d748484b8f9165f",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N11-HARD-AUDIT.md",
+      "status": "??",
+      "size": 2885,
+      "sha256": "bdefcf26d138b658d31df0b8525c46b776aa5e9086796bcd16696d8b783f2012",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N11-OUTCOME-EVIDENCE.md",
+      "status": "??",
+      "size": 3847,
+      "sha256": "33eef7e3348f44007482458821e465163033d9505382d93b799ed3b8d2b80781",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N11-PLAN-AUDIT.md",
+      "status": "??",
+      "size": 2188,
+      "sha256": "e157d9f3b6dcbc276b782d960c237d50fed9d4ff5614473678813e27541844a7",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N11-PLAN.md",
+      "status": "??",
+      "size": 3993,
+      "sha256": "1fb0898b37306d56b92b89eef40f824acf26a7a45d9626fbdecfd28fa8ea9b6d",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N12-OUTCOME-EVIDENCE.md",
+      "status": "??",
+      "size": 5762,
+      "sha256": "5b3a2a0af172d94e2d908abb637264b0097ae729fbdf63e4c860c1ff384cd0cd",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N12-PLAN-AUDIT.md",
+      "status": "??",
+      "size": 3657,
+      "sha256": "4275b645cb9b08b9f118863ea8f56ca9137a0217d75d1db4440d37e5e1308970",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N13-PLAN-AUDIT.md",
+      "status": "??",
+      "size": 6001,
+      "sha256": "632d8c5c062536555c307280badcf8cb3b41a0c33c91be1e4350e7b635ea0d9f",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N14-PLAN-AUDIT.md",
+      "status": "??",
+      "size": 5980,
+      "sha256": "e28365fc38b79bc4340defba8524350629f6966490532251445a6f84d6ce1385",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N15-PLAN-AUDIT.md",
+      "status": "??",
+      "size": 5528,
+      "sha256": "01e95a0cc55e4d0580562008a65de2ee941a13a8b37f4fd730389937d5abaef1",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N16-PLAN-AUDIT.md",
+      "status": "??",
+      "size": 8152,
+      "sha256": "ad6794067444a56658d52d23c3ca29f7092cd7024829f1c4313b295b10c77fef",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N17-PLAN-AUDIT.md",
+      "status": "??",
+      "size": 13856,
+      "sha256": "46cded0d8537f432617e0fed4d59b1d9e842ce255ee6851ce224b4cea177433b",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N18-PLAN-AUDIT.md",
+      "status": "??",
+      "size": 12540,
+      "sha256": "87db9821c255555ab6a42aab8d22cac945a5e0141aeeb3dd02e76a07e743af6d",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N19-PLAN-AUDIT.md",
+      "status": "??",
+      "size": 32965,
+      "sha256": "e5c603efbfecb5603a0fd068dd2a0b39e7a75abac5fd116634adc397d9b7e470",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N2-PLAN-AUDIT.md",
+      "status": "??",
+      "size": 958,
+      "sha256": "c34fede88989a9847dd3cad0bf719b6476c28bbfb124cb094d4afbe24d90fb85",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N2.5-PLAN-AUDIT.md",
+      "status": "??",
+      "size": 518,
+      "sha256": "bd0cf1b5f4dddb9af40168a89d1a87be84d5a4eb2f99872d3389880523617953",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N2.5-PLAN.md",
+      "status": "??",
+      "size": 3555,
+      "sha256": "5b7a56bee110eefec199bf2c3b5d0fbc70171ad634923a9a97dc85150d4b2983",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N20-PLAN-AUDIT.md",
+      "status": "??",
+      "size": 9003,
+      "sha256": "c3296b662fdd8e667de1e94bfa5838f141b3a4c249e0e2128e532bed5d506d66",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N21-PLAN-AUDIT.md",
+      "status": "??",
+      "size": 1641,
+      "sha256": "2b40852e48c2430e0ae9288005c634c8eba1d166dec398e5a1b4040b2a184c98",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N22-PLAN-AUDIT.md",
+      "status": "??",
+      "size": 11584,
+      "sha256": "bac3404aa98a492c6da00fb76b0f55325c7fa26ec1c486c3a1587539b691d986",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N23-PLAN-AUDIT.md",
+      "status": "??",
+      "size": 15463,
+      "sha256": "8da7e7af958e4d776885970c4cfddc581376582e94c3797b9309a43a5297b714",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N29-HARD-AUDIT.md",
+      "status": "??",
+      "size": 2247,
+      "sha256": "88ba65292986aa0d6ada59f49a77956e8f7c493fe763aab32d3944c10e6144ae",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N29-PLAN-AUDIT.md",
+      "status": "??",
+      "size": 1706,
+      "sha256": "877076c6d9e7b62da2c0424b752869184a95da606851291056508fee84e707e1",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N29-PLAN.md",
+      "status": "??",
+      "size": 3653,
+      "sha256": "821cbe3741d56f1948e2b2cbccdcac1a3459a4d3682632445f3e091d920a798c",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N3-PLAN-AUDIT.md",
+      "status": "??",
+      "size": 1318,
+      "sha256": "ab99d7c2d0553575f16124fba807067a8039839321fb9f3469c949dbdc8a4994",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N3-PLAN.md",
+      "status": "??",
+      "size": 5113,
+      "sha256": "cfec9da05843718867ef29395179be67a820af6e53cd574259d3346def2f08b2",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N30-PLAN-AUDIT.md",
+      "status": "??",
+      "size": 6783,
+      "sha256": "8ddc3cdef9cf69895b5617091fe5c010976d74c434e7eaca8c36a59fe9e7499d",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N30-PLAN.md",
+      "status": "??",
+      "size": 10816,
+      "sha256": "5da80bf6aef88cd69382b7f2440a026101b41ec5da867d50da73f62839678f78",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N4-PLAN-AUDIT.md",
+      "status": "??",
+      "size": 2082,
+      "sha256": "ee7e14ab9347edac185661fddb0cee1a3d0a5205f6932560aab49fb99509f0bb",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N4-PLAN.md",
+      "status": "??",
+      "size": 3387,
+      "sha256": "562994e8a8b442a9882b96ace55d09301d99c5692a9ea685340df27bbd443c46",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N5-PLAN-AUDIT.md",
+      "status": "??",
+      "size": 669,
+      "sha256": "481f77b815b0d0623e37010ab9dbcd9879d9d275d4b5e9e601e74c2d781bee28",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N5-PLAN.md",
+      "status": "??",
+      "size": 2452,
+      "sha256": "2f610dfba0d6569b3ce8008bb2240e8328a7e0b49fef1859419c76a2395bfabf",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N6-PLAN-AUDIT.md",
+      "status": "??",
+      "size": 1225,
+      "sha256": "8de656eae1a26d244cf83ea2e06e9f2b8b264f3102b27f32c96ad1a63dddbb12",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N6-PLAN.md",
+      "status": "??",
+      "size": 5271,
+      "sha256": "fb03e439885f9ee41dc187598b1da25504b4803af4353011f03b4df9366d5e18",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N7-PLAN-AUDIT.md",
+      "status": "??",
+      "size": 703,
+      "sha256": "929970318d8fb3043371f82a9208360db7e38e6dd058e37f0eef515534f26d39",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N7-PLAN.md",
+      "status": "??",
+      "size": 2407,
+      "sha256": "62cce60dd75e62218275dc433f479c4e9d7490f7b186b8074a5ffd9cf918392e",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N8-HARD-AUDIT.md",
+      "status": "??",
+      "size": 1270,
+      "sha256": "7970e96af49bbc86f6e71785409a68b482f24e8b2f08a42c2993bbc93c14a8f9",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N8-PLAN-AUDIT.md",
+      "status": "??",
+      "size": 1328,
+      "sha256": "7f16263f786315420ed42a7c79350add553ad84b11ce4cd6dbc21b0fdc320570",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N8-PLAN.md",
+      "status": "??",
+      "size": 3324,
+      "sha256": "84438fa09559aef0c5471f4de339cad5f710b774e0f61ba7253d285ba89e9449",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N9-HARD-AUDIT.md",
+      "status": "??",
+      "size": 899,
+      "sha256": "1cf2ee1bfb671e8503a0eb400fd81ec24870b3254a5bd6335c1201d4ea2430c5",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N9-PLAN-AUDIT.md",
+      "status": "??",
+      "size": 529,
+      "sha256": "8939a95a619e398a1605e13b807771726ad27574a3fd6f9a7b0803d1f593ebfa",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/N9-PLAN.md",
+      "status": "??",
+      "size": 2360,
+      "sha256": "ac5a90e8e8fbb8838f39f72f688cb72ed5e3b92e2acd072b15bbf6560e9df0f4",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/PLAN-AUDIT-BATCH-RESULT.json",
+      "status": "??",
+      "size": 718,
+      "sha256": "a1d7938afc3638103b8bcfff2bcb0cf3a9e9cab7a144280637d43dea57131874",
+      "category": "duplicate-stale",
+      "disposition": "keep uncommitted; do not commit (superseded by current artifacts)",
+      "reason": "Stale batch results (N1 BLOCKED, N2.5 FAIL, N2 FAIL, N3 FAIL, N4 BLOCKED) contradict the current per-node PLAN-AUDIT files which all record PASS. Resolution 2026-08-15 flags this file as stale. Superseded by per-node audit files; keep uncommitted, do not commit."
+    },
+    {
+      "path": "docs/nodes/n12-evidence/BUILD-OUTPUT.txt",
+      "status": "??",
+      "size": 3480,
+      "sha256": "eb089af5ee57ef8f5020f75ea6a0823d83833626a99aaabb01a3757400c7d047",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n12-evidence/CLAUDE-N12-HARD-AUDIT-RESPONSE-2.txt",
+      "status": "??",
+      "size": 5028,
+      "sha256": "3814370474cc407aee817ac5a26755f0a0e0e38d0daf662954c6999382cde07f",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n12-evidence/CLAUDE-N12-HARD-AUDIT-RESPONSE.txt",
+      "status": "??",
+      "size": 7898,
+      "sha256": "70fae294c6629fee3b357ff068563622b6e440ae4f9890dd5df835814652580d",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n12-evidence/TEST-OUTPUT.txt",
+      "status": "??",
+      "size": 1619,
+      "sha256": "1ef178b8ea34ee036c57e297b8822487d3dbbdddcf1f7f226e44440a561e6706",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n13-evidence/BUILD-OUTPUT.txt",
+      "status": "??",
+      "size": 3995,
+      "sha256": "e00a8bd8dd7f54244f9264b6427b84affe429f3d4d809f0ed98aca1d090b13e8",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n13-evidence/CLAUDE-N13-HARD-AUDIT-RESPONSE-2.txt",
+      "status": "??",
+      "size": 10423,
+      "sha256": "2160bed98d629a41dfda41853f4084aaf7a754dae142523f8798ee87b185f19b",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n13-evidence/CLAUDE-N13-HARD-AUDIT-RESPONSE-3.txt",
+      "status": "??",
+      "size": 6819,
+      "sha256": "bbc0d087b3077ccc367551a699f19b0386d8bc15a57ebdae18893529f0b57dcd",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n13-evidence/CLAUDE-N13-HARD-AUDIT-RESPONSE-4.txt",
+      "status": "??",
+      "size": 5056,
+      "sha256": "ffa5c4ed7f3ad7cf5b0e05324d5554a4f8ad288a759d213d9163076df2fec421",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n13-evidence/CLAUDE-N13-HARD-AUDIT-RESPONSE-5.txt",
+      "status": "??",
+      "size": 3711,
+      "sha256": "b3543a0ec2b143b9fbaaeb32ff458daf1e762ed49315a9ed7c3c4058e120e374",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n13-evidence/CLAUDE-N13-HARD-AUDIT-RESPONSE-6.txt",
+      "status": "??",
+      "size": 4137,
+      "sha256": "49a73387886dfa34fe7226b944d2db0ea94f3a3414735d6378889e7afda02744",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n13-evidence/CLAUDE-N13-HARD-AUDIT-RESPONSE.txt",
+      "status": "??",
+      "size": 641,
+      "sha256": "0a7dc13fcf6f567bad98869f27209ebb828661fc38f72c3cf1c2a97378fc1702",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n13-evidence/CLI-SMOKE-OUTPUT.txt",
+      "status": "??",
+      "size": 1322,
+      "sha256": "a392248ff0eac91eea6a4c4aeb529ef3bcbb7ad6a533d5d80b909e0949743368",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n13-evidence/TEST-OUTPUT.txt",
+      "status": "??",
+      "size": 2120,
+      "sha256": "e13556167e08f6b4304219627b3d3b9ed26bc740289aaa1c62c730acaa9512f6",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n14-evidence/BUILD-MANIFEST.txt",
+      "status": "??",
+      "size": 11317,
+      "sha256": "2b6bee15b0c279c3a85e81b99eebf2811cc59a90627ae1ec331e08ce6e4a4d7d",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n14-evidence/BUILD-OUTPUT.txt",
+      "status": "??",
+      "size": 58080,
+      "sha256": "03c213b1a785e2597da5ea354c4273c2925178018d4adb4b1af0045353ad5f7c",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n14-evidence/CLAUDE-N14-HARD-AUDIT-CLEANUP-RESPONSE.txt",
+      "status": "??",
+      "size": 1284,
+      "sha256": "80f3886e55a14c454959e6804ea046e27ac3ebc58b1a6c234610f3441514eef5",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n14-evidence/CLAUDE-N14-HARD-AUDIT-RESPONSE-FINAL-2.txt",
+      "status": "??",
+      "size": 2059,
+      "sha256": "30e93e0fbe94374d463248a6403c4798f87200d11d2755d1f79afa343de16e48",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n14-evidence/CLAUDE-N14-HARD-AUDIT-RESPONSE-FINAL.txt",
+      "status": "??",
+      "size": 786,
+      "sha256": "262c9daab3b20bcfaddabd402178797851ad73fed8fd7733ed36fc1edc9501c1",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n14-evidence/CLAUDE-N14-HARD-AUDIT-RESPONSE.txt",
+      "status": "??",
+      "size": 2176,
+      "sha256": "daea6ba17ab414a2498fbd6115632d48be2401b14509098231dc84ccc233238f",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n14-evidence/CLI-SMOKE-OUTPUT.txt",
+      "status": "??",
+      "size": 2471,
+      "sha256": "253be9a380d13b4ca2926791bdeff92044c22cd774722cfedf76a2025c95281f",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n14-evidence/TEST-OUTPUT.txt",
+      "status": "??",
+      "size": 55448,
+      "sha256": "36296c327d21be482e44ea962c4c9c69d045e3f07f7245af606c4359438ed7dd",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n14-evidence/VERIFY-REPORT.md",
+      "status": "??",
+      "size": 6756,
+      "sha256": "a3b36f114caa41df185a2600c86d1d97675f992b0b901e7d0c324cea2396684d",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n15-evidence/BUILD-MANIFEST.txt",
+      "status": "??",
+      "size": 11317,
+      "sha256": "2b6bee15b0c279c3a85e81b99eebf2811cc59a90627ae1ec331e08ce6e4a4d7d",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n15-evidence/BUILD-OUTPUT.txt",
+      "status": "??",
+      "size": 58080,
+      "sha256": "03c213b1a785e2597da5ea354c4273c2925178018d4adb4b1af0045353ad5f7c",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n15-evidence/CLAUDE-N15-HARD-AUDIT-CLEANUP-RESPONSE.txt",
+      "status": "??",
+      "size": 2226,
+      "sha256": "5bd0a24ee5f708ac9e27dd59b6caef1eff160851808f9a793b9b1b09d9f939e4",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n15-evidence/CLAUDE-N15-HARD-AUDIT-EXCLUSION-CLEANUP.txt",
+      "status": "??",
+      "size": 778,
+      "sha256": "1382d07aeed5ca12e5e4dd21011521b7646d3ee484a0fb45eb4bf77ab2dc0a7c",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n15-evidence/CLAUDE-N15-HARD-AUDIT-RESPONSE-FINAL.txt",
+      "status": "??",
+      "size": 2590,
+      "sha256": "c69258f4ed3ef41ac32d1784fd2b8a6fa152f758c843644e741253119b0adb70",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n15-evidence/CLAUDE-N15-HARD-AUDIT-RESPONSE.txt",
+      "status": "??",
+      "size": 1946,
+      "sha256": "110699e6481fd7e9d104eba345f2283b6c23bb1127be9153f2105f8ee697180c",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n15-evidence/CLI-SMOKE-OUTPUT.txt",
+      "status": "??",
+      "size": 718,
+      "sha256": "2f5702719e984a6a4a020741d5acdf29eba9df0c74eeb183ef61659db1013ab2",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n15-evidence/TEST-OUTPUT.txt",
+      "status": "??",
+      "size": 55448,
+      "sha256": "8744d31f1579cd199e29af9c2bf02d412d76ff34c35efb5c374f41b3382d5fff",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n15-evidence/VERIFY-REPORT.md",
+      "status": "??",
+      "size": 8511,
+      "sha256": "c9b217b97989dab04d49800ac4e81abd961fca1a18ac5d75a453b624a9b22046",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n16-evidence/BUILD-MANIFEST.txt",
+      "status": "??",
+      "size": 11317,
+      "sha256": "2b6bee15b0c279c3a85e81b99eebf2811cc59a90627ae1ec331e08ce6e4a4d7d",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n16-evidence/BUILD-OUTPUT.txt",
+      "status": "??",
+      "size": 58080,
+      "sha256": "03c213b1a785e2597da5ea354c4273c2925178018d4adb4b1af0045353ad5f7c",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n16-evidence/CLAUDE-N16-HARD-AUDIT-CLEANUP-RESPONSE-2.txt",
+      "status": "??",
+      "size": 1776,
+      "sha256": "150bedf797d0aa26dd770db2beea686ace52b69ae76174d181ee419e20d7d8c9",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n16-evidence/CLAUDE-N16-HARD-AUDIT-CLEANUP-RESPONSE.txt",
+      "status": "??",
+      "size": 1310,
+      "sha256": "f423eea06963ddc3e08ac8aa8a22bf5be3d236d984db2ebc62298478cc72b139",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n16-evidence/CLAUDE-N16-HARD-AUDIT-RESPONSE-FINAL-2.txt",
+      "status": "??",
+      "size": 2129,
+      "sha256": "7e116a3651d7470f594ff70acdc4ed12800a09f7c69f6bbbe90539d30230af52",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n16-evidence/CLAUDE-N16-HARD-AUDIT-RESPONSE-FINAL.txt",
+      "status": "??",
+      "size": 2,
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n16-evidence/CLAUDE-N16-HARD-AUDIT-RESPONSE.txt",
+      "status": "??",
+      "size": 2,
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n16-evidence/CLI-SMOKE-OUTPUT.txt",
+      "status": "??",
+      "size": 718,
+      "sha256": "268183e3f6fde67300f576bfe44eb57f8e28b23ca868d282a34da095832cd809",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n16-evidence/TEST-OUTPUT.txt",
+      "status": "??",
+      "size": 55448,
+      "sha256": "79b7a1925fcbdbb1122d254862be3f6a8fdd732781adf03f57ef8db7e93ec4fe",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n16-evidence/VERIFY-REPORT.md",
+      "status": "??",
+      "size": 28746,
+      "sha256": "f6d84dbe8d65ca76d2ed131390dc67db9d5bd46734f04a36ee1d8ab501a3d095",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n17-evidence/BUILD-MANIFEST.txt",
+      "status": "??",
+      "size": 11441,
+      "sha256": "d24f6fed6faf8fa3e2ff4af7c16c906870847995affde52e5065d8c4b153070b",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n17-evidence/CLI-SMOKE-OUTPUT.txt",
+      "status": "??",
+      "size": 1190,
+      "sha256": "72c6e75bb43d550234be35ca71865544b39f0b998ef6c70ab8ce612b7c13a68c",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n17-evidence/EVIDENCE-MANIFEST.txt",
+      "status": "??",
+      "size": 5055,
+      "sha256": "cc64561f258efe983fc1a259e4660ee347e1fc47f053761fe02bef4470e09028",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n17-evidence/N17-SCOPE-MANIFEST.txt",
+      "status": "??",
+      "size": 2809,
+      "sha256": "ab53f1ce9a230d8350cdb5452973d2474b30c8f8be6c8c753a039789cc09bcc3",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n17-evidence/OPERATION-SCHEMAS.json",
+      "status": "??",
+      "size": 8435,
+      "sha256": "f1a0d24ca5d54d5cd14f5696d259b95f89e776ecd87aff91b545cb7ed2883fca",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n17-evidence/PRODUCTION-BUILD-OUTPUT.txt",
+      "status": "??",
+      "size": 1461,
+      "sha256": "fe5cb3021725e29b837f129d6209be42a3366084e5795808769b1827d0bf9024",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n17-evidence/RUNTIME-MARKERS.txt",
+      "status": "??",
+      "size": 2010,
+      "sha256": "d40f25be8fe041b8b7c622ff5c5ef8fe9efde9582dec3627a9b08220a06ecbdc",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n17-evidence/SCHEMA-EVIDENCE.txt",
+      "status": "??",
+      "size": 603,
+      "sha256": "7dac37dad1eaf9e1854f3a40f452e7a427048d3d7b184a835c387ec1ab85b5eb",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n17-evidence/TEST-BUILD-OUTPUT.txt",
+      "status": "??",
+      "size": 141407,
+      "sha256": "ab7b70f412b54fc167eeb674fb06f024dcc48279710b62e7952f5fdaea1d2201",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n17-evidence/TEST-OUTPUT.txt",
+      "status": "??",
+      "size": 140467,
+      "sha256": "ff4d563530439b4d1c1fe8c50429dea05efb017a72a91ae83ca6585ceb0671c6",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n17-evidence/VERIFY-REPORT.md",
+      "status": "??",
+      "size": 10229,
+      "sha256": "f64e5b063281aadc02277685ec3a642658164e1e0a65441cc9e17974f15436ff",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n18-evidence/BUILD-MANIFEST.txt",
+      "status": "??",
+      "size": 11317,
+      "sha256": "2b6bee15b0c279c3a85e81b99eebf2811cc59a90627ae1ec331e08ce6e4a4d7d",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n18-evidence/BUILD-OUTPUT.txt",
+      "status": "??",
+      "size": 58080,
+      "sha256": "03c213b1a785e2597da5ea354c4273c2925178018d4adb4b1af0045353ad5f7c",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n18-evidence/CLAUDE-N18-HARD-AUDIT-CORRECTION-FAIL.txt",
+      "status": "??",
+      "size": 2,
+      "sha256": "7eb70257593da06f682a3ddda54a9d260d4fc514f645237f5ca74b08f8da61a6",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n18-evidence/CLAUDE-N18-HARD-AUDIT-FAIL-RETRY.txt",
+      "status": "??",
+      "size": 2016,
+      "sha256": "6ba9e4addee413b5e4424fd2af1c700f493f4dae77a55ec95fd2822e065d441a",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n18-evidence/CLAUDE-N18-HARD-AUDIT-RESPONSE-FINAL.txt",
+      "status": "??",
+      "size": 1528,
+      "sha256": "2cb87c6bcbee65d60903d188ad46c9b7b7fc743e6289591be0b649366df46fc5",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n18-evidence/CLI-SMOKE-OUTPUT.txt",
+      "status": "??",
+      "size": 718,
+      "sha256": "d519cdba010891f4759bdc999b028e4cc86cd37dfbb92c57e64781a0649de358",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n18-evidence/TEST-OUTPUT.txt",
+      "status": "??",
+      "size": 55448,
+      "sha256": "6657c2999f2414d86c3435f27bb3ac02d93dad0071042b8baedf1988d23a847b",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n18-evidence/VERIFY-REPORT.md",
+      "status": "??",
+      "size": 32749,
+      "sha256": "67662532c8eb77fc242d325d619419ceba2b3bfc6ca39bd46ada9883cff1387b",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n19-evidence/EVIDENCE-MANIFEST.json",
+      "status": "??",
+      "size": 26266,
+      "sha256": "fa17ce28a96e5ba62bd0a107d2f28c715678de71e2b645fbd2c1c2cc16c84b94",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n19-evidence/FOCUSED-RUNTIME-OUTPUT.txt",
+      "status": "??",
+      "size": 726,
+      "sha256": "f4de3fb1f98332caacaae51a6ff5cb1f1520d198f78edda369ec8118a03982a7",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n19-evidence/FULL-SUITE-OUTPUT.txt",
+      "status": "??",
+      "size": 141260,
+      "sha256": "95ca314165d4586d68bbbe95dc774db4e2b2bf382b54fdffb765e1ccaf62a3ca",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n19-evidence/MCP-SCHEMA-EVIDENCE.txt",
+      "status": "??",
+      "size": 31888,
+      "sha256": "d1d8c903947ba7b6754c01fa2a9e2e072e2338326bce84e2ba6a78f470e0af44",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n19-evidence/PLATFORM-OUTPUT.txt",
+      "status": "??",
+      "size": 243,
+      "sha256": "6af1d454dc6de519b9517889d59760bdfa361cbdaf2d014313a18d517605e275",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n19-evidence/PRE-CORRECTIVE-SCHEMA-GATE.json",
+      "status": "??",
+      "size": 4778,
+      "sha256": "2638f4c02a501cf295f8b2ab575e894d051159479b8f6a8beadca28d6544ea3a",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n19-evidence/PREBUILD-MANIFEST.json",
+      "status": "??",
+      "size": 45089,
+      "sha256": "e7b556cb957f0e2eeecd8bfeda8d385727ca6f94f32d4fcb9294e4658aa5aa27",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n19-evidence/PRODUCTION-BUILD-OUTPUT.txt",
+      "status": "??",
+      "size": 1495,
+      "sha256": "b5fa020d00e9abaa90df2bd3719670b749b9841c6144ab21fb427fb21dcd4531",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n19-evidence/SCHEMA-SMOKE-OUTPUT.txt",
+      "status": "??",
+      "size": 268,
+      "sha256": "615902fc0751394500bdd8bb3eb80cbf08b69b9ceaf74206a2313cbc56207cbd",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n19-evidence/SNAPSHOT-EVIDENCE.txt",
+      "status": "??",
+      "size": 84000,
+      "sha256": "bd8b8c8d065e24d530ac733e51e8cb93f3b798bbcbcc95921ae25ca71b63e7f3",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n19-evidence/TEST-BUILD-OUTPUT.txt",
+      "status": "??",
+      "size": 142159,
+      "sha256": "b1f79f7924b55faf36440ef8a1168ccb8236976fe2d313c773c158feb9306082",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n19-evidence/VERIFY-REPORT.md",
+      "status": "??",
+      "size": 8516,
+      "sha256": "6cf3ee923cf299531d44f2a9ba91b3eef9df13170686fb94ddad2bb52548e0f1",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n20-evidence/PRE-IMPLEMENTATION-GATE.json",
+      "status": "??",
+      "size": 16521,
+      "sha256": "db60b533ea14e99fdcd8971ee7bd13b30d8119c3de3953516c9777641ceecd16",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n20-evidence/PREBUILD-MANIFEST.json",
+      "status": "??",
+      "size": 137813,
+      "sha256": "e891e4d246771c8e409867f4d3a3f8cf310dfcbcba47fa5ec49cc1cf1d3d3082",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n22-evidence/DOCTOR-SCHEMA-EVIDENCE.json",
+      "status": "??",
+      "size": 2712,
+      "sha256": "42b2fa05d3a11af1b39672a22a28b22b1b44c204067033dd453e8930279b5612",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n22-evidence/EVIDENCE-MANIFEST.json",
+      "status": "??",
+      "size": 747555,
+      "sha256": "214021978a3657aa5285d5f5a54f97666ee299f1f969276f7dd5ddcd4d6ca634",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n22-evidence/FOCUSED-RUNTIME-OUTPUT.txt",
+      "status": "??",
+      "size": 985,
+      "sha256": "412fef26eb72b383f24e6b007b32143bceb4b0ce41b64f0a924726b3f3b0c2e4",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n22-evidence/FULL-SUITE-RUN-2.txt",
+      "status": "??",
+      "size": 563643,
+      "sha256": "99975bf9d146faa9b9b8951b5e9a8218ed9af681e878b98f1457e13bbd2e3d0e",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n22-evidence/PLATFORM-OUTPUT.txt",
+      "status": "??",
+      "size": 395,
+      "sha256": "217e86354199b3938d72c1e6f873bdbce2144752e89558c1296c8c7e6296fd9d",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n22-evidence/PREBUILD-MANIFEST.json",
+      "status": "??",
+      "size": 62684,
+      "sha256": "0628f990fc74dbc868464d106b986af5fd47154123cdbc653d828bbd7dfc072d",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n22-evidence/PRODUCTION-BUILD-OUTPUT.txt",
+      "status": "??",
+      "size": 2128,
+      "sha256": "0c6004982b3a03ef43bdba8b11bb9ae5126bf94bed3c0dc7208d441dd98bbcef",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n22-evidence/REAL-MCP-EVIDENCE.json",
+      "status": "??",
+      "size": 580148,
+      "sha256": "bd6ff70b85a6aa2a96ea608aaf17bc612425226b616db83b7f0156c8b1c98683",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n22-evidence/REGISTRY-MCP-EVIDENCE.json",
+      "status": "??",
+      "size": 16252,
+      "sha256": "411a963048db2da05779e0d211b4783de742293fd460e9c5edebf97fb77a7bef",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n22-evidence/SCHEMA-EVIDENCE.txt",
+      "status": "??",
+      "size": 1697,
+      "sha256": "907ce9a985064e4cac6f5f297d834bce1f33bc3ad6afafa260481c98b48a9475",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n22-evidence/SCOPE-SAFETY-EVIDENCE.txt",
+      "status": "??",
+      "size": 708,
+      "sha256": "5c841a7441663e9113d7d896b29cf4bae11d9c4f536392402d50fa77a9765436",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n22-evidence/SNAPSHOT-EVIDENCE.txt",
+      "status": "??",
+      "size": 151195,
+      "sha256": "0e4d8673fbbe5961966b204d6f6d2830a3bd1ae8090aa19019b27c5083f5b9e0",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n22-evidence/TEST-BUILD-OUTPUT.txt",
+      "status": "??",
+      "size": 564786,
+      "sha256": "766b40b6536fbb5502d2ebbc4dd0444ef7f54a5eb4dbc9bfaa8cae8a1ce3e9c1",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n22-evidence/VERIFY-REPORT.md",
+      "status": "??",
+      "size": 2724,
+      "sha256": "640273f63881a8267b718ffe3297c48a3657eb7144970d2663fcfce67fb9d5e6",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n23-evidence/EVIDENCE-MANIFEST.json",
+      "status": "??",
+      "size": 365,
+      "sha256": "e65338f18681cad392b595a4e86864e50f5240ac5c87efe57a7f22c89b786ce1",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n23-evidence/N23-HARD-AUDIT-BASELINE.md",
+      "status": "??",
+      "size": 1722,
+      "sha256": "0ab5517a77331de181550b4365244a86a8d0c4c9a9883b267837df017a579ebb",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n23-evidence/N23-PLAN-APPROVED-BASELINE.md",
+      "status": "??",
+      "size": 25416,
+      "sha256": "4301f77a8a7b427a3d27bd883ce21d0316a94a5261a10541f9b0a2a3f6942a17",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n23-evidence/N23-PLAN-AUDIT-BASELINE.md",
+      "status": "??",
+      "size": 14220,
+      "sha256": "0bff70920652adbe9929d0cd76697fadaa9912a9014ae6b41ddccb648c869aef",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n23-evidence/POST-GATE-SHARED-INPUT-REVALIDATION-v1.json",
+      "status": "??",
+      "size": 4537,
+      "sha256": "c2dc2a34fc9928c253456210dce94f4a6fb239933906d8b896a1146bdec37149",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n23-evidence/PRE-CORRECTIVE-SCHEMA-GATE.json",
+      "status": "??",
+      "size": 6305,
+      "sha256": "06c1d9fb4527993267534afe3780ce5ac5c2ead5e12f6e2018c471aad2839122",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n23-evidence/PREBUILD-MANIFEST.json",
+      "status": "??",
+      "size": 41264,
+      "sha256": "7ae4556f914b58b5d048c5a931eac316c21adf8f3b05b68acafb6274bfa02658",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n23-evidence/PRODUCTION-BUILD-OUTPUT.txt",
+      "status": "??",
+      "size": 1538,
+      "sha256": "368a17b65fc29c2d2d664ff10b0ce3173b69109514c4d0238f6da14442457bff",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n23-evidence/VERIFY-REPORT.md",
+      "status": "??",
+      "size": 240,
+      "sha256": "c3e157416ecca8878d956c10af80e656a2b5ef04426a049a2d3bacf399ecf378",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "Governance / documentation artifact (node plans, audits, evidence transcripts, master-plan-family docs). Part of the governance+test retrofit wave; reconciliation and Tier annotations handled by the D2 matrix and D10 doc sync. No secrets; no product code."
+    },
+    {
+      "path": "docs/nodes/n30-evidence/PRE-GATE.json",
+      "status": "??",
+      "size": 3455,
+      "sha256": "13dae0819cf28285fe73ad531341f9c518e31dfe005d3ee8ad7cf9b8b068de78",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "N30 pre-implementation gate evidence (PRE-GATE.json, PREGATE-BUILD-*.txt, PREGATE-TEST-RUN.txt) captured by the parent after N30 plan approval and before implementation edits. N30 governance evidence."
+    },
+    {
+      "path": "docs/nodes/n30-evidence/PREGATE-BUILD-CL.txt",
+      "status": "??",
+      "size": 1143,
+      "sha256": "438381db2590e3b21f3f933c6f72294175891a9674d9f8d027070f5cf3ed497b",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "N30 pre-implementation gate evidence (PRE-GATE.json, PREGATE-BUILD-*.txt, PREGATE-TEST-RUN.txt) captured by the parent after N30 plan approval and before implementation edits. N30 governance evidence."
+    },
+    {
+      "path": "docs/nodes/n30-evidence/PREGATE-BUILD-CMAKE.txt",
+      "status": "??",
+      "size": 22126,
+      "sha256": "550481591430af8e546b608c3736652f48a4923042932694305418f6a8a1bec9",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "N30 pre-implementation gate evidence (PRE-GATE.json, PREGATE-BUILD-*.txt, PREGATE-TEST-RUN.txt) captured by the parent after N30 plan approval and before implementation edits. N30 governance evidence."
+    },
+    {
+      "path": "docs/nodes/n30-evidence/PREGATE-BUILD-TESTS.txt",
+      "status": "??",
+      "size": 351449,
+      "sha256": "2f6dd0903c14d74b878a779b3537f28c3f06e5ae005bf4397817e51b39f48663",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "N30 pre-implementation gate evidence (PRE-GATE.json, PREGATE-BUILD-*.txt, PREGATE-TEST-RUN.txt) captured by the parent after N30 plan approval and before implementation edits. N30 governance evidence."
+    },
+    {
+      "path": "docs/nodes/n30-evidence/PREGATE-TEST-RUN.txt",
+      "status": "??",
+      "size": 698931,
+      "sha256": "4736f0087ba4c488a03bb8775e60753fa97350339fed641a368aeeee34138f55",
+      "category": "doc-correction",
+      "disposition": "commit: docs/governance slice (after D10 re-sync and D2 matrix reconciliation)",
+      "reason": "N30 pre-implementation gate evidence (PRE-GATE.json, PREGATE-BUILD-*.txt, PREGATE-TEST-RUN.txt) captured by the parent after N30 plan approval and before implementation edits. N30 governance evidence."
+    },
+    {
+      "path": "scripts/n13-cli-smoke.ps1",
+      "status": "??",
+      "size": 4157,
+      "sha256": "f322b5e082d7a58c6861dd2a74adaef3804b5b384754ee70bc65b38ad2c22124",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Node verification / audit tooling (new, untracked). Produces the per-node evidence runs referenced by n*-evidence artifacts and exercises registered behavior. Accepted as test-evidence tooling."
+    },
+    {
+      "path": "scripts/n13-verify.ps1",
+      "status": "??",
+      "size": 12635,
+      "sha256": "c4b85a83ea01e6753d775982002592e2d5cc59338d420b4eba2e9cf425441c9e",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Node verification / audit tooling (new, untracked). Produces the per-node evidence runs referenced by n*-evidence artifacts and exercises registered behavior. Accepted as test-evidence tooling."
+    },
+    {
+      "path": "scripts/n14-verify.ps1",
+      "status": "??",
+      "size": 21313,
+      "sha256": "8f840f6414d6827fc3f766bd64630f66d18803e3a1041c46ea4b671f70808532",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Node verification / audit tooling (new, untracked). Produces the per-node evidence runs referenced by n*-evidence artifacts and exercises registered behavior. Accepted as test-evidence tooling."
+    },
+    {
+      "path": "scripts/n15-verify.ps1",
+      "status": "??",
+      "size": 319,
+      "sha256": "05e84a9222589b82f4c3788faff1154d608eca00eb2184f087b5b0e10bc356f7",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Node verification / audit tooling (new, untracked). Produces the per-node evidence runs referenced by n*-evidence artifacts and exercises registered behavior. Accepted as test-evidence tooling."
+    },
+    {
+      "path": "scripts/n16-verify.ps1",
+      "status": "??",
+      "size": 319,
+      "sha256": "8bab0bc4144d1be9259e751e09429a25b13e7ff02d2bd4c8a71343e70fca7ca7",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Node verification / audit tooling (new, untracked). Produces the per-node evidence runs referenced by n*-evidence artifacts and exercises registered behavior. Accepted as test-evidence tooling."
+    },
+    {
+      "path": "scripts/n17-verify.ps1",
+      "status": "??",
+      "size": 61009,
+      "sha256": "1c8991fd1ee4ef06cc17b2c506ce35fdfac240b35ca0be21bc7ec92034159c00",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Node verification / audit tooling (new, untracked). Produces the per-node evidence runs referenced by n*-evidence artifacts and exercises registered behavior. Accepted as test-evidence tooling."
+    },
+    {
+      "path": "scripts/n18-verify.ps1",
+      "status": "??",
+      "size": 319,
+      "sha256": "2f6a5c64c04115e04032c1e1cd8d98f74ff969aa0c2eb86ca8788d831c9a8892",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Node verification / audit tooling (new, untracked). Produces the per-node evidence runs referenced by n*-evidence artifacts and exercises registered behavior. Accepted as test-evidence tooling."
+    },
+    {
+      "path": "scripts/n19-verify.ps1",
+      "status": "??",
+      "size": 90414,
+      "sha256": "cd6f37cfcb5b4e40ed4af2bec46776814d868905b5d246dc1f511d5fd4ec2e8a",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Node verification / audit tooling (new, untracked). Produces the per-node evidence runs referenced by n*-evidence artifacts and exercises registered behavior. Accepted as test-evidence tooling."
+    },
+    {
+      "path": "scripts/n20-verify.ps1",
+      "status": "??",
+      "size": 214213,
+      "sha256": "77f1db2dd93ebafa57b5992533e6200eefda92d36b3089266da01212c72d1c40",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Node verification / audit tooling (new, untracked). Produces the per-node evidence runs referenced by n*-evidence artifacts and exercises registered behavior. Accepted as test-evidence tooling."
+    },
+    {
+      "path": "scripts/n22-verify.ps1",
+      "status": "??",
+      "size": 193808,
+      "sha256": "c3096e9acb5054689e8c013b846c5860b74d4a868996d5b98c1df5098b14924d",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Node verification / audit tooling (new, untracked). Produces the per-node evidence runs referenced by n*-evidence artifacts and exercises registered behavior. Accepted as test-evidence tooling."
+    },
+    {
+      "path": "scripts/n23-verify.ps1",
+      "status": "??",
+      "size": 227886,
+      "sha256": "0674611f3a879412144bbe07c9d8e1b44c0f86e4d180d453cdc7558c33bd306e",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Node verification / audit tooling (new, untracked). Produces the per-node evidence runs referenced by n*-evidence artifacts and exercises registered behavior. Accepted as test-evidence tooling."
+    },
+    {
+      "path": "scripts/plan-audit-all.ps1",
+      "status": "??",
+      "size": 3678,
+      "sha256": "2d1279b1ab66f048d1e641f93f9fe92bb77f9db3aef3982739dce868deebd0e0",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Node verification / audit tooling (new, untracked). Produces the per-node evidence runs referenced by n*-evidence artifacts and exercises registered behavior. Accepted as test-evidence tooling."
+    },
+    {
+      "path": "scripts/wave3-verify-common.ps1",
+      "status": "??",
+      "size": 29064,
+      "sha256": "478348e2885f738cf7390aa18e6267470355379c85d6501fb9010a8904189d56",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Node verification / audit tooling (new, untracked). Produces the per-node evidence runs referenced by n*-evidence artifacts and exercises registered behavior. Accepted as test-evidence tooling."
+    },
+    {
+      "path": "tests/test_doctor.cpp",
+      "status": "??",
+      "size": 4003,
+      "sha256": "70483d7e12a0bd8f6304ffdf5e48647ce43ddfc9238507325a8c1f8fa7b88cf4",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Test source (new, untracked). Suite registers 29 tests (tests/test_main.cpp); pre-gate run: 28 PASS + 1 FAIL (n20, expected-deny check at tests/test_n20.cpp:570), two rounds (n30-evidence/PREGATE-TEST-RUN.txt). Accepted as test evidence."
+    },
+    {
+      "path": "tests/test_migration_v6.cpp",
+      "status": "??",
+      "size": 13332,
+      "sha256": "8b0c7e8fd1cd716ae2a7ae1a921098a2b48e99a5ad3029efc24f89697b908880",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Test source (new, untracked). Suite registers 29 tests (tests/test_main.cpp); pre-gate run: 28 PASS + 1 FAIL (n20, expected-deny check at tests/test_n20.cpp:570), two rounds (n30-evidence/PREGATE-TEST-RUN.txt). Accepted as test evidence."
+    },
+    {
+      "path": "tests/test_n12_dream.cpp",
+      "status": "??",
+      "size": 22662,
+      "sha256": "23350c06a9ded7ca637410770f342a1488ffc98143dc4bd04a3e30fb03e4b329",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Test source (new, untracked). Suite registers 29 tests (tests/test_main.cpp); pre-gate run: 28 PASS + 1 FAIL (n20, expected-deny check at tests/test_n20.cpp:570), two rounds (n30-evidence/PREGATE-TEST-RUN.txt). Accepted as test evidence."
+    },
+    {
+      "path": "tests/test_n13.cpp",
+      "status": "??",
+      "size": 16133,
+      "sha256": "34ae2de83bc54b1fcd9611d7982ada6704617e3c02ce132be5bf807171425dec",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Test source (new, untracked). Suite registers 29 tests (tests/test_main.cpp); pre-gate run: 28 PASS + 1 FAIL (n20, expected-deny check at tests/test_n20.cpp:570), two rounds (n30-evidence/PREGATE-TEST-RUN.txt). Accepted as test evidence."
+    },
+    {
+      "path": "tests/test_n14.cpp",
+      "status": "??",
+      "size": 43337,
+      "sha256": "3b4a69f3b4c2d282069ca81d8be6421d3a09a48a8ce61d71cf761f296eb97785",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Test source (new, untracked). Suite registers 29 tests (tests/test_main.cpp); pre-gate run: 28 PASS + 1 FAIL (n20, expected-deny check at tests/test_n20.cpp:570), two rounds (n30-evidence/PREGATE-TEST-RUN.txt). Accepted as test evidence."
+    },
+    {
+      "path": "tests/test_n15.cpp",
+      "status": "??",
+      "size": 69183,
+      "sha256": "ad709351520f1f48f16fcbd6392ee8a93f886c10e92f70054b24f6b231cc9078",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Test source (new, untracked). Suite registers 29 tests (tests/test_main.cpp); pre-gate run: 28 PASS + 1 FAIL (n20, expected-deny check at tests/test_n20.cpp:570), two rounds (n30-evidence/PREGATE-TEST-RUN.txt). Accepted as test evidence."
+    },
+    {
+      "path": "tests/test_n16.cpp",
+      "status": "??",
+      "size": 24969,
+      "sha256": "9653f1bfa0f3e0493e1017d88466b7e45cbdf16901a2eea5a2c58b77387c3ee7",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Test source (new, untracked). Suite registers 29 tests (tests/test_main.cpp); pre-gate run: 28 PASS + 1 FAIL (n20, expected-deny check at tests/test_n20.cpp:570), two rounds (n30-evidence/PREGATE-TEST-RUN.txt). Accepted as test evidence."
+    },
+    {
+      "path": "tests/test_n17.cpp",
+      "status": "??",
+      "size": 64178,
+      "sha256": "e4fe3eaa144209e8a7e64b6f5251bf863514a05c1d5e6ae5109b118b112bcdac",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Test source (new, untracked). Suite registers 29 tests (tests/test_main.cpp); pre-gate run: 28 PASS + 1 FAIL (n20, expected-deny check at tests/test_n20.cpp:570), two rounds (n30-evidence/PREGATE-TEST-RUN.txt). Accepted as test evidence."
+    },
+    {
+      "path": "tests/test_n18.cpp",
+      "status": "??",
+      "size": 69108,
+      "sha256": "4781d0029a8fd7d9a0cb298d4ac935bb36fc23e2612e51f562c5d7e33a87f9ea",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Test source (new, untracked). Suite registers 29 tests (tests/test_main.cpp); pre-gate run: 28 PASS + 1 FAIL (n20, expected-deny check at tests/test_n20.cpp:570), two rounds (n30-evidence/PREGATE-TEST-RUN.txt). Accepted as test evidence."
+    },
+    {
+      "path": "tests/test_n20.cpp",
+      "status": "??",
+      "size": 103979,
+      "sha256": "c696bf0ea77320d7a738174b951f260c6df229a9684b29d4d75d4e4f424bb020",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Dedicated N20 corrective test (new, untracked). Currently FAILS one expected-deny check (line 570: a call that must be denied returns ok). Known failure scheduled to close via N30 D3 central scope enforcement; fresh N20 outcome audit then required (AMD-1)."
+    },
+    {
+      "path": "tests/test_n22.cpp",
+      "status": "??",
+      "size": 79395,
+      "sha256": "4289da8ea55d8c496d945cabad2365aae9f4568fbaff723768f8c5f607df3966",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Test source (new, untracked). Suite registers 29 tests (tests/test_main.cpp); pre-gate run: 28 PASS + 1 FAIL (n20, expected-deny check at tests/test_n20.cpp:570), two rounds (n30-evidence/PREGATE-TEST-RUN.txt). Accepted as test evidence."
+    },
+    {
+      "path": "tests/test_n23.cpp",
+      "status": "??",
+      "size": 69995,
+      "sha256": "ae9775b372805abd9c10f8e853f9ceaa7296677226a1ba5b0271e050040adf0b",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Test source (new, untracked). Suite registers 29 tests (tests/test_main.cpp); pre-gate run: 28 PASS + 1 FAIL (n20, expected-deny check at tests/test_n20.cpp:570), two rounds (n30-evidence/PREGATE-TEST-RUN.txt). Accepted as test evidence."
+    },
+    {
+      "path": "tests/test_wave4.cpp",
+      "status": "??",
+      "size": 9973,
+      "sha256": "1c6f6bc082a267c113b35ce840fb9f93e16f6930e22a1a1633f9667a76731c50",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Test source (new, untracked). Suite registers 29 tests (tests/test_main.cpp); pre-gate run: 28 PASS + 1 FAIL (n20, expected-deny check at tests/test_n20.cpp:570), two rounds (n30-evidence/PREGATE-TEST-RUN.txt). Accepted as test evidence."
+    },
+    {
+      "path": "tests/test_wave5.cpp",
+      "status": "??",
+      "size": 4557,
+      "sha256": "0fb95676920eeb0d33a7f3c8afc20d913bd209fdc71bc6f5830063fdd511a45e",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Test source (new, untracked). Suite registers 29 tests (tests/test_main.cpp); pre-gate run: 28 PASS + 1 FAIL (n20, expected-deny check at tests/test_n20.cpp:570), two rounds (n30-evidence/PREGATE-TEST-RUN.txt). Accepted as test evidence."
+    },
+    {
+      "path": "tests/wave3_test_support.hpp",
+      "status": "??",
+      "size": 5290,
+      "sha256": "9a4f94093a6e64b6a3f2021b52cefa23cd06d0223803d4e6bda3ea7ec9c301a6",
+      "category": "accepted-test-evidence",
+      "disposition": "commit: accepted test/evidence slice (n20 known FAIL closes via D3)",
+      "reason": "Test source (new, untracked). Suite registers 29 tests (tests/test_main.cpp); pre-gate run: 28 PASS + 1 FAIL (n20, expected-deny check at tests/test_n20.cpp:570), two rounds (n30-evidence/PREGATE-TEST-RUN.txt). Accepted as test evidence."
+    }
+  ]
+}

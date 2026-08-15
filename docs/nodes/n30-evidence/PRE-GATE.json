@@ -1,0 +1,40 @@
+{
+  "captured_at": "2026-08-15T05:24:04.602Z",
+  "plan_sha256": "5da80bf6aef88cd69382b7f2440a026101b41ec5da867d50da73f62839678f78",
+  "plan_audit_sha256": "8ddc3cdef9cf69895b5617091fe5c010976d74c434e7eaca8c36a59fe9e7499d",
+  "master_plan_sha256": "f0c0d48597787e406851cc26f9db91bb0c4b28b0016e8385f9e319b58d01be11",
+  "resolution_sha256": "7d5d2341ed11459a6537afe9bcfc1e535eb378d0c5b690c83ba0d91b6df7c803",
+  "scoped_files": {
+    "docs/nodes/N30-PLAN.md": "5da80bf6aef88cd69382b7f2440a026101b41ec5da867d50da73f62839678f78",
+    "docs/nodes/N30-PLAN-AUDIT.md": "8ddc3cdef9cf69895b5617091fe5c010976d74c434e7eaca8c36a59fe9e7499d",
+    "docs/08-MASTER-PLAN-GBRAIN-PARITY.md": "f0c0d48597787e406851cc26f9db91bb0c4b28b0016e8385f9e319b58d01be11",
+    "docs/RESOLUTION-2026-08-15.md": "7d5d2341ed11459a6537afe9bcfc1e535eb378d0c5b690c83ba0d91b6df7c803",
+    "include/qbrain/ops/registry.hpp": "8318bd4e755d97de5c9c3a869b2592cdf4868511e110e3010cc2809982d1dad8",
+    "src/qbrain/ops/registry.cpp": "f96f1b1ec44fb9ad8e5a1b0e5922d3592b226053da306c7f3ff6c738ec91d7ff",
+    "src/qbrain/ops/handlers.cpp": "f147f8f02e985ab3e957e10df456b9df13d641842a4456f77fee9489b6cfe46e",
+    "src/qbrain/cli/commands.cpp": "d02428ddcc80191ce4058423d212a2b0a2fb37dc7e9f0643786f4f868c54c41f",
+    "src/qbrain/mcp/http_server.cpp": "9f488eb7ebe2f71f90bffa7462303684e1f115ff97a3b0e07d4959f2f456a25d",
+    "CMakeLists.txt": "a08b3c58c687499b789ba808f9e23613dd7b652dacefd0161322b3ef18684f49",
+    "scripts/build-cl.ps1": "37f33e653079ebee5acac171470ea963cf6e73c2e82d7aa940a825385660f4ad",
+    "scripts/build-tests-cl.ps1": "f0bfa1610bdef802e4466a581f61e455f28a96fa1c873ff1504f42e7ebd6066f",
+    "src/qbrain/storage/migrate.cpp": "d775529ff6f89d520f15a3fee30f0e180a2011646516de0a620e1870d538ec45",
+    "src/qbrain/schema/packs.cpp": "893c71db1beff94490c1f395abb31deb60812506ef14c0d87bf9e6643e9e2d9c",
+    "tests/test_main.cpp": "27f76a7e7e4042baa2f8035e083e2036ff74a6da2f8b10e6b2b39251bee75957",
+    "docs/OPS-PARITY-LEDGER.md": "f2cd1f13221ace95faff569ae71074296a4e169deca007752e144aee5e6c6bfe",
+    "docs/09-PROJECT-COMPLETION.md": "c6c624ed16793bda1371700fb341f187fc20234c0d9901801ed4108bf39ed5e5",
+    "docs/03-BUILD-WINDOWS.md": "47a3885d7128fbd19bd3ac4dc5fb0f3c8976fac01fc67d8e95d31f6b283f8618"
+  },
+  "deliverables_absence_proof": {
+    "docs/nodes/n30-evidence/CHANGESET-MANIFEST.json": "expected-absent",
+    "docs/nodes/n30-evidence/NODE-RECONCILIATION-MATRIX.json": "expected-absent",
+    "tests/test_n30.cpp": "expected-absent"
+  },
+  "isolated_data_root_note": "All N30 test runs use system temp directories; %LOCALAPPDATA%Qbrain is never touched by tests.",
+  "build_identity": {
+    "captured_at": "2026-08-15T05:59:28.879Z",
+    "direct_msvc_production": "PASS clean (rm -rf build/cl; scripts/build-cl.ps1; qbrain.exe 3,139,072 bytes; exit 0) — evidence PREGATE-BUILD-CL.txt",
+    "direct_msvc_tests": "BUILD PASS; suite 28 PASS + 1 FAIL (n20: require_operation_error CHECK !result.ok at tests/test_n20.cpp:570 — an operation expected to be denied returned ok) — evidence PREGATE-BUILD-TESTS.txt, PREGATE-TEST-RUN.txt",
+    "cmake": "FAIL: test targets missing nlohmann/json.hpp include path (C1083); known additional gap: src/qbrain/files/store.cpp not in CMakeLists — evidence PREGATE-BUILD-CMAKE.txt",
+    "baseline_note": "29 registered tests (28 distinct PASS names + n20); suite ran twice in evidence file due to nonzero-exit fallback; counts are per-run."
+  }
+}

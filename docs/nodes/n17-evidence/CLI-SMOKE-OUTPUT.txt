@@ -1,0 +1,47 @@
+﻿command[1]=build\cl\qbrain.exe version
+command[1]_stdout=qbrain 0.1.0-dev (windows-native c++)
+command[1]_stderr=
+command[1]_exit_code=0
+command[2]=build\cl\qbrain.exe doctor --json
+command[2]_stdout={
+  "checks": [
+    {
+      "name": "database",
+      "status": "OK"
+    },
+    {
+      "name": "schema",
+      "status": "OK"
+    },
+    {
+      "name": "critical_tables",
+      "status": "OK"
+    },
+    {
+      "name": "optional",
+      "status": "WARN"
+    }
+  ],
+  "notes": [
+    "empty brain: import or capture notes",
+    "no embedding API key (set OPENAI_API_KEY or qbrain config set embedding.api_key)"
+  ],
+  "ok": true,
+  "overall": "OK",
+  "schema_version": 12,
+  "stats": {
+    "chunks": 0,
+    "embedded_chunks": 0,
+    "links": 0,
+    "pages": 0
+  }
+}
+command[2]_stderr=
+command[2]_exit_code=0
+command[3]=build\cl\qbrain.exe serve --brain n17-evidence (stdio NDJSON tools/list; writes disabled)
+command[3]_stderr=[qbrain-serve] stdio MCP ready brain=n17-evidence write=disabled
+[qbrain-serve] shutdown: stdin EOF
+command[3]_exit_code=0
+command[3]_schemas=OPERATION-SCHEMAS.json
+isolated_localappdata=true
+live_network_calls=0

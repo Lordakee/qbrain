@@ -1,0 +1,35 @@
+﻿> qbrain sync C:\Users\Administrator\AppData\Local\Temp\qbrain_n13_cli_ea17a85307f34da695eb132bdb3690a5\notes --once --source cli_source --brain n13-cli-smoke
+live_sync scanned=2 imported=2 skipped=0 errors=0
+exit_code=0
+
+> qbrain sync C:\Users\Administrator\AppData\Local\Temp\qbrain_n13_cli_ea17a85307f34da695eb132bdb3690a5\notes --once --source cli_source --brain n13-cli-smoke
+live_sync scanned=2 imported=0 skipped=2 errors=0
+exit_code=0
+
+> qbrain sync C:\Users\Administrator\AppData\Local\Temp\qbrain_n13_cli_ea17a85307f34da695eb132bdb3690a5\notes --watch --once --interval 1 --source cli_source --brain n13-cli-smoke
+[INFO] live_sync cycle pages=1 scanned=2 skip=1
+live_sync_watch imported_pages_total=1
+exit_code=0
+
+> qbrain sync C:\Users\Administrator\AppData\Local\Temp\qbrain_n13_cli_ea17a85307f34da695eb132bdb3690a5\notes --once --brain n13-cli-smoke
+live_sync scanned=2 imported=2 skipped=0 errors=0
+exit_code=0
+
+> qbrain graph a --depth 2 --json --brain n13-cli-smoke
+[
+  {
+    "depth": 1,
+    "direction": "out",
+    "link_type": "related",
+    "slug": "b"
+  },
+  {
+    "depth": 2,
+    "direction": "in",
+    "link_type": "related",
+    "slug": "a"
+  }
+]
+exit_code=0
+
+N13_CLI_SMOKE_OK sync_once=pass idempotent=pass watch_once=pass source=pass interval=pass graph=pass

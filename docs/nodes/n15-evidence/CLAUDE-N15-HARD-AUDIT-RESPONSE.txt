@@ -1,0 +1,18 @@
+`docs/nodes/N15-HARD-AUDIT.md` written.
+
+**VERDICT: PASS**
+
+All 12 acceptance assertions from the approved plan are evidenced. Summary by assertion group:
+
+- **AA1(v12 migration)** — Transactional, idempotent, rollback-confirmed. `migration_snapshot_sha256=4cbd3966…`, `migration_rollback_sha256=f8eba99b…`
+- **AA2 (ingest attribution)** — Import and live-sync both attribute rows to the requested N13 source; `localappdata_isolation=pass`
+- **AA3 (atomic retention)** — `BEGIN IMMEDIATE` insert+prune; per-source scoping confirmed by3-insert/keep_last=2 test
+- **AA4 (get_ingest_log)** — Clamped to 1..50, newest-first, source-scoped; malformed-JSON rejection leaves snapshot unchanged
+- **AA5 (list_link_sources)** — Exact counts per canonical source; cross-source isolation confirmed
+- **AA6–AA7 (chronicle)** — `normalize_utc_boundary()` + `days_in_month()` correctly reject Feb 30, offsets, trailing chars; leap-day2024-02-29 accepted; `read_snapshot_sha256=f817048d…` unchanged
+- **AA8 (add_timeline_entry)** — `type=timeline`, source canonicalized, `embed_delta=2`, unique slug collision loop confirmed (`timeline_collision=pass`)
+- **AA9–AA10 (MCP security)** — `local_only=true` denial before mutation; `mcp_deny_snapshot_sha256=ae5e1982…`; non-allowlisted source denied even with `allow_write=true`
+- **AA11 (ledger/descriptions)** — Ledger explicitly "N15 thin put_page type=timeline"; handler description "Create a type=timeline page (thin put_page subset)"
+- **AA12 (Windows evidence)** — MSVC 19.51.36248 x64, `/std:c++20`, 25/25 PASS (≥ N13 baseline 21 + N15), N1–N13 all PASS, no config changes
+
+**P1** (non-blocking): `test_n15.cpp` omits a handful of test-plan sub-items (explicit keep_last=0, byte-boundary-plus-one, soft-delete in chronicle, `2025-02-29`). All are implementation-correct; the gaps are coverage shortfalls only and do not falsify any acceptance assertion.

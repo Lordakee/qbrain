@@ -1,0 +1,62 @@
+# N13 Outcome Hard Audit
+
+**VERDICT: PASS**
+**Auditor:** Claude Code
+**Approved plan:** docs/nodes/N13-PLAN.md
+**Plan audit:** docs/nodes/N13-PLAN-AUDIT.md (read in full; VERDICT PASS, 2026-07-29)
+**Audit date:** 2026-07-30
+**Scope:** read-only; no files edited.
+
+## Acceptance
+
+| # | Status | Evidence |
+|---|--------|----------|
+| 1 | PASS | `live_sync.cpp:134-144` skips on matching `size:mtime` sig, else `import_path`. `test_n13.cpp:172-185`: first=2 imports (`.bin` excluded by `is_note`), second=0 imports/2 skips, changed=1. Marker `n13_live_sync first_pages=2 second_skipped=2 changed_pages=1` (TEST-OUTPUT.txt:21). |
+| 2 | PASS | `live_sync.cpp:183` breaks when `cycles>=max_cycles`; `test_n13.cpp:188` `live_sync_watch(...,1,1)==1`. CLI `--watch --once`→`cycles=1` at `commands.cpp:411-412`. Bad root: `test_live_sync.cpp:46-49`, WARN `not a directory: ...should_not_matter` (TEST-OUTPUT.txt:35). CLI form itself is code-verified only (P1-2). |
+| 3 | PASS | `import.cpp:28-29` propagates `page.source_id` to pages+links; `test_n13.cpp:175-176` `src_a`=2, `default`=0. Invalid id fails pre-mutation: `live_sync.cpp:96-100`, `test_n13.cpp:191-194` errors=1 + snapshot identical, WARN `invalid source_id: bad/id`. Confinement: `path_under_root` + `weakly_canonical` (`live_sync.cpp:65-77,114-126`). |
+| 4 | PASS | `state_path_for` = sha256(`brain_id\nsource_id\ncanonical_root`)[0:16].json (`live_sync.cpp:20-27`), source lowercased at `:101-103`. `test_n13.cpp:197-203`: brain `N13-Secondary`/`SRC_B` imports 3 from the same root, cross-brain count=0. Marker `source_isolation=pass`. Scope key ignores db path (P2-3). |
+| 5 | PASS | `brain.cpp:484-496`: pages `COUNT`+`MAX(updated_at)` with `deleted_at IS NULL`, links `COUNT` by `source_id`. `test_n13.cpp:227-228`: `source_status("OTHER")`→id `other`, pages=1, links=1. Deleted-page/last_updated not asserted (P2-4). |
+| 6 | PASS | `brain.cpp:438,447` reject `default`/unknown and non-empty without force before any txn. `test_n13.cpp:229-234`: non-force refused + snapshot identical; `EMPTY-SOURCE` removed; `remove_source("default",true)` false. |
+| 7 | PASS | `brain.cpp:449-475` `BEGIN IMMEDIATE`→links→facts→pages→source→`COMMIT`, `ROLLBACK` on throw; chunks/tags/versions cascade (`schema_sql.hpp:52,76`, `PRAGMA foreign_keys=ON` `database.cpp:38`). `test_n13.cpp:236-246`: authorizer-denied page delete→false + snapshot identical; then force clears sources/pages/links/facts, `other` preserved. Marker `rollback_unchanged=pass force_cleanup=pass`. |
+| 8 | PASS | `traverse.cpp:10-34`: `depth<1`→empty, `visited` set, `if (d>=depth) continue`, links scoped by `source_id`. `test_n13.cpp:265-272`: `b/out/1`, `c/out/2`, `x/in/1`, no `leak` from `graph_b`, depth-100 cycle bounded (8<20), depth 0 empty. Marker `neighbors_depth2=8 cycle_nodes=8 source_isolation=pass`. |
+| 9 | PASS | `minions.cpp:180-186` single `UPDATE ... WHERE id=? AND status IN ('failed','cancelled','dead')` clearing `lock_token/lock_until/error_text`; returns `changes()>0`. `test_n13.cpp:281-286`: cancelled→waiting, payload preserved, fence/error empty, re-retry on waiting→false. Also `test_minions.cpp:111-113`. |
+| 10 | PASS | `brain.cpp:542-555` predicate-optional `active=0` update; `list_facts` filters `active=1` (`:518`). `test_n13.cpp:296-301`: 1 then 0 (idempotent), remaining=1, all-forget=1, empty, `other-entity` untouched. |
+| 11 | PASS | `register_one(...,true,...)` for all four (`handlers.cpp:557,1043,1090,1222`); deny precedes handler at `registry.cpp:40-48`. `test_n13.cpp:305-323`: `local_only` asserted for all four, four denials each with byte-identical full snapshot; allow-write path succeeds at `:325-343`. Marker `n13_mcp_deny_snapshot_sha256=8339…0df19 unchanged=pass allow_write=pass`. |
+| 12 | PASS | All four registered `Scope::Read`, `local_only=false` (`handlers.cpp:561,1047,1226,1253`); handlers are SELECT-only; `recall`→search with `mode=conservative`, which skips embedding (`:261`) and forces `use_vec=false` (`hybrid.cpp:148-150`). `test_n13.cpp:345-351` all four ok remotely without allow-write; `read_ops=pass`. No post-call snapshot proof (P2-4). |
+| 13 | PASS | VERIFY-REPORT.md: Win11 10.0.22624/X64, MSVC 19.51.36248 x64, `/std:c++20`, exact 3-command block, 21 PASS/0 FAIL, build+test log SHA-256, 4 runtime markers, 14 deliverable hashes, N1-N12(+N2.5) plan/outcome audit SHA-256 table, explicit no-provider/model-change statement. Enforced by `n13-verify.ps1:68-105,128-155`; suite count matches `test_main.cpp:57-79` (21) and TEST-OUTPUT.txt. BUILD-OUTPUT.txt shows `BUILD_OK`+`TESTS_BUILD_OK`. |
+
+## Deliverables check
+
+- 1-2 live-sync + source-aware import: present (`live_sync.hpp/.cpp`, `import.hpp:14-15` source param, `import.cpp:58-73` fail-closed) — met.
+- 3 brain source status/removal/force/facts: `brain.hpp:42-50,78`, `brain.cpp:436-498,542-555` — met.
+- 4 graph traversal + handler: `traverse.hpp/.cpp`, `handlers.cpp:1046-1070` — met.
+- 5 jobs/ops/CLI wiring: `minions.cpp:179-187`, 8 registrations, `cmd_sync`/`cmd_graph` routed (`commands.cpp:398-424,557,562`); no N12 regression (n12_dream/minions/mcp still PASS) — met.
+- 6 tests + harness: `tests/test_n13.cpp` (registered `test_main.cpp:69`), `scripts/n13-verify.ps1`, evidence BUILD/TEST/VERIFY — met.
+- 7 docs/ledger: `N13-PLAN-AUDIT.md` PASS, `n13-evidence/VERIFY-REPORT.md`, ledger rows for all 8 ops — **partially met**: `N13-HARD-AUDIT.md` still holds the historical 2026-07-26 audit (see P1-1).
+
+## Findings
+
+**P0** — none.
+
+**P1**
+
+1. `docs/nodes/N13-HARD-AUDIT.md` is stale: it is the 2026-07-26 historical audit (7 rows, cites rerank/minions/`n13-claude-reaudit.ps1`, "Work may proceed to N14"), which the plan itself declares evidence-only (`N13-PLAN.md:7`) while listing the outcome audit as pending (`:5`). It nonetheless satisfies the naive `^\*\*VERDICT … PASS` grep that `n13-verify.ps1:73-82` applies to dependency nodes, so a later node could inherit a false gate. Replace it with this audit's text before marking N13 done.
+2. No CLI runtime evidence. The plan's CLI smoke matrix (`sync <dir> --once`, `--watch --once`, `--source`, `--interval`, graph output) has no captured output; only `qbrain_tests.exe` ran. Assertion 2's CLI half rests on code inspection of the 2-line flag mapping.
+
+**P2**
+
+1. Ledger timing (plan-audit P2 #1): no rows beyond the plan's eight are claimed — exactly `forget_fact, recall, resolve_slugs, retry_job, sources_remove, sources_status, sync_brain, traverse_graph` carry N13 attribution. But they read **implemented** and `OPS-PARITY-LEDGER.md:127` asserts "D1–D25 usable gates: met (N0–N11 + N12–N13 extensions)" while the outcome gate was pending; the N13 note (`:122`) lacks the "plan audit PASS + outcome hard audit PASS" wording that N12 (`:121`) carries. Retrospective sequencing, acknowledged in the plan; add the N12-style wording now.
+2. `recall` conservative semantics (plan-audit P2 #2) now concrete and consistent with the ledger: `handlers.cpp:1252-1262` aliases `search`, defaults `mode=conservative`, maps `q`→`query`; `:261` skips query embedding under that mode; `hybrid.cpp:148-150` sets `use_vec=false`, `cand=limit*2`. So conservative = lexical-only, no provider/embedding call. Untested without an explicit `no_vector` argument.
+3. Sync-state medium (plan-audit P2 #3): JSON file at `%LOCALAPPDATA%\Qbrain\sync-state\<hash>.json`, one per brain/source/root scope. Concurrency is unguarded — `load_state`/`save_state` (`live_sync.cpp:29-51`) do full read-modify-write with no lock, so two concurrent syncs of the same scope lose entries (last writer wins); corrupt JSON is swallowed (`:41-43`) and degrades to re-import, not data loss. Scope key uses `brain_id`, not the db path, so distinct DBs opened via `open_at` under one brain id share state; the test sidesteps this with distinct ids. Test-written state files also land in the real `sync-state` directory and are not cleaned (only the temp root is removed).
+4. Test coverage narrower than assertion text, each structurally guaranteed by code read: chunks/tags orphan-absence after force removal (cascade + pragma), per-status retry rejection and unknown id (single WHERE clause), `sources_status` deleted-page exclusion and `last_updated`, imported-link `source_id`, real symlink escape (only `..` escape is exercised), and no post-read-op snapshot equality for assertion 12.
+5. Evidence hygiene: `n13-evidence/CLAUDE-N13-HARD-AUDIT-RESPONSE.txt` is truncated mid-table at row A1 and self-reports that the plan audit's full text was not re-read — it must not be mistaken for the outcome audit. `VERIFY-REPORT.md` was produced with `-SkipBuild`, so "Canonical build exit code: 0" is inherited from the reused `BUILD-OUTPUT.txt` (disclosed in its Commands block; the embedded test run there timestamps 09:18:02Z versus 09:45:17Z in `TEST-OUTPUT.txt`).
+
+## Comparison to approved plan
+
+Deliverables 1-6 are fully met with no scope creep: no N14-N16 work, no provider/model/baseURL/key/reasoning/context/compression change, no schema bump (all `migrate.cpp` versions predate N13). Deliverable 7 is met except for the stale outcome-audit file. Every ledger row moved is one of the plan's eight ops. All eight security notes are implemented: fail-closed source canonicalization (`brain.cpp:21-42`, reserved Windows names included), Windows canonicalization with escape rejection, brain/source/root state namespacing, `local_only=true` on all four writes with pre-handler deny, transactional target-scoped force cleanup, and temp-path test isolation (except P2-3's state files).
+
+**N30 / orchestration: not created and not needed.** The plan explicitly excludes any orchestration node (`N13-PLAN.md:11`); `docs/nodes/N3*` contains only N3 artifacts, so no `N30-*` doc exists. Parallelism stayed within the plan's three slices with the parent agent owning the gates.
+
+## Conclusion
+
+**VERDICT: PASS.** All 13 acceptance assertions hold against the implementation, the 21-test native MSVC suite, and the recorded evidence; the plan audit's three P2s are resolved with concrete answers above. The two P1s are bookkeeping and evidence-coverage gaps, not implementation defects — but N13 should not be marked done until `docs/nodes/N13-HARD-AUDIT.md` is replaced with this verdict and the ledger's N13 note records both gates.

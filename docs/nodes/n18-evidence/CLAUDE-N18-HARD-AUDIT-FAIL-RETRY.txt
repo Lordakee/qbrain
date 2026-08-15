@@ -1,0 +1,22 @@
+Fresh blocking FAIL audit written to `docs/nodes/N18-HARD-AUDIT.md`.
+
+**VERDICT: FAIL**
+
+**Blocking P1 count: 6**
+
+The audit documents that N18 implementation is functionally correct in all exercised code paths, with native Windows x64 MSVC C++20 compilation passing, full test suite of 25 tests passing, and correct runtime behavior for source isolation, remote authorization, selected-brain isolation, deterministic ordering, bounded UTF-8 details, MCP serialization, and read-only verification.
+
+However, the approved plan requires a complete falsifiable test matrix. The current evidence has six blocking gaps:
+
+1. **P1-1**: Missing limit validation fixtures (empty, signs, whitespace, decimals, overflow, exact 200, above-200 clamp)
+2. **P1-2**: Missing source validation fixtures (malformed, Win32 reserved, overlength, remote default without allowlist, no-create proof)
+3. **P1-3**: Missing contradiction coverage for 13 of 14 opposing predicate families and all 3 single-character negating prefixes (correctly notes that the `not_not_x` vs `not_x` negative regression IS present and passes)
+4. **P1-4**: Missing anomaly/expert boundary fixtures (tied ranks, zero-inbound exclusion, cross-source limit-after-grouping)
+5. **P1-5**: Missing registry schema and MCP error-path checks (malformed/unknown/denied request handling)
+6. **P1-6**: Full snapshots cannot prove read-only behavior for unexercised code paths
+
+The audit includes all 16 acceptance rows (7 PASS, 7 PARTIAL, 2 appropriately blocked) and all 8 deliverables (5 PASS, 2 PARTIAL, 1 correctly NOT MET). Evidence hashes match the required values:
+- VERIFY hash: `2A111DAE47929DCD40E9A8D251AF759731E2B9BADEB56A7472C20FBEABC8FA04`
+- 99-file manifest: `7A102C4C36E6F20F1FE089BB70072C3733FE893F11F21FA2F6589BB0E1D9426F`
+
+All P1 findings are classified as test/evidence completion work, not implementation defects. Required action: address the six P1 gaps by adding the specified test fixtures and evidence, then request re-audit.

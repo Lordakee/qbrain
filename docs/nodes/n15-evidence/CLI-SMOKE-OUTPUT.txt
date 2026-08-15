@@ -1,0 +1,37 @@
+﻿version=qbrain 0.1.0-dev (windows-native c++)
+version_exit=0
+{
+  "checks": [
+    {
+      "name": "database",
+      "status": "OK"
+    },
+    {
+      "name": "schema",
+      "status": "OK"
+    },
+    {
+      "name": "critical_tables",
+      "status": "OK"
+    },
+    {
+      "name": "optional",
+      "status": "WARN"
+    }
+  ],
+  "notes": [
+    "empty brain: import or capture notes",
+    "no embedding API key (set OPENAI_API_KEY or qbrain config set embedding.api_key)"
+  ],
+  "ok": true,
+  "overall": "OK",
+  "schema_version": 12,
+  "stats": {
+    "chunks": 0,
+    "embedded_chunks": 0,
+    "links": 0,
+    "pages": 0
+  }
+}
+doctor_exit=0
+N15_CLI_SMOKE_OK doctor=pass version=pass isolated_localappdata=pass

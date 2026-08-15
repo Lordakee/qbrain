@@ -1,0 +1,792 @@
+{
+    "format_version":  1,
+    "node":  "N23",
+    "state":  "prepared-before-official-builds",
+    "prepared_utc":  "2026-08-04T13:15:00.4277019+00:00",
+    "governance":  {
+                       "approved_plan_sha256":  "4301f77a8a7b427a3d27bd883ce21d0316a94a5261a10541f9b0a2a3f6942a17",
+                       "audited_draft_plan_sha256":  "138d68f638bea13f1bc8198339d6e1d0422fa11a85185c7a49698fde87bb5398",
+                       "plan_audit_sha256":  "0bff70920652adbe9929d0cd76697fadaa9912a9014ae6b41ddccb648c869aef",
+                       "plan_audit_verdict":  "PASS"
+                   },
+    "pre_corrective_gate":  {
+                                "path":  "docs/nodes/n23-evidence/PRE-CORRECTIVE-SCHEMA-GATE.json",
+                                "sha256":  "06c1d9fb4527993267534afe3780ce5ac5c2ead5e12f6e2018c471aad2839122",
+                                "completed_utc":  "2026-08-04T11:22:39.4268265+00:00",
+                                "schema_version":  12,
+                                "input_count":  23,
+                                "changed_inputs":  [
+                                                       {
+                                                           "path":  "CMakeLists.txt",
+                                                           "gate_sha256":  "24a4668591feb3b4a9ae1dba584c82dffe9f0d7c5f796fc6f0c31b631eced395",
+                                                           "current_sha256":  "a0896b126ddff6ac075e5e501187ec148eb3caeccd55fc30d60d58fcaddea628"
+                                                       },
+                                                       {
+                                                           "path":  "include/qbrain/core/brain.hpp",
+                                                           "gate_sha256":  "1aa7da46f32c3514320c9c878c0d57aae62721c59698fcfeb58c68ab98256229",
+                                                           "current_sha256":  "3f90a4b547e390d2e2522ec3734f329ec0a47039e59af914690118e409182ec9"
+                                                       },
+                                                       {
+                                                           "path":  "scripts/build-tests-cl.ps1",
+                                                           "gate_sha256":  "a682bb81ba366e7dc45eeee2825255f76b27c6db66b490791e4a1467c88f458e",
+                                                           "current_sha256":  "f5e9d43230957d845723ee62e0939c903c246d51cbd4ceead077f50a5638a63d"
+                                                       },
+                                                       {
+                                                           "path":  "src/qbrain/core/brain.cpp",
+                                                           "gate_sha256":  "24bcd78978dc3aefb8bf7057def006f1fa049a8d63276402403f3b9a3740235b",
+                                                           "current_sha256":  "1fceb88261afd04536b747e41bb51a2ab02199e3be65f749360e5637ad9ac23b"
+                                                       },
+                                                       {
+                                                           "path":  "src/qbrain/mcp/server.cpp",
+                                                           "gate_sha256":  "7515830e9d40c18580723567149569296b55d43a5e93615d7e5e35385564c4fd",
+                                                           "current_sha256":  "3ebce0364d301968da50e2fd1f406564c18f50621183a87451919afe18c4d5a0"
+                                                       },
+                                                       {
+                                                           "path":  "src/qbrain/ops/handlers.cpp",
+                                                           "gate_sha256":  "e02c76b55410f4ac02bb973d6e83691ffe1b97856f3a4234cb3677cca3c7ad7e",
+                                                           "current_sha256":  "6bf36bc288e64aa641c4cbfe57b07f89bc364d7b6a4f74072a229dd7ba42da04"
+                                                       },
+                                                       {
+                                                           "path":  "tests/test_main.cpp",
+                                                           "gate_sha256":  "e47ab53280eb82f29ba189d022e174ee8300a683eef2134accb14758dfd12600",
+                                                           "current_sha256":  "27f76a7e7e4042baa2f8035e083e2036ff74a6da2f8b10e6b2b39251bee75957"
+                                                       }
+                                                   ],
+                                "unchanged_input_count":  16,
+                                "production_tree_unchanged":  true,
+                                "temporary_root_removed":  true
+                            },
+    "expected_registered_tests":  29,
+    "registered_test_names":  [
+                                  "rrf",
+                                  "vector",
+                                  "chunker",
+                                  "extract",
+                                  "storage",
+                                  "mcp",
+                                  "rerank",
+                                  "minions",
+                                  "migration_v6",
+                                  "n12_dream",
+                                  "live_sync",
+                                  "n13",
+                                  "codeintel",
+                                  "analytics",
+                                  "n19",
+                                  "n20",
+                                  "n22",
+                                  "n23",
+                                  "n20_23",
+                                  "n24_25",
+                                  "n26_27",
+                                  "wave4",
+                                  "wave5",
+                                  "doctor",
+                                  "n14",
+                                  "n15",
+                                  "n16",
+                                  "n17",
+                                  "n18"
+                              ],
+    "inputs":  [
+                   {
+                       "path":  "AGENTS.md",
+                       "role":  "frozen-input",
+                       "sha256":  "71d174e725e6df4cda2767fa6aaf96c2f4f3316e1798ec419b18081e496ea1e2",
+                       "bytes":  5718
+                   },
+                   {
+                       "path":  "CMakeLists.txt",
+                       "role":  "frozen-input",
+                       "sha256":  "a0896b126ddff6ac075e5e501187ec148eb3caeccd55fc30d60d58fcaddea628",
+                       "bytes":  5237
+                   },
+                   {
+                       "path":  "docs/nodes/n23-evidence/PRE-CORRECTIVE-SCHEMA-GATE.json",
+                       "role":  "frozen-input",
+                       "sha256":  "06c1d9fb4527993267534afe3780ce5ac5c2ead5e12f6e2018c471aad2839122",
+                       "bytes":  6305
+                   },
+                   {
+                       "path":  "docs/nodes/N23-PLAN.md",
+                       "role":  "frozen-input",
+                       "sha256":  "4301f77a8a7b427a3d27bd883ce21d0316a94a5261a10541f9b0a2a3f6942a17",
+                       "bytes":  25416
+                   },
+                   {
+                       "path":  "docs/nodes/N23-PLAN-AUDIT.md",
+                       "role":  "frozen-input",
+                       "sha256":  "0bff70920652adbe9929d0cd76697fadaa9912a9014ae6b41ddccb648c869aef",
+                       "bytes":  14220
+                   },
+                   {
+                       "path":  "docs/nodes/README.md",
+                       "role":  "frozen-input",
+                       "sha256":  "b7543d860eabe39c95b738d8682771e6883b246ddba2a143d07f7b2924023a80",
+                       "bytes":  1605
+                   },
+                   {
+                       "path":  "include/qbrain/ai/chat.hpp",
+                       "role":  "frozen-input",
+                       "sha256":  "581b40d0b931c2d3876584d120936d5c4e92655a17084804f08ead59f9280bc7",
+                       "bytes":  674
+                   },
+                   {
+                       "path":  "include/qbrain/ai/embed.hpp",
+                       "role":  "frozen-input",
+                       "sha256":  "a0b12ad0031da3e1755d26ad38ce87dd6d4271e68a33da766ab7ad3f6f209487",
+                       "bytes":  347
+                   },
+                   {
+                       "path":  "include/qbrain/ai/http_client.hpp",
+                       "role":  "frozen-input",
+                       "sha256":  "bd42457d3d382e0cff714d7f316a7b521cd22968f25095233234cf88224c98d3",
+                       "bytes":  410
+                   },
+                   {
+                       "path":  "include/qbrain/cli/app.hpp",
+                       "role":  "frozen-input",
+                       "sha256":  "b496252cecf6ad3ffb9f7e85deb51e96d49f305f8f2dc3e5b268ab5e68bde6fd",
+                       "bytes":  204
+                   },
+                   {
+                       "path":  "include/qbrain/codeintel/scan.hpp",
+                       "role":  "frozen-input",
+                       "sha256":  "ec2e546f8fa8a75a4e8026e240a8790cb7638bce4daca2e5038c3017fbbc57fc",
+                       "bytes":  3213
+                   },
+                   {
+                       "path":  "include/qbrain/core/brain.hpp",
+                       "role":  "frozen-input",
+                       "sha256":  "3f90a4b547e390d2e2522ec3734f329ec0a47039e59af914690118e409182ec9",
+                       "bytes":  10461
+                   },
+                   {
+                       "path":  "include/qbrain/core/types.hpp",
+                       "role":  "frozen-input",
+                       "sha256":  "35472c36ff62bec42b282b987d2c39b4315f09ac29ff78883be7076898dbd6f3",
+                       "bytes":  2177
+                   },
+                   {
+                       "path":  "include/qbrain/cycle/dream.hpp",
+                       "role":  "frozen-input",
+                       "sha256":  "6003aa8383cef1a4f3c8cd8e8779b1c9f995bc94c9e78ca8649826daec5a5ebe",
+                       "bytes":  1018
+                   },
+                   {
+                       "path":  "include/qbrain/files/store.hpp",
+                       "role":  "frozen-input",
+                       "sha256":  "a91e30539a4a69337616c9595cc898b80710c3ea096ee17e85fc821a3073cee2",
+                       "bytes":  661
+                   },
+                   {
+                       "path":  "include/qbrain/graph/analytics.hpp",
+                       "role":  "frozen-input",
+                       "sha256":  "d1d8f63081179dc49c1f46b5a4789445203eeddc0fabe63516fd72e373feb381",
+                       "bytes":  1068
+                   },
+                   {
+                       "path":  "include/qbrain/graph/extract.hpp",
+                       "role":  "frozen-input",
+                       "sha256":  "61f9956fe0802c9bf1c79a38033dec13631a7fdbc3f71ed1b9366c4cc46366e3",
+                       "bytes":  323
+                   },
+                   {
+                       "path":  "include/qbrain/graph/traverse.hpp",
+                       "role":  "frozen-input",
+                       "sha256":  "b157649a23642e4932689d2e105040eb9754848faa0ca7d9afed2ed537f1a0f2",
+                       "bytes":  457
+                   },
+                   {
+                       "path":  "include/qbrain/ingest/chunker.hpp",
+                       "role":  "frozen-input",
+                       "sha256":  "5f4cb34c2ae142b86fb94e8f3a01cd70677224a9bab627d4f57093a34776b7d5",
+                       "bytes":  343
+                   },
+                   {
+                       "path":  "include/qbrain/ingest/import.hpp",
+                       "role":  "frozen-input",
+                       "sha256":  "467ec1da3c7e77107104c5b44203cf55da97f3614c0c1c4aa3a4e6a9fadfc7c9",
+                       "bytes":  504
+                   },
+                   {
+                       "path":  "include/qbrain/ingest/markdown.hpp",
+                       "role":  "frozen-input",
+                       "sha256":  "89551956b4774111e52935791997ca3137cbdd5b11ffaa1f5a9acec94651c7cb",
+                       "bytes":  372
+                   },
+                   {
+                       "path":  "include/qbrain/jobs/minions.hpp",
+                       "role":  "frozen-input",
+                       "sha256":  "00da6811c7e0c41ac93b6b50e8e126b8d2dbf15e19b4f149a1116c108b52abe4",
+                       "bytes":  5038
+                   },
+                   {
+                       "path":  "include/qbrain/mcp/jsonrpc.hpp",
+                       "role":  "frozen-input",
+                       "sha256":  "0aa1dca4121ac2235245f13468daf801fc381f0a100d8ce38be57c35552f3010",
+                       "bytes":  524
+                   },
+                   {
+                       "path":  "include/qbrain/mcp/server.hpp",
+                       "role":  "frozen-input",
+                       "sha256":  "5a6fe4dfa6f2c288f17974541a61dbc546c0ae910ea7488250415740220ae4eb",
+                       "bytes":  713
+                   },
+                   {
+                       "path":  "include/qbrain/ops/registry.hpp",
+                       "role":  "frozen-input",
+                       "sha256":  "8318bd4e755d97de5c9c3a869b2592cdf4868511e110e3010cc2809982d1dad8",
+                       "bytes":  1155
+                   },
+                   {
+                       "path":  "include/qbrain/schema/lint.hpp",
+                       "role":  "frozen-input",
+                       "sha256":  "eafe8ac9e846750f36790805b0e2b1f0624de4c3b0150d0999440ad19d88dfe2",
+                       "bytes":  667
+                   },
+                   {
+                       "path":  "include/qbrain/schema/packs.hpp",
+                       "role":  "frozen-input",
+                       "sha256":  "3cbefc32cea456bdfdc19e9b9788912a8e0501c532aa9be4aac95433ed684da1",
+                       "bytes":  2439
+                   },
+                   {
+                       "path":  "include/qbrain/search/hybrid.hpp",
+                       "role":  "frozen-input",
+                       "sha256":  "45072d707a65485f355b22fa64ed662d9a1439703224224faad03fd9a5f00034",
+                       "bytes":  1181
+                   },
+                   {
+                       "path":  "include/qbrain/search/rerank.hpp",
+                       "role":  "frozen-input",
+                       "sha256":  "7486917838473af720043e9cb6b71752ac950e3693de26f6aeae69b0ceb33148",
+                       "bytes":  1399
+                   },
+                   {
+                       "path":  "include/qbrain/search/rrf.hpp",
+                       "role":  "frozen-input",
+                       "sha256":  "1f996af434ae1e8fd39e341f50a914e62094bba59e700dfd78c8e0cd461a166e",
+                       "bytes":  603
+                   },
+                   {
+                       "path":  "include/qbrain/search/vector.hpp",
+                       "role":  "frozen-input",
+                       "sha256":  "f7d5ff18e87c1be9232d314fdbde9a485d56bab28fecdf95f8a7007f788be251",
+                       "bytes":  337
+                   },
+                   {
+                       "path":  "include/qbrain/service/inbox_watch.hpp",
+                       "role":  "frozen-input",
+                       "sha256":  "89b3b4c0851a13104c704d1f9bf46b8bf41bf31a54bd5bbf3a7dbbfca7d72181",
+                       "bytes":  202
+                   },
+                   {
+                       "path":  "include/qbrain/service/live_sync.hpp",
+                       "role":  "frozen-input",
+                       "sha256":  "9cc6c61e26565aaca5294e263f6ef3b36b2040ed7b9d3ed8ebabf0dc35f7d4ba",
+                       "bytes":  934
+                   },
+                   {
+                       "path":  "include/qbrain/storage/database.hpp",
+                       "role":  "frozen-input",
+                       "sha256":  "2f0ccf8035aa35f3ce69a12d42afa18015754efb4671d7c528b36bb4285de8fd",
+                       "bytes":  2182
+                   },
+                   {
+                       "path":  "include/qbrain/storage/schema_sql.hpp",
+                       "role":  "frozen-input",
+                       "sha256":  "7709912b2d792b6055c0b95d5c79a157b949669925242e7c840a256717c7a024",
+                       "bytes":  4106
+                   },
+                   {
+                       "path":  "include/qbrain/util/hash.hpp",
+                       "role":  "frozen-input",
+                       "sha256":  "f5a02bc2dc179bc01a6598c8e91183b057c41c400839c1eceb9abaaeb2f04250",
+                       "bytes":  268
+                   },
+                   {
+                       "path":  "include/qbrain/util/log.hpp",
+                       "role":  "frozen-input",
+                       "sha256":  "35da3c86a9068bd6b00484a096cf63b90b34ed1f3ce0cbb4e727b45d8ce2e856",
+                       "bytes":  464
+                   },
+                   {
+                       "path":  "include/qbrain/util/paths.hpp",
+                       "role":  "frozen-input",
+                       "sha256":  "631a93eb746fb92b2b0e5d20c2dc131cda0686127d68685a045f6cec4cdef0ce",
+                       "bytes":  555
+                   },
+                   {
+                       "path":  "include/qbrain/util/string_util.hpp",
+                       "role":  "frozen-input",
+                       "sha256":  "9394742e0a5ba2da8a83748e4afcf90fee400d473abe1db23b971faf905511e3",
+                       "bytes":  521
+                   },
+                   {
+                       "path":  "include/qbrain/util/time_util.hpp",
+                       "role":  "frozen-input",
+                       "sha256":  "78390f81b3a583fd7e3b0ce3b62e7f4405ef3e0947b266a0e5fb4066b68b8cb3",
+                       "bytes":  335
+                   },
+                   {
+                       "path":  "scripts/build-cl.ps1",
+                       "role":  "frozen-input",
+                       "sha256":  "553a1989952d346fce8f836146377aec6d0db29e143893c3ac7fd28869b15070",
+                       "bytes":  3605
+                   },
+                   {
+                       "path":  "scripts/build-tests-cl.ps1",
+                       "role":  "frozen-input",
+                       "sha256":  "f5e9d43230957d845723ee62e0939c903c246d51cbd4ceead077f50a5638a63d",
+                       "bytes":  3315
+                   },
+                   {
+                       "path":  "scripts/n23-verify.ps1",
+                       "role":  "frozen-input",
+                       "sha256":  "7fb300048eb3238d6a8515f47f5de353e8cba0084645043255135e9c7f376398",
+                       "bytes":  31419
+                   },
+                   {
+                       "path":  "src/qbrain/ai/chat.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "d140568bb6977668c5912c39a32e5399ecf47ad843047fce777d1ec1be397191",
+                       "bytes":  2393
+                   },
+                   {
+                       "path":  "src/qbrain/ai/embed.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "4893549c139dffb7e909352dde6cb87fd32fb5ca3285c2058f0fe24ee93824c8",
+                       "bytes":  1922
+                   },
+                   {
+                       "path":  "src/qbrain/ai/http_client.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "9b442c82abf2fca866b81d8b9dc7a0919269e755e784d0cefcfc3232eb8261e9",
+                       "bytes":  4537
+                   },
+                   {
+                       "path":  "src/qbrain/cli/app.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "5a8eb76fa3845d39af3940377ce9ac8b2f2056cfe46775462cbdbc570903262e",
+                       "bytes":  157
+                   },
+                   {
+                       "path":  "src/qbrain/cli/commands.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "d02428ddcc80191ce4058423d212a2b0a2fb37dc7e9f0643786f4f868c54c41f",
+                       "bytes":  19909
+                   },
+                   {
+                       "path":  "src/qbrain/codeintel/scan.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "fd538237f83aff57da596b9d85571611b913a511b9bbb5563693c1ee3fa6853c",
+                       "bytes":  25144
+                   },
+                   {
+                       "path":  "src/qbrain/core/brain.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "1fceb88261afd04536b747e41bb51a2ab02199e3be65f749360e5637ad9ac23b",
+                       "bytes":  56260
+                   },
+                   {
+                       "path":  "src/qbrain/core/types.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "e3aeea582bac116e01f44aceef6c3f9b18235b7572291a3547a935912f7da262",
+                       "bytes":  136
+                   },
+                   {
+                       "path":  "src/qbrain/cycle/dream.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "e7c6d107e3d9c64526a6e9c428ebff27d5ce89a7545321412bd23ab3ed0e3a21",
+                       "bytes":  12815
+                   },
+                   {
+                       "path":  "src/qbrain/files/store.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "3e20f5e999721d129f2ae62fbab37c7be5ed5e605e73663ba108f79ae08f758c",
+                       "bytes":  3823
+                   },
+                   {
+                       "path":  "src/qbrain/graph/analytics.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "2ad297757745bec4707616374db628a52754390791d21489a7a425e6a7cf2c93",
+                       "bytes":  20344
+                   },
+                   {
+                       "path":  "src/qbrain/graph/extract.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "2a71b0c4d39fad1be8e1d11c23c0c902c19500994758c8300b62c773c01c363a",
+                       "bytes":  2048
+                   },
+                   {
+                       "path":  "src/qbrain/graph/traverse.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "9b9eeecff60a720f480f79c4d010369e7ed6984589e9210af1da4e935de4f5e4",
+                       "bytes":  1135
+                   },
+                   {
+                       "path":  "src/qbrain/ingest/chunker.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "08c0436d12333fbd46a98fb883b2673c4e4b525105ac50a57feef8f50dcca145",
+                       "bytes":  1576
+                   },
+                   {
+                       "path":  "src/qbrain/ingest/import.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "a51304a9dbbfe234d3f8b6cd39174c59a5a36f747644af03a22852bbc8f61819",
+                       "bytes":  4407
+                   },
+                   {
+                       "path":  "src/qbrain/ingest/markdown.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "3fca4a706193e4618a8a2941678e25c4856618d505315fe48ada2397dd3b3e89",
+                       "bytes":  2435
+                   },
+                   {
+                       "path":  "src/qbrain/jobs/minions.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "245b7bae5589947b3aaf03698f12c54959c62535439f781c8daa782bf0123806",
+                       "bytes":  22100
+                   },
+                   {
+                       "path":  "src/qbrain/main.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "72e0b8bb649e462617f2056bec417df4d4a4704f0d7b29acc883630868d54462",
+                       "bytes":  106
+                   },
+                   {
+                       "path":  "src/qbrain/mcp/http_server.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "9f488eb7ebe2f71f90bffa7462303684e1f115ff97a3b0e07d4959f2f456a25d",
+                       "bytes":  10833
+                   },
+                   {
+                       "path":  "src/qbrain/mcp/jsonrpc.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "30988951fc045e7a7a0f2b5819cd8122ba992b5cec400d7212989d9e69a74836",
+                       "bytes":  2625
+                   },
+                   {
+                       "path":  "src/qbrain/mcp/server.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "3ebce0364d301968da50e2fd1f406564c18f50621183a87451919afe18c4d5a0",
+                       "bytes":  17731
+                   },
+                   {
+                       "path":  "src/qbrain/ops/handlers.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "6bf36bc288e64aa641c4cbfe57b07f89bc364d7b6a4f74072a229dd7ba42da04",
+                       "bytes":  126538
+                   },
+                   {
+                       "path":  "src/qbrain/ops/registry.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "e3fb8bad77a88677d6ae23a2eba626e98d47ab41c0659cbac1d724688b134a18",
+                       "bytes":  1597
+                   },
+                   {
+                       "path":  "src/qbrain/schema/lint.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "a1771eda869a6d6407ed611d2f1efe540652dc18e973572a1fa680e31fe89f67",
+                       "bytes":  3900
+                   },
+                   {
+                       "path":  "src/qbrain/schema/packs.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "2962992a2b829946e90bc26df176ede4bd57d9093d1ab7ed0342cf5787e5b5f1",
+                       "bytes":  30414
+                   },
+                   {
+                       "path":  "src/qbrain/search/hybrid.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "2a74917efc8e6ceffd8800ab2548fd4ce3c1065671d53dc174bc4bd190b74508",
+                       "bytes":  7734
+                   },
+                   {
+                       "path":  "src/qbrain/search/rerank.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "67d87412d90d14c79e1f44b19262917105d7433c66264e170f910c97a8dbb505",
+                       "bytes":  14885
+                   },
+                   {
+                       "path":  "src/qbrain/search/rrf.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "7df0be7c8f36e5c1f4ab76af16b2fd77f75d01d1ce1afd326a4ef5fbf044efc3",
+                       "bytes":  1761
+                   },
+                   {
+                       "path":  "src/qbrain/search/vector.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "313e930afdd5a6897d37650ec7c99b5dd87a4d11fd9953e6f4e2d8e5bdebbc11",
+                       "bytes":  1017
+                   },
+                   {
+                       "path":  "src/qbrain/service/inbox_watch.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "76cb8edab0e4691faa46cf7d5bc74e87c0432f948947df27ad24be4de330b84e",
+                       "bytes":  1546
+                   },
+                   {
+                       "path":  "src/qbrain/service/live_sync.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "35302192d0c1fdfb0515115945fc2419cf26f8ec450af9e7bb929bddc3cf7c4f",
+                       "bytes":  6099
+                   },
+                   {
+                       "path":  "src/qbrain/storage/database.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "bda29c5926936979102fd1078044b8ee76c250ae34707f4f4fda42ab4d32dacb",
+                       "bytes":  4570
+                   },
+                   {
+                       "path":  "src/qbrain/storage/migrate.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "d775529ff6f89d520f15a3fee30f0e180a2011646516de0a620e1870d538ec45",
+                       "bytes":  15352
+                   },
+                   {
+                       "path":  "src/qbrain/util/hash.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "00c8e73e28481e5be961470caaa27c68521cc767dee7f2335f96ab02a793a3a3",
+                       "bytes":  1653
+                   },
+                   {
+                       "path":  "src/qbrain/util/log.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "ecbf5cfcfef182f9645f2b4e9186b612f76f507f408b3c9a57843b80097900f5",
+                       "bytes":  583
+                   },
+                   {
+                       "path":  "src/qbrain/util/paths.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "f7c3522070c601635b385f8d68bfee898e6b70cad2e2acc5a25d9e2f90b2488f",
+                       "bytes":  3352
+                   },
+                   {
+                       "path":  "src/qbrain/util/string_util.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "3a6dbdd4c8c02f79e411e48b71fbc607355569f51089e90d779c5818b2065662",
+                       "bytes":  1981
+                   },
+                   {
+                       "path":  "src/qbrain/util/time_util.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "cb315dc6c50958c6a69270b130a9757881a9030cd27b8b730626d6e296ffe217",
+                       "bytes":  1215
+                   },
+                   {
+                       "path":  "tests/test_analytics.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "ba017586f00cf0d195cc142d4dd646f7c7197ae0c29f1cfbef678121ca350855",
+                       "bytes":  5076
+                   },
+                   {
+                       "path":  "tests/test_chunker.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "31f47c8dc66538d2dae0bd3ca55a78311b2b61ec1365ee047e7d4ca305a14bf0",
+                       "bytes":  742
+                   },
+                   {
+                       "path":  "tests/test_codeintel.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "a35c91419718f0be05a1b5da26a6a1c47d692ab7c23d29dda0154395e0b84013",
+                       "bytes":  2635
+                   },
+                   {
+                       "path":  "tests/test_doctor.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "70483d7e12a0bd8f6304ffdf5e48647ce43ddfc9238507325a8c1f8fa7b88cf4",
+                       "bytes":  4003
+                   },
+                   {
+                       "path":  "tests/test_extract.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "883d78e8afb18715e36fe328195b6ecae6a52951bd7c2546576289037dcc0eb0",
+                       "bytes":  1156
+                   },
+                   {
+                       "path":  "tests/test_live_sync.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "947fbfb8fe32dded9e5c17cbcdf9acba2df51ef54bd87625bf8b3f0e213b9dde",
+                       "bytes":  1981
+                   },
+                   {
+                       "path":  "tests/test_main.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "27f76a7e7e4042baa2f8035e083e2036ff74a6da2f8b10e6b2b39251bee75957",
+                       "bytes":  2782
+                   },
+                   {
+                       "path":  "tests/test_mcp.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "8745ba5691dfb7d7d794f9fd9a8c43837e7cbed83a98f29f3d77a59bb8478052",
+                       "bytes":  11182
+                   },
+                   {
+                       "path":  "tests/test_migration_v6.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "8b0c7e8fd1cd716ae2a7ae1a921098a2b48e99a5ad3029efc24f89697b908880",
+                       "bytes":  13332
+                   },
+                   {
+                       "path":  "tests/test_minions.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "b3367ef79accf53f1da33a88d05f4948e65b9eb20bf4c95abb316f2d8282750a",
+                       "bytes":  12145
+                   },
+                   {
+                       "path":  "tests/test_n12_dream.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "23350c06a9ded7ca637410770f342a1488ffc98143dc4bd04a3e30fb03e4b329",
+                       "bytes":  22662
+                   },
+                   {
+                       "path":  "tests/test_n13.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "34ae2de83bc54b1fcd9611d7982ada6704617e3c02ce132be5bf807171425dec",
+                       "bytes":  16133
+                   },
+                   {
+                       "path":  "tests/test_n14.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "3b4a69f3b4c2d282069ca81d8be6421d3a09a48a8ce61d71cf761f296eb97785",
+                       "bytes":  43337
+                   },
+                   {
+                       "path":  "tests/test_n15.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "ad709351520f1f48f16fcbd6392ee8a93f886c10e92f70054b24f6b231cc9078",
+                       "bytes":  69183
+                   },
+                   {
+                       "path":  "tests/test_n16.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "9653f1bfa0f3e0493e1017d88466b7e45cbdf16901a2eea5a2c58b77387c3ee7",
+                       "bytes":  24969
+                   },
+                   {
+                       "path":  "tests/test_n17.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "e4fe3eaa144209e8a7e64b6f5251bf863514a05c1d5e6ae5109b118b112bcdac",
+                       "bytes":  64178
+                   },
+                   {
+                       "path":  "tests/test_n18.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "4781d0029a8fd7d9a0cb298d4ac935bb36fc23e2612e51f562c5d7e33a87f9ea",
+                       "bytes":  69108
+                   },
+                   {
+                       "path":  "tests/test_n19.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "27023d52d3c637b081747d1e66c2a86c84a21c0628fb413d6301af8e00e6d8e9",
+                       "bytes":  58903
+                   },
+                   {
+                       "path":  "tests/test_n20.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "31ddab710fadeb74a43fe60ba2786c18e9e1715ea83501453f6783b40d2c33c7",
+                       "bytes":  71272
+                   },
+                   {
+                       "path":  "tests/test_n20_23.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "a8c068df0544c90e6dd6b2dce213878381ecf37637a087ca9afc81dc2e799f3b",
+                       "bytes":  4235
+                   },
+                   {
+                       "path":  "tests/test_n22.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "fb4b647f013c816ad0c0ffbbbe48f1d4ab477bca75a40fdf7b11069085f5c566",
+                       "bytes":  65528
+                   },
+                   {
+                       "path":  "tests/test_n23.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "d4dbb3e0e2d330adde43d928f21334561127c29afac84f97d546e5c9bfe7ad99",
+                       "bytes":  32027
+                   },
+                   {
+                       "path":  "tests/test_n24_25.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "443a2591fcefc00c714b14290ac00664d945e6db464b770d46f4cce98d484101",
+                       "bytes":  2302
+                   },
+                   {
+                       "path":  "tests/test_n26_27.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "1fc30bcabd8388b3437cbed696212e6b354950b700f6e6e5d4ac38106775a2fe",
+                       "bytes":  2457
+                   },
+                   {
+                       "path":  "tests/test_rerank.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "64a91574e2a56433392b39e52a74a101a09487ff1e6c772cb432da1a3e90ff06",
+                       "bytes":  17068
+                   },
+                   {
+                       "path":  "tests/test_rrf.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "d18a5bd90fae53b71ab69c3f4242e0a7f1ef5bf4a101be50fd3eee5cd856a79d",
+                       "bytes":  879
+                   },
+                   {
+                       "path":  "tests/test_storage.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "2e7eb17de213045625f9c0ae3f224142c5fbb5e2ae6c8d946e369fdff5b54095",
+                       "bytes":  4233
+                   },
+                   {
+                       "path":  "tests/test_vector.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "a6ba9e5a02d88ca3d105a1174ee8ead1d4960417ce778c10dff012e71524cc76",
+                       "bytes":  874
+                   },
+                   {
+                       "path":  "tests/test_wave4.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "1c6f6bc082a267c113b35ce840fb9f93e16f6930e22a1a1633f9667a76731c50",
+                       "bytes":  9973
+                   },
+                   {
+                       "path":  "tests/test_wave5.cpp",
+                       "role":  "frozen-input",
+                       "sha256":  "0fb95676920eeb0d33a7f3c8afc20d913bd209fdc71bc6f5830063fdd511a45e",
+                       "bytes":  4557
+                   },
+                   {
+                       "path":  "tests/wave3_test_support.hpp",
+                       "role":  "frozen-input",
+                       "sha256":  "9a4f94093a6e64b6a3f2021b52cefa23cd06d0223803d4e6bda3ea7ec9c301a6",
+                       "bytes":  5290
+                   },
+                   {
+                       "path":  "third_party/nlohmann/json.hpp",
+                       "role":  "frozen-input",
+                       "sha256":  "010009e60834fccd54247fd3709ca44f604e125751b9ad7ffb780420d1067f7c",
+                       "bytes":  919977
+                   },
+                   {
+                       "path":  "third_party/sqlite/sqlite-amalgamation-3460100/sqlite3.c",
+                       "role":  "frozen-input",
+                       "sha256":  "6c35bc5f7f85eac9c49928bacbb02bb694b547aabf69197e058cca245ad80e83",
+                       "bytes":  9089564
+                   },
+                   {
+                       "path":  "third_party/sqlite/sqlite-amalgamation-3460100/sqlite3.h",
+                       "role":  "frozen-input",
+                       "sha256":  "89b62c671c5964e137409ce034941b7b05a3af2c9875aba41f47f9483d0c2515",
+                       "bytes":  644069
+                   }
+               ],
+    "git":  {
+                "head":  "5ced8ccb511672536d0f9767a2bc1777baf561ab",
+                "scoped_diff_sha256":  "438a8459631c87a3bb2e232dda1e9860ac8f8f4e50d9d44327f95e7eb59d891c",
+                "protected_assignment_change_count":  0
+            },
+    "schema_version":  12,
+    "protected_model_configuration_changed":  false,
+    "commit_or_push_executed":  false,
+    "n30_artifact_count":  0
+}

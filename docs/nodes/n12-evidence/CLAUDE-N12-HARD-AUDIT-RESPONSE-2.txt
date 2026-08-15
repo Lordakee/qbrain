@@ -1,0 +1,47 @@
+I have completed reading all required files. Based on my analysis of the approved N12 plan, the implementation code, and the runtime evidence, I can now deliver the concise hard audit verdict.
+
+---
+
+**VERDICT: PASS**
+
+**Auditor: Claude Code**
+
+## Acceptance Table
+
+| # | Assertion | Result | Evidence |
+|---|-----------|--------|----------|
+| 1 | Rerank failure never throws/exits non-zero/empties non-truncating results | PASS | test_rerank.cpp:308-323 throw injection + TEST-OUTPUT.txt line 9 [PASS] |
+| 2 | Fallback membership/count/scores match no-LLM baseline | PASS | test_rerank.cpp:286,309 serialize_triples equality + rerank.cpp:183-206 finite [0,1] |
+| 3 | Byte-identical triples on repeat; <10s silent timeout | PASS | VERIFY-REPORT.md:43 3961ms + test_rerank.cpp:390-397 <4500ms assertion |
+| 4 | Safe audit fields only; capped 1MiB; no secrets | PASS | TEST-OUTPUT.txt:8 exact 5-field sample + test_rerank.cpp:232-255 closed-enum + :401 no key |
+| 5 | No double-claim; wrong/stale token rejected | PASS | test_minions.cpp:44-56 duplicate fail + :49-85 wrong-token rejection + migration_v6:279-301 v5 job |
+| 6 | Reclaim once; concurrent one winner | PASS | test_minions.cpp:155-161 +1 attempts + :231 "sqlite_busy" loser logged |
+| 7 | Remote write denied; allowed path succeeds | PASS | test_n12_dream.cpp:489-520 denied snapshot unchanged + ops/registry.cpp local-only markers |
+| 8 | Dry-run all phases mutations=0; full snapshot unchanged | PASS | VERIFY-REPORT.md:47 447b07..hash + test_n12_dream.cpp:238-257 all 5 phases |
+| 9 | Selected phase isolated mutations; embed mock >0 | PASS | test_n12_dream.cpp:291-341 per-phase deltas + :312-322 QBRAIN_EMBED_MOCK 2 jobs |
+| 10 | No-phase skips purge; explicit purge follows boundary/retention | PASS | test_n12_dream.cpp:333-338 skipped + :403-426 eligibility/cascade + :407-420 old-active preserved |
+| 11 | All phases dry/apply isolated; invalid retention no-mutation | PASS | test_n12_dream.cpp:237-258 5 dry + :428-438 invalid inputs unchanged snapshot |
+| 12 | Populated v5 upgraded; nullable fence; transactional/idempotent | PASS | migration_v6.cpp:244-272 identical hash + :315-356 rollback clean + minions.cpp:128 lock_token fence |
+| 13 | N1-N11 preconditions; MSVC/c++20; cl.exe; 20 tests | PASS | VERIFY-REPORT.md:23-37 all PASS + BUILD-OUTPUT.txt:62 /std:c++20 + :86 TESTS_BUILD_OK + TEST-OUTPUT.txt 20 [PASS] |
+
+## Deliverables
+
+All 14 hashed files present at VERIFY-REPORT.md:60-76. Implementation: rerank.cpp (timeout 3000ms, fail-open, safe JSONL, rotation), minions.cpp (token fence lines 104,141,154, reclaim line 247, bounded error 156), dream.cpp (retention parse 26-44, purge eligibility 172-178, cascade 200-207), migration v6 (transactional 41-56). Tests: test_rerank.cpp (throw/empty/partial/timeout/rotation matrix), test_minions.cpp (empty/wrong/stale/concurrent), test_migration_v6.cpp (populated v5, rollback injection, idempotent), test_n12_dream.cpp (5 dry phases, apply isolation, purge boundary table, MCP deny). Build script: build-tests-cl.ps1. Evidence: n12-verify.ps1, VERIFY-REPORT.md.
+
+## P0 (blocks done)
+
+None.
+
+## P1
+
+None.
+
+## P2
+
+1. Concurrent claim loser outcome "sqlite_busy" is now documented (TEST-OUTPUT.txt:10) but could be made mechanically decidable in CI if repeated runs guarantee the same loser. Current: race-dependent, acceptable.
+2. Schema v6 rollback/downgrade are documented as unsupported (VERIFY-REPORT.md:56, migration_v6.cpp comment) per plan; backup-before-migration is the mitigation.
+
+## Comparison to Approved Plan / Remaining Risk
+
+All 13 falsifiable assertions from the approved N12 plan (N12-PLAN.md status approved, plan audit PASS 2026-07-29) are verified with runtime or source evidence. The rerank fail-open contract (baseline membership, finite scores, deterministic triples, <10s silent timeout, safe rotating audit) is confirmed. The minion token fence (empty/wrong/stale rejection, reclaim accounting, concurrent SQLite busy loser) is confirmed. The dream phase isolation (5 dry-run mutations=0, selected apply deltas, embed mock, no-phase purge skip, explicit purge eligibility/cascade/retention boundary table including invalid input no-mutation) is confirmed. The populated-v5 migration (nullable columns, identical content hash, transactional rollback, idempotent second run, migrated job fence) is confirmed. MCP write default-deny is confirmed with unchanged snapshot. No LLM provider/model/baseURL/key/reasoning/context was changed by implementation or tests. Build is native Windows MSVC 19.51 /std:c++20. All 20 tests pass. No P0 or P1 findings block done status. Remaining risk: schema v6 is additive and has no supported downgrade mechanism; mitigate by taking a pre-migration backup and never attempting rollback. The two P2 observations are documentation/determinism quality items that do not weaken the product contract. The node is complete against its approved plan and ready for done status and ledger reconciliation.
+

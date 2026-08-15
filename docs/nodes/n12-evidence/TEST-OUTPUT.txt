@@ -1,0 +1,29 @@
+﻿[PASS] rrf
+[PASS] vector
+[PASS] chunker
+[PASS] extract
+[PASS] storage
+[PASS] mcp
+[INFO] silent_provider_elapsed_ms=3961
+[INFO] rerank_audit_sample={"doc_count":3,"failure_reason":"transport_timeout","fallback_taken":true,"query_hash":"abadadc5b647126edb5c309a536952857ea008c0ec22babd6e0c74dd9791408e","timestamp":"2026-07-29T20:52:13Z"}
+[PASS] rerank
+[INFO] minions_concurrent_claim winner=tok-race-A loser=sqlite_busy error=step: database is locked
+[PASS] minions
+[INFO] migration_v6_snapshot_sha256=692927dc1b80165584578f7256eac3ff956e4dd468552e96fb35038d9849bda4 populated_v5_before_after=identical
+[INFO] migration_v6 populated_v5=preserved idempotent=noop rollback_after_first_ddl=clean rollback_after_marker=clean migrated_job_fence=pass fresh_shape=pass
+[PASS] migration_v6
+[INFO] dream_dry_run_snapshot_sha256=447b07f81e145d5f74dffac396df1faace0399121b7f05bbdd811c052c509cf0 phases=orphans,extract_facts,consolidate,embed,purge unchanged=pass
+[INFO] dream_purge_snapshot_before_sha256=3a45db1ae4fa98811c9f843db9e993c7af58c952f723b725b9ca63c8d88c4f23 after_sha256=f7fe43f2134531f8b1f083f008b46c051d9ca3195034964131cd4b3bbc625a36 mutations=7
+[INFO] mcp_write_deny_snapshot_sha256=e650e3892a8736511efda93fe2b33d8a8b69752416f89d7d54a6803ca8c5a574 ops=submit_job,cancel_job,run_dream unchanged=pass
+[PASS] n12_dream
+[PASS] live_sync
+[PASS] codeintel
+[PASS] analytics
+[PASS] n19
+[PASS] n20_23
+[PASS] n24_25
+[PASS] n26_27
+[PASS] wave4
+[PASS] wave5
+[PASS] doctor
+[WARN] live_sync: not a directory: C:\Users\ADMINI~1\AppData\Local\Temp\qbrain_live_sync_test\notes\..\..\should_not_matter

@@ -1,0 +1,29 @@
+## Revision Complete
+
+**File:** `docs/nodes/N14-HARD-AUDIT.md`
+
+**Verdict:** PASS (preserved)
+
+**SHA-256:** `6567e8cc17abb4547aede3a66320583a103cc7b1a93bce497dcb3c3e7b80a1e5`
+
+### Changes Applied
+
+1. ✓ **Manifest hash clarification** (lines 19-20): Distinguished the two manifest files:
+   - Evidence-directory copy (`docs/nodes/n14-evidence/BUILD-MANIFEST.txt`): SHA-256 `81873e38...` 
+   - Current build manifest (`build/wave3-final-build-manifest.txt`): SHA-256 `7a102c4c...`
+   - Both have **99 FILE entries**; files differ in line-ending encoding
+
+2. ✓ **Trailing whitespace removed**: All lines stripped of trailing whitespace, including the multi-line N14 runtime marker block (lines 89-95)
+
+3. ✓ **Excluded-node reference removed**: "No N30 artifact present or referenced." removed from Conclusion (line 239)
+
+4. ✓ **Final newline verified**: File ends with exactly one newline character after "N14 is complete and ready to be marked done."
+
+### Preserved Content
+- Auditor: Claude Code
+- Date: 2026-08-01
+- All 15 acceptance assertions with concrete evidence
+- All 8 deliverables verified
+- P0/P1/P2 sections (all empty)
+- Page ID 1 vs 10 regression fixture explicitly documented (acceptance row 11)
+- Approved-plan comparison maintained
