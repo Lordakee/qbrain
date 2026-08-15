@@ -192,6 +192,7 @@ add_executable(qbrain_tests
   tests/test_n32.cpp
   tests/test_n34.cpp
   tests/test_n33.cpp
+  tests/test_n35.cpp
 )
 target_link_libraries(qbrain_tests PRIVATE
   qbrain_cli qbrain_mcp qbrain_ops qbrain_schema qbrain_search qbrain_jobs qbrain_cycle qbrain_graph qbrain_codeintel qbrain_ingest qbrain_ai

@@ -1,14 +1,23 @@
 #pragma once
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <utility>
 #include <vector>
 #include <sqlite3.h>
 
+#include "qbrain/storage/backend.hpp"
+
 namespace qbrain::storage {
 
+// N35 D1: Database keeps its exact pre-N35 public API; the native storage
+// state now lives behind the IStorageBackend contract (backend.hpp), to which
+// every method delegates one-for-one. The SQLite adapter (SqliteBackend,
+// src/qbrain/storage/database.cpp) is a line-by-line extraction of the former
+// method bodies -- zero logic change.
 class Database {
  public:
   Database() = default;
@@ -20,8 +29,8 @@ class Database {
 
   void open(const std::string& path);
   void close();
-  bool is_open() const { return db_ != nullptr; }
-  sqlite3* handle() const { return db_; }
+  bool is_open() const { return backend_ && backend_->is_open(); }
+  sqlite3* handle() const { return backend_ ? backend_->handle() : nullptr; }
 
   void exec(std::string_view sql);
   int64_t last_insert_rowid() const;
@@ -54,14 +63,25 @@ class Database {
     bool column_is_null(int i) const;
 
    private:
-    sqlite3_stmt* stmt_ = nullptr;
+    // N35 D1: the native statement lives behind the contract statement
+    // interface. Null exactly while this Statement has never been prepared
+    // (the old stmt_ == nullptr state).
+    std::unique_ptr<IStorageBackend::IStatement> impl_;
   };
 
   Statement prepare(std::string_view sql);
 
  private:
-  sqlite3* db_ = nullptr;
-  void check(int rc, std::string_view what) const;
+  // N35 D1: the contract owns the native connection. backend_ is null only
+  // on a moved-from Database -- the same observable state the old
+  // db_ == nullptr represented.
+  std::unique_ptr<IStorageBackend> backend_;
+
+  // N35 D1 acceptance assertion 1: compile-time proof that storage::Database
+  // uses the storage contract -- the member type IS the interface type.
+  static_assert(
+      std::is_same_v<decltype(backend_), std::unique_ptr<IStorageBackend>>,
+      "storage::Database must hold its storage via IStorageBackend");
 };
 
 // Apply migrations using embedded canonical schema (always).

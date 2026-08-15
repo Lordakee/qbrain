@@ -63,6 +63,7 @@ void test_n31_a_counts_mapping();
 void test_n32_scan_integration();
 void test_n34();
 void test_n33_multimodal();
+void test_n35_contract_suite();
 
 int main() {
   int failed = 0;
@@ -106,6 +107,7 @@ int main() {
       {"n32_scan_integration", test_n32_scan_integration},
       {"n34", test_n34},
       {"n33_multimodal", test_n33_multimodal},
+      {"n35_contract_suite", test_n35_contract_suite},
   };
   for (auto& t : tests) {
     try {
