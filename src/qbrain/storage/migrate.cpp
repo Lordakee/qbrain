@@ -1,8 +1,10 @@
 #include "qbrain/storage/database.hpp"
 #include "qbrain/storage/schema_sql.hpp"
 #include <fstream>
+#include <iterator>
 #include <sstream>
 #include <stdexcept>
+#include <utility>
 #include <vector>
 
 namespace qbrain::storage {
@@ -19,6 +21,49 @@ static void run_in_txn(Database& db, const std::string& sql) {
   db.exec("BEGIN;");
   try {
     db.exec(sql);
+    db.exec("COMMIT;");
+  } catch (...) {
+    try {
+      db.exec("ROLLBACK;");
+    } catch (...) {
+    }
+    throw;
+  }
+}
+
+static bool jobs_has_column(Database& db, const std::string& column_name) {
+  auto st = db.prepare("PRAGMA table_info(jobs)");
+  while (st.step()) {
+    if (st.column_text(1) == column_name) return true;
+  }
+  return false;
+}
+
+static bool table_has_column(Database& db, const std::string& table,
+                              const std::string& column_name) {
+  auto st = db.prepare("PRAGMA table_info(" + table + ")");
+  while (st.step()) {
+    if (st.column_text(1) == column_name) return true;
+  }
+  return false;
+}
+
+static std::string ascii_upper(std::string value) {
+  for (char& c : value) {
+    if (c >= 'a' && c <= 'z') c = static_cast<char>(c - 'a' + 'A');
+  }
+  return value;
+}
+
+static void apply_v6_minion_migration(Database& db) {
+  db.exec("BEGIN;");
+  try {
+    if (!jobs_has_column(db, "lock_token"))
+      db.exec("ALTER TABLE jobs ADD COLUMN lock_token TEXT DEFAULT NULL;");
+    if (!jobs_has_column(db, "error_text"))
+      db.exec("ALTER TABLE jobs ADD COLUMN error_text TEXT DEFAULT NULL;");
+    db.exec("CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status, type);");
+    db.exec("INSERT OR IGNORE INTO schema_version(version) VALUES (6);");
     db.exec("COMMIT;");
   } catch (...) {
     try {
@@ -130,18 +175,9 @@ INSERT OR IGNORE INTO schema_version(version) VALUES (5);
     ver = 5;
   }
 
-    // v6: minions claim fields (N12). Columns may already exist on fresh v1 schema.
+  // v6: minions claim fields (N12). Columns may already exist on fresh v1 schema.
   if (ver < 6) {
-    auto try_exec = [&](const char* sql) {
-      try {
-        db.exec(sql);
-      } catch (...) {
-      }
-    };
-    try_exec("ALTER TABLE jobs ADD COLUMN lock_token TEXT;");
-    try_exec("ALTER TABLE jobs ADD COLUMN error_text TEXT;");
-    try_exec("CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status, type);");
-    db.exec("INSERT OR IGNORE INTO schema_version(version) VALUES (6);");
+    apply_v6_minion_migration(db);
     ver = 6;
   }
 
@@ -228,48 +264,232 @@ INSERT OR IGNORE INTO schema_version(version) VALUES (11);
 )SQL");
     ver = 11;
   }
+
+  // v12: source-attributed ingest log. Legacy rows cannot be attributed
+  // honestly, so they are preserved and assigned to canonical default.
+  if (ver < 12) {
+    db.exec("BEGIN IMMEDIATE;");
+    try {
+      db.exec(
+          "CREATE TABLE IF NOT EXISTS sources ("
+          "id TEXT PRIMARY KEY,"
+          "name TEXT NOT NULL DEFAULT ''"
+          ");"
+          "INSERT OR IGNORE INTO sources(id,name) VALUES('default','default');"
+          "DROP TABLE IF EXISTS ingest_log_v12;"
+          "CREATE TABLE ingest_log_v12 ("
+          "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+          "source_id TEXT NOT NULL,"
+          "event_type TEXT NOT NULL DEFAULT 'import',"
+          "path TEXT NOT NULL DEFAULT '',"
+          "detail_json TEXT NOT NULL DEFAULT '{}',"
+          "created_at TEXT NOT NULL DEFAULT (datetime('now')),"
+          "FOREIGN KEY(source_id) REFERENCES sources(id) ON DELETE CASCADE"
+          ");"
+          "INSERT INTO ingest_log_v12(id,source_id,event_type,path,detail_json,created_at) "
+          "SELECT id,'default',event_type,path,detail_json,created_at FROM ingest_log;"
+          "DROP TABLE ingest_log;"
+          "ALTER TABLE ingest_log_v12 RENAME TO ingest_log;"
+          "CREATE INDEX idx_ingest_log_source_created "
+          "ON ingest_log(source_id,created_at DESC,id DESC);"
+          "INSERT OR IGNORE INTO schema_version(version) VALUES (12);");
+      db.exec("COMMIT;");
+    } catch (...) {
+      try {
+        db.exec("ROLLBACK;");
+      } catch (...) {
+      }
+      throw;
+    }
+    ver = 12;
+  }
 }
 
 SchemaIntegrity check_schema_integrity(Database& db) {
   SchemaIntegrity r;
   {
-    auto st = db.prepare("SELECT COALESCE(MAX(version),0) FROM schema_version");
-    if (st.step()) r.schema_version = static_cast<int>(st.column_int(0));
+    try {
+      auto st = db.prepare("SELECT COALESCE(MAX(version),0) FROM schema_version");
+      if (st.step()) r.schema_version = static_cast<int>(st.column_int(0));
+    } catch (const std::exception& e) {
+      r.ok = false;
+      r.missing.push_back(std::string("schema_version query failed: ") + e.what());
+    }
   }
 
   auto has_table = [&](const char* name) {
-    auto st = db.prepare(
-        "SELECT 1 FROM sqlite_master WHERE type IN ('table','view') AND name=? LIMIT 1");
-    st.bind_text(1, name);
-    return st.step();
+    try {
+      auto st = db.prepare(
+          "SELECT 1 FROM sqlite_master WHERE type IN ('table','view') AND name=? LIMIT 1");
+      st.bind_text(1, name);
+      return st.step();
+    } catch (const std::exception& e) {
+      r.ok = false;
+      r.missing.push_back(std::string("table check failed:") + name + ": " + e.what());
+      return false;
+    }
   };
   auto has_index = [&](const char* name) {
-    auto st = db.prepare(
-        "SELECT 1 FROM sqlite_master WHERE type='index' AND name=? LIMIT 1");
-    st.bind_text(1, name);
-    return st.step();
+    try {
+      auto st = db.prepare(
+          "SELECT 1 FROM sqlite_master WHERE type='index' AND name=? LIMIT 1");
+      st.bind_text(1, name);
+      return st.step();
+    } catch (const std::exception& e) {
+      r.ok = false;
+      r.missing.push_back(std::string("index check failed:") + name + ": " + e.what());
+      return false;
+    }
   };
 
-  const char* tables[] = {"schema_version", "sources", "pages", "content_chunks",
-                          "links",          "tags",    "config", "jobs", "pages_fts"};
+  // N30 D8: complete v12 required-object set. Every table/index created by the
+  // canonical v1 schema (include/qbrain/storage/schema_sql.hpp) plus every
+  // additive migration v2..v12 must be present; doctor fails closed otherwise.
+  const char* tables[] = {"schema_version", "sources",
+                          "pages",         "content_chunks",
+                          "links",         "tags",
+                          "config",        "jobs",
+                          "pages_fts",     "ingest_log",
+                          "job_messages",  "page_versions",
+                          "facts",         "takes",
+                          "file_index",    "raw_data"};
   for (auto* t : tables) {
     if (!has_table(t)) {
       r.ok = false;
       r.missing.push_back(std::string("table:") + t);
     }
   }
-  const char* indexes[] = {"idx_pages_type",  "idx_pages_updated", "idx_pages_source",
-                           "idx_chunks_page", "idx_links_from",    "idx_links_to",
-                           "idx_jobs_claim",  "idx_pages_source_slug"};
+  const char* indexes[] = {"idx_pages_type",
+                           "idx_pages_updated",
+                           "idx_pages_source",
+                           "idx_pages_source_slug",
+                           "idx_chunks_page",
+                           "idx_chunks_missing_emb",
+                           "idx_links_from",
+                           "idx_links_to",
+                           "idx_jobs_claim",
+                           "idx_jobs_status",
+                           "idx_ingest_log_source_created",
+                           "idx_job_messages_job",
+                           "idx_page_versions_page",
+                           "idx_facts_entity",
+                           "idx_takes_entity",
+                           "idx_takes_body",
+                           "idx_file_index_name",
+                           "idx_raw_data_key"};
   for (auto* i : indexes) {
     if (!has_index(i)) {
       r.ok = false;
       r.missing.push_back(std::string("index:") + i);
     }
   }
-  if (r.schema_version < 3) {
+  try {
+    for (const char* column : {"lock_token", "error_text"}) {
+      if (!jobs_has_column(db, column)) {
+        r.ok = false;
+        r.missing.push_back(std::string("column:jobs.") + column);
+      }
+    }
+  } catch (const std::exception& e) {
     r.ok = false;
-    r.missing.push_back("schema_version<3");
+    r.missing.push_back(std::string("jobs column check failed: ") + e.what());
+  }
+  // N30 D8: required columns on v4 (pages provenance) and v5/v9/v10/v11 tables.
+  const std::pair<const char*, const char*> required_columns[] = {
+      {"pages", "source_kind"},   {"pages", "ingested_via"},
+      {"pages", "ingested_at"},   {"ingest_log", "source_id"},
+      {"page_versions", "page_id"}, {"facts", "entity_slug"},
+      {"takes", "entity_slug"},   {"file_index", "path"},
+      {"raw_data", "key"}};
+  for (const auto& [table, column] : required_columns) {
+    try {
+      if (!table_has_column(db, table, column)) {
+        r.ok = false;
+        r.missing.push_back(std::string("column:") + table + "." + column);
+      }
+    } catch (const std::exception& e) {
+      r.ok = false;
+      r.missing.push_back(std::string("column check failed:") + table + "." + column + ": " +
+                          e.what());
+    }
+  }
+  try {
+    struct ColumnShape {
+      const char* name;
+      const char* type;
+      int not_null;
+      const char* default_value;
+      int primary_key;
+      bool default_contains;
+    };
+    const ColumnShape expected[] = {
+        {"id", "INTEGER", 0, "", 1, false},
+        {"job_id", "INTEGER", 1, "", 0, false},
+        {"sender", "TEXT", 1, "'system'", 0, false},
+        {"payload_json", "TEXT", 1, "'{}'", 0, false},
+        {"created_at", "TEXT", 1, "datetime('now')", 0, true},
+    };
+    size_t index = 0;
+    auto columns = db.prepare("PRAGMA table_info(job_messages)");
+    while (columns.step()) {
+      if (index >= std::size(expected)) {
+        r.ok = false;
+        r.missing.push_back("table:job_messages unexpected column shape");
+        ++index;
+        continue;
+      }
+      const auto& want = expected[index];
+      const std::string name = columns.column_text(1);
+      const std::string type = ascii_upper(columns.column_text(2));
+      const int not_null = static_cast<int>(columns.column_int(3));
+      const std::string default_value = columns.column_text(4);
+      const int primary_key = static_cast<int>(columns.column_int(5));
+      const bool default_ok =
+          want.default_contains
+              ? default_value.find(want.default_value) != std::string::npos
+              : default_value == want.default_value;
+      if (name != want.name || type != want.type || not_null != want.not_null ||
+          !default_ok || primary_key != want.primary_key) {
+        r.ok = false;
+        r.missing.push_back(std::string("column:job_messages.") + want.name + " shape");
+      }
+      ++index;
+    }
+    if (index != std::size(expected)) {
+      r.ok = false;
+      r.missing.push_back("table:job_messages column count/shape");
+    }
+
+    auto table_sql = db.prepare(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='job_messages'");
+    if (!table_sql.step() ||
+        ascii_upper(table_sql.column_text(0)).find("AUTOINCREMENT") == std::string::npos) {
+      r.ok = false;
+      r.missing.push_back("table:job_messages AUTOINCREMENT shape");
+    }
+
+    std::vector<std::string> index_columns;
+    auto index_info = db.prepare("PRAGMA index_xinfo(idx_job_messages_job)");
+    while (index_info.step()) {
+      if (index_info.column_int(5) == 1 && !index_info.column_is_null(2)) {
+        if (index_info.column_int(3) != 0) {
+          r.ok = false;
+          r.missing.push_back("index:idx_job_messages_job ordering shape");
+        }
+        index_columns.push_back(index_info.column_text(2));
+      }
+    }
+    if (index_columns != std::vector<std::string>({"job_id", "id"})) {
+      r.ok = false;
+      r.missing.push_back("index:idx_job_messages_job column shape");
+    }
+  } catch (const std::exception& e) {
+    r.ok = false;
+    r.missing.push_back(std::string("job_messages column check failed: ") + e.what());
+  }
+  if (r.schema_version < 12) {
+    r.ok = false;
+    r.missing.push_back("schema_version<12");
   }
   return r;
 }

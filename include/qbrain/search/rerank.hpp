@@ -11,12 +11,17 @@ struct RerankerOpts {
   int top_n_in = 30;
   int top_n_out = 0;  // 0 = no truncate
   bool use_llm = false;
-  int timeout_ms = 5000;
+  // Rerank requests may use a shorter deadline but are always capped at 3000 ms.
+  int timeout_ms = 3000;
   // Test seam: when set, replaces LLM call. Production must leave null.
   // May throw or return empty/partial — apply_reranker must fail-open.
   std::function<std::vector<SearchHit>(const std::string& query,
                                        const std::vector<SearchHit>& head)>
       llm_fn_for_test;
+  // Raw-response seam for exercising the production JSON index parser.
+  std::function<std::string(const std::string& query,
+                            const std::vector<SearchHit>& head)>
+      llm_response_for_test;
 };
 
 // Fail-open: never throws; on failure returns results with same membership size

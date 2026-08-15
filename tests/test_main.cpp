@@ -35,13 +35,29 @@ void test_storage();
 void test_mcp();
 void test_rerank();
 void test_minions();
+void test_migration_v6();
+void test_n12_dream();
 void test_live_sync();
+void test_n13();
 void test_codeintel();
 void test_analytics();
 void test_n19();
+void test_n20();
+void test_n22();
+void test_n23();
 void test_n20_23();
 void test_n24_25();
 void test_n26_27();
+void test_wave4();
+void test_wave5();
+void test_doctor();
+void test_n14();
+void test_n15();
+void test_n16();
+void test_n17();
+void test_n18();
+void test_n30_c_routing_storage();
+void test_n30_b_auth_redaction();
 
 int main() {
   int failed = 0;
@@ -57,20 +73,36 @@ int main() {
       {"mcp", test_mcp},
       {"rerank", test_rerank},
       {"minions", test_minions},
+      {"migration_v6", test_migration_v6},
+      {"n12_dream", test_n12_dream},
       {"live_sync", test_live_sync},
+      {"n13", test_n13},
       {"codeintel", test_codeintel},
       {"analytics", test_analytics},
       {"n19", test_n19},
+      {"n20", test_n20},
+      {"n22", test_n22},
+      {"n23", test_n23},
       {"n20_23", test_n20_23},
       {"n24_25", test_n24_25},
       {"n26_27", test_n26_27},
+      {"wave4", test_wave4},
+      {"wave5", test_wave5},
+      {"doctor", test_doctor},
+      {"n14", test_n14},
+      {"n15", test_n15},
+      {"n16", test_n16},
+      {"n17", test_n17},
+      {"n18", test_n18},
+      {"n30_c_routing_storage", test_n30_c_routing_storage},
+      {"n30_b_auth_redaction", test_n30_b_auth_redaction},
   };
   for (auto& t : tests) {
     try {
       t.f();
-      std::cout << "[PASS] " << t.n << "\n";
+      std::cout << "[PASS] " << t.n << "\n" << std::flush;
     } catch (const std::exception& e) {
-      std::cout << "[FAIL] " << t.n << ": " << e.what() << "\n";
+      std::cout << "[FAIL] " << t.n << ": " << e.what() << "\n" << std::flush;
       ++failed;
     }
   }

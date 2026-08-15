@@ -11,8 +11,19 @@ enum class Scope { Read, Write, Admin };
 
 struct OpContext {
   Brain* brain = nullptr;
+  // remote = network-exposed transport (HTTP). The central scope check treats
+  // remote Write/Admin as never-writable without an authenticated capability.
   bool remote = false;
-  bool allow_write = false;  // MCP --allow-write
+  // via_mcp = any MCP transport (stdio or HTTP). The audited N1 decision keeps
+  // MCP write default-deny: stdio writes need the explicit --allow-write opt-in.
+  bool via_mcp = false;
+  bool allow_write = false;  // MCP --allow-write (local convenience switch only)
+  // N30: explicit capability that may authorize remote Write/Admin scope.
+  // --allow-write is not an identity and never authorizes remote mutation.
+  // A transport may point this at a capability string only after verifying the
+  // caller's local-machine identity; N36 replaces it with authenticated
+  // token scopes ("write" permits Write; "admin" permits Admin and Write).
+  const std::string* authenticated_capability = nullptr;
   std::unordered_map<std::string, std::string> args;
 };
 

@@ -21,8 +21,16 @@ int watch_inbox_once(Brain& brain) {
   util::ensure_dir(inbox_dir());
   util::ensure_dir(inbox_dir() / "processed");
   int n = 0;
+  auto root = fs::absolute(inbox_dir());
   for (auto& e : fs::directory_iterator(inbox_dir())) {
     if (!e.is_regular_file()) continue;
+    // N5: only files directly under inbox root (no subdir escape / processed re-entry)
+    if (e.path().parent_path() != inbox_dir() &&
+        fs::absolute(e.path().parent_path()) != root) {
+      continue;
+    }
+    auto name = e.path().filename().string();
+    if (name.find("..") != std::string::npos) continue;
     auto ext = e.path().extension().string();
     if (ext != ".md" && ext != ".txt" && ext != ".markdown") continue;
     try {

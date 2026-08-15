@@ -11,7 +11,9 @@ struct ImportResult {
   int errors = 0;
 };
 
-ImportResult import_path(Brain& brain, const std::string& path);
-Page capture_text(Brain& brain, const std::string& text, const std::string& type = "note");
+ImportResult import_path(Brain& brain, const std::string& path,
+                         const std::string& source_id = "default");
+Page capture_text(Brain& brain, const std::string& text, const std::string& type = "note",
+                  const std::string& source_id = "default");
 
 }  // namespace qbrain::ingest

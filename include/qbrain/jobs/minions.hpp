@@ -1,10 +1,20 @@
 #pragma once
 #include "qbrain/core/brain.hpp"
+#include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <vector>
 
 namespace qbrain::jobs {
+
+inline constexpr std::size_t kJobMessageSenderMaxBytes = 128;
+inline constexpr std::size_t kJobMessagePayloadMaxBytes = 65536;
+inline constexpr int kJobMessageDefaultLimit = 50;
+inline constexpr int kJobMessageMaxLimit = 200;
+
+enum class JobOperationStatus { success, invalid_argument, not_found, invalid_state };
+enum class JobInputField { none, job_id, sender, payload_json };
 
 struct Job {
   int64_t id = 0;
@@ -39,7 +49,18 @@ bool cancel_job(Brain& brain, int64_t job_id);
 // Requeue failed/cancelled/dead → waiting (N13).
 bool retry_job(Brain& brain, int64_t job_id);
 
-// N17: clone job to a new waiting row (keeps original). Returns new id or 0.
+struct ReplayJobResult {
+  JobOperationStatus status = JobOperationStatus::invalid_argument;
+  JobInputField field = JobInputField::none;
+  int64_t original_id = 0;
+  int64_t new_id = 0;
+};
+
+// N17: atomically clone a failed/completed job to a fresh waiting row.
+// SQLite failures propagate to the caller for structured error mapping.
+ReplayJobResult replay_job_checked(Brain& brain, int64_t job_id);
+
+// Compatibility wrapper. Returns the new id on success and 0 for domain rejections.
 int64_t replay_job(Brain& brain, int64_t job_id);
 
 struct JobMessage {
@@ -49,15 +70,39 @@ struct JobMessage {
   std::string payload_json;
   std::string created_at;
 };
+
+struct SendJobMessageResult {
+  JobOperationStatus status = JobOperationStatus::invalid_argument;
+  JobInputField field = JobInputField::none;
+  int64_t message_id = 0;
+};
+
+SendJobMessageResult send_job_message_checked(Brain& brain, int64_t job_id,
+                                               const std::string& sender,
+                                               const std::string& payload_json);
+
+// Compatibility wrapper. Empty sender/payload are invalid; handlers supply omitted defaults.
 int64_t send_job_message(Brain& brain, int64_t job_id, const std::string& sender,
                          const std::string& payload_json);
-std::vector<JobMessage> list_job_messages(Brain& brain, int64_t job_id, int limit = 50);
+
+struct ListJobMessagesResult {
+  JobOperationStatus status = JobOperationStatus::invalid_argument;
+  JobInputField field = JobInputField::none;
+  std::vector<JobMessage> messages;
+};
+
+ListJobMessagesResult list_job_messages_checked(Brain& brain, int64_t job_id,
+                                                int limit = kJobMessageDefaultLimit);
+
+// Compatibility wrapper. Missing/invalid ids collapse to an empty list.
+std::vector<JobMessage> list_job_messages(Brain& brain, int64_t job_id,
+                                          int limit = kJobMessageDefaultLimit);
 
 // N14: waiting|active → paused (clears lock); paused → waiting.
 bool pause_job(Brain& brain, int64_t job_id);
 bool resume_job(Brain& brain, int64_t job_id);
 
-// Requeue active jobs whose lock_until expired.
+// Requeue active jobs whose lock_until expired, clearing the fence and recording one retry.
 int reclaim_stalled(Brain& brain, const std::string& queue = "default");
 
 std::optional<Job> get_job(Brain& brain, int64_t job_id);

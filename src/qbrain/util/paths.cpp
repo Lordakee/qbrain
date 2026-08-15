@@ -1,4 +1,5 @@
 #include "qbrain/util/paths.hpp"
+#include <algorithm>
 #include <cstdlib>
 #include <stdexcept>
 
@@ -32,13 +33,15 @@ static std::string narrow(const std::wstring& w) {
 
 fs::path local_app_data() {
 #ifdef _WIN32
+  // Honor an explicit process override first so native tests and isolated CLI
+  // runs can use their own %LOCALAPPDATA% data root.
+  if (const char* e = std::getenv("LOCALAPPDATA"); e && *e) return utf8_to_path(e);
   wchar_t* buf = nullptr;
   if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, nullptr, &buf)) && buf) {
     std::wstring w(buf);
     CoTaskMemFree(buf);
     return fs::path(w);
   }
-  if (const char* e = std::getenv("LOCALAPPDATA")) return utf8_to_path(e);
   throw std::runtime_error("LOCALAPPDATA not found");
 #else
   if (const char* e = std::getenv("HOME")) return fs::path(e) / ".local" / "share";
@@ -48,7 +51,30 @@ fs::path local_app_data() {
 
 fs::path qbrain_root() { return local_app_data() / "Qbrain"; }
 fs::path brains_root() { return qbrain_root() / "brains"; }
-fs::path brain_dir(const std::string& brain_id) { return brains_root() / brain_id; }
+
+std::string normalize_brain_id(const std::string& brain_id) {
+  if (brain_id.empty() || brain_id.size() > 64) throw std::runtime_error("invalid brain id");
+  std::string out;
+  out.reserve(brain_id.size());
+  for (unsigned char c : brain_id) {
+    if (c >= 'A' && c <= 'Z')
+      out.push_back(static_cast<char>(c - 'A' + 'a'));
+    else if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_' || c == '-')
+      out.push_back(static_cast<char>(c));
+    else
+      throw std::runtime_error("invalid brain id");
+  }
+  static const char* kReserved[] = {"con",  "prn",  "aux",  "nul",  "com1", "com2", "com3",
+                                    "com4", "com5", "com6", "com7", "com8", "com9", "lpt1",
+                                    "lpt2", "lpt3", "lpt4", "lpt5", "lpt6", "lpt7", "lpt8",
+                                    "lpt9"};
+  for (auto* r : kReserved) {
+    if (out == r) throw std::runtime_error("invalid brain id");
+  }
+  return out;
+}
+
+fs::path brain_dir(const std::string& brain_id) { return brains_root() / normalize_brain_id(brain_id); }
 fs::path brain_db_path(const std::string& brain_id) {
   return brain_dir(brain_id) / "brain.db";
 }

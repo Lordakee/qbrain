@@ -2,12 +2,161 @@
 #include "qbrain/ai/embed.hpp"
 #include "qbrain/util/time_util.hpp"
 #include <nlohmann/json.hpp>
+#include <algorithm>
 #include <sstream>
+#include <string_view>
 
 using json = nlohmann::json;
 
 namespace qbrain::jobs {
 namespace {
+
+constexpr size_t kMaxErrorTextBytes = 500;
+
+bool is_utf8_continuation(unsigned char byte) { return (byte & 0xC0u) == 0x80u; }
+
+size_t utf8_sequence_length(std::string_view value, size_t offset) {
+  const auto byte_at = [&](size_t index) {
+    return static_cast<unsigned char>(value[index]);
+  };
+  const size_t remaining = value.size() - offset;
+  const unsigned char first = byte_at(offset);
+  if (first <= 0x7Fu) return 1;
+  if (first >= 0xC2u && first <= 0xDFu) {
+    return remaining >= 2 && is_utf8_continuation(byte_at(offset + 1)) ? 2 : 0;
+  }
+  if (first == 0xE0u) {
+    return remaining >= 3 && byte_at(offset + 1) >= 0xA0u && byte_at(offset + 1) <= 0xBFu &&
+                   is_utf8_continuation(byte_at(offset + 2))
+               ? 3
+               : 0;
+  }
+  if (first >= 0xE1u && first <= 0xECu) {
+    return remaining >= 3 && is_utf8_continuation(byte_at(offset + 1)) &&
+                   is_utf8_continuation(byte_at(offset + 2))
+               ? 3
+               : 0;
+  }
+  if (first == 0xEDu) {
+    return remaining >= 3 && byte_at(offset + 1) >= 0x80u && byte_at(offset + 1) <= 0x9Fu &&
+                   is_utf8_continuation(byte_at(offset + 2))
+               ? 3
+               : 0;
+  }
+  if (first >= 0xEEu && first <= 0xEFu) {
+    return remaining >= 3 && is_utf8_continuation(byte_at(offset + 1)) &&
+                   is_utf8_continuation(byte_at(offset + 2))
+               ? 3
+               : 0;
+  }
+  if (first == 0xF0u) {
+    return remaining >= 4 && byte_at(offset + 1) >= 0x90u && byte_at(offset + 1) <= 0xBFu &&
+                   is_utf8_continuation(byte_at(offset + 2)) &&
+                   is_utf8_continuation(byte_at(offset + 3))
+               ? 4
+               : 0;
+  }
+  if (first >= 0xF1u && first <= 0xF3u) {
+    return remaining >= 4 && is_utf8_continuation(byte_at(offset + 1)) &&
+                   is_utf8_continuation(byte_at(offset + 2)) &&
+                   is_utf8_continuation(byte_at(offset + 3))
+               ? 4
+               : 0;
+  }
+  if (first == 0xF4u) {
+    return remaining >= 4 && byte_at(offset + 1) >= 0x80u && byte_at(offset + 1) <= 0x8Fu &&
+                   is_utf8_continuation(byte_at(offset + 2)) &&
+                   is_utf8_continuation(byte_at(offset + 3))
+               ? 4
+               : 0;
+  }
+  return 0;
+}
+
+bool is_valid_utf8(std::string_view value) {
+  size_t offset = 0;
+  while (offset < value.size()) {
+    const size_t length = utf8_sequence_length(value, offset);
+    if (length == 0) return false;
+    offset += length;
+  }
+  return true;
+}
+
+bool is_valid_message_sender(std::string_view sender) {
+  if (sender.empty() || sender.size() > kJobMessageSenderMaxBytes || !is_valid_utf8(sender)) {
+    return false;
+  }
+  for (char value : sender) {
+    const auto byte = static_cast<unsigned char>(value);
+    if (byte <= 0x1Fu || byte == 0x7Fu) return false;
+  }
+  return true;
+}
+
+std::optional<std::string> canonical_message_payload(std::string_view payload_json) {
+  if (payload_json.empty() || payload_json.size() > kJobMessagePayloadMaxBytes ||
+      !is_valid_utf8(payload_json)) {
+    return std::nullopt;
+  }
+  try {
+    auto parsed = json::parse(payload_json.begin(), payload_json.end());
+    auto canonical = parsed.dump();
+    if (canonical.size() > kJobMessagePayloadMaxBytes) return std::nullopt;
+    return canonical;
+  } catch (const json::exception&) {
+    return std::nullopt;
+  }
+}
+
+std::string bounded_utf8(std::string_view value) {
+  std::string out;
+  out.reserve(std::min(value.size(), kMaxErrorTextBytes));
+  size_t offset = 0;
+  while (offset < value.size()) {
+    const size_t length = utf8_sequence_length(value, offset);
+    if (length == 0) {
+      constexpr std::string_view replacement = "\xEF\xBF\xBD";
+      if (out.size() + replacement.size() > kMaxErrorTextBytes) break;
+      out.append(replacement);
+      ++offset;
+      continue;
+    }
+    if (out.size() + length > kMaxErrorTextBytes) break;
+    out.append(value, offset, length);
+    offset += length;
+  }
+  return out;
+}
+
+bool has_bare_secret_key(std::string_view lower) {
+  size_t offset = 0;
+  while ((offset = lower.find("sk-", offset)) != std::string_view::npos) {
+    const bool at_boundary = offset == 0 ||
+                             !((lower[offset - 1] >= 'a' && lower[offset - 1] <= 'z') ||
+                               (lower[offset - 1] >= '0' && lower[offset - 1] <= '9') ||
+                               lower[offset - 1] == '_' || lower[offset - 1] == '-');
+    if (at_boundary && offset + 3 < lower.size() && lower[offset + 3] != ' ') return true;
+    offset += 3;
+  }
+  return false;
+}
+
+std::string safe_progress_error(std::string error) {
+  auto lower = error;
+  for (char& c : lower) {
+    const auto u = static_cast<unsigned char>(c);
+    if (u >= 'A' && u <= 'Z') c = static_cast<char>(u - 'A' + 'a');
+  }
+  static const char* markers[] = {"api_key", "api-key", "api key", "apikey", "authorization",
+                                  "bearer ", "password", "secret", "token", "key=", "https://",
+                                  "http://", "provider", "model"};
+  for (auto* marker : markers) {
+    if (lower.find(marker) != std::string::npos) return "[redacted]";
+  }
+  if (has_bare_secret_key(lower)) return "[redacted]";
+  return bounded_utf8(error);
+}
 
 Job row_to_job(storage::Database::Statement& st) {
   Job j;
@@ -151,10 +300,11 @@ bool complete_job(Brain& brain, int64_t job_id, const std::string& lock_token,
 bool fail_job(Brain& brain, int64_t job_id, const std::string& lock_token,
               const std::string& error_text) {
   if (lock_token.empty()) return false;
+  const auto bounded_error = bounded_utf8(error_text);
   auto st = brain.db().prepare(
       "UPDATE jobs SET status='failed', error_text=?, result_json=?, lock_token=NULL, "
       "lock_until=NULL, updated_at=? WHERE id=? AND status='active' AND lock_token=?");
-  st.bind_text(1, error_text.substr(0, 500));
+  st.bind_text(1, bounded_error);
   st.bind_text(2, json({{"error", error_text}}).dump());
   st.bind_text(3, util::utc_now());
   st.bind_int(4, job_id);
@@ -183,32 +333,162 @@ bool retry_job(Brain& brain, int64_t job_id) {
   return brain.db().changes() > 0;
 }
 
+ReplayJobResult replay_job_checked(Brain& brain, int64_t job_id) {
+  ReplayJobResult result;
+  result.original_id = job_id;
+  if (job_id <= 0) {
+    result.field = JobInputField::job_id;
+    return result;
+  }
+
+  auto& database = brain.db();
+  // Avoid creating sqlite_sequence=0 for a missing first-ever job while the
+  // guarded INSERT still evaluates id and status inside the same transaction.
+  database.exec("SAVEPOINT qbrain_replay_job;");
+  bool savepoint_active = true;
+  try {
+    auto source = database.prepare("SELECT status FROM jobs WHERE id=?");
+    source.bind_int(1, job_id);
+    if (!source.step()) {
+      database.exec("RELEASE qbrain_replay_job;");
+      savepoint_active = false;
+      result.status = JobOperationStatus::not_found;
+      return result;
+    }
+    const auto source_status = source.column_text(0);
+    if (source_status != "failed" && source_status != "completed") {
+      database.exec("RELEASE qbrain_replay_job;");
+      savepoint_active = false;
+      result.status = JobOperationStatus::invalid_state;
+      return result;
+    }
+
+    auto insert = database.prepare(
+        "INSERT INTO jobs(queue, type, payload_json, priority) "
+        "SELECT queue, type, payload_json, priority FROM jobs "
+        "WHERE id=? AND status IN ('failed','completed')");
+    insert.bind_int(1, job_id);
+    insert.step_done();
+    if (database.changes() == 0) {
+      database.exec("ROLLBACK TO qbrain_replay_job;RELEASE qbrain_replay_job;");
+      savepoint_active = false;
+      result.status = JobOperationStatus::invalid_state;
+      return result;
+    }
+
+    result.new_id = database.last_insert_rowid();
+    database.exec("RELEASE qbrain_replay_job;");
+    savepoint_active = false;
+    result.status = JobOperationStatus::success;
+    return result;
+  } catch (...) {
+    if (savepoint_active) {
+      try {
+        database.exec("ROLLBACK TO qbrain_replay_job;RELEASE qbrain_replay_job;");
+      } catch (...) {
+      }
+    }
+    throw;
+  }
+}
+
 int64_t replay_job(Brain& brain, int64_t job_id) {
-  auto job = get_job(brain, job_id);
-  if (!job) return 0;
-  // Clone to new waiting job (original retained for audit).
-  return submit_job(brain, job->type, job->payload_json, job->queue, job->priority);
+  auto result = replay_job_checked(brain, job_id);
+  return result.status == JobOperationStatus::success ? result.new_id : 0;
+}
+
+SendJobMessageResult send_job_message_checked(Brain& brain, int64_t job_id,
+                                               const std::string& sender,
+                                               const std::string& payload_json) {
+  SendJobMessageResult result;
+  if (job_id <= 0) {
+    result.field = JobInputField::job_id;
+    return result;
+  }
+  if (!is_valid_message_sender(sender)) {
+    result.field = JobInputField::sender;
+    return result;
+  }
+  auto canonical_payload = canonical_message_payload(payload_json);
+  if (!canonical_payload) {
+    result.field = JobInputField::payload_json;
+    return result;
+  }
+
+  auto& database = brain.db();
+  // A zero-row INSERT on an AUTOINCREMENT table creates sqlite_sequence=0.
+  // Keep the parent preflight and guarded insert in one savepoint instead.
+  database.exec("SAVEPOINT qbrain_send_job_message;");
+  bool savepoint_active = true;
+  try {
+    auto parent = database.prepare("SELECT 1 FROM jobs WHERE id=?");
+    parent.bind_int(1, job_id);
+    if (!parent.step()) {
+      database.exec("RELEASE qbrain_send_job_message;");
+      savepoint_active = false;
+      result.status = JobOperationStatus::not_found;
+      return result;
+    }
+
+    auto insert = database.prepare(
+        "INSERT INTO job_messages(job_id, sender, payload_json) "
+        "SELECT ?, ?, ? WHERE EXISTS(SELECT 1 FROM jobs WHERE id=?)");
+    insert.bind_int(1, job_id);
+    insert.bind_text(2, sender);
+    insert.bind_text(3, *canonical_payload);
+    insert.bind_int(4, job_id);
+    insert.step_done();
+    if (database.changes() == 0) {
+      database.exec("ROLLBACK TO qbrain_send_job_message;"
+                    "RELEASE qbrain_send_job_message;");
+      savepoint_active = false;
+      result.status = JobOperationStatus::not_found;
+      return result;
+    }
+
+    result.message_id = database.last_insert_rowid();
+    database.exec("RELEASE qbrain_send_job_message;");
+    savepoint_active = false;
+    result.status = JobOperationStatus::success;
+    return result;
+  } catch (...) {
+    if (savepoint_active) {
+      try {
+        database.exec("ROLLBACK TO qbrain_send_job_message;"
+                      "RELEASE qbrain_send_job_message;");
+      } catch (...) {
+      }
+    }
+    throw;
+  }
 }
 
 int64_t send_job_message(Brain& brain, int64_t job_id, const std::string& sender,
                          const std::string& payload_json) {
-  if (!get_job(brain, job_id)) return 0;
-  auto st = brain.db().prepare(
-      "INSERT INTO job_messages(job_id, sender, payload_json) VALUES(?,?,?)");
-  st.bind_int(1, job_id);
-  st.bind_text(2, sender.empty() ? "system" : sender);
-  st.bind_text(3, payload_json.empty() ? "{}" : payload_json);
-  st.step_done();
-  return brain.db().last_insert_rowid();
+  auto result = send_job_message_checked(brain, job_id, sender, payload_json);
+  return result.status == JobOperationStatus::success ? result.message_id : 0;
 }
 
-std::vector<JobMessage> list_job_messages(Brain& brain, int64_t job_id, int limit) {
-  std::vector<JobMessage> out;
+ListJobMessagesResult list_job_messages_checked(Brain& brain, int64_t job_id, int limit) {
+  ListJobMessagesResult result;
+  if (job_id <= 0) {
+    result.field = JobInputField::job_id;
+    return result;
+  }
+
+  auto parent = brain.db().prepare("SELECT 1 FROM jobs WHERE id=?");
+  parent.bind_int(1, job_id);
+  if (!parent.step()) {
+    result.status = JobOperationStatus::not_found;
+    return result;
+  }
+
+  const int effective_limit = std::clamp(limit, 1, kJobMessageMaxLimit);
   auto st = brain.db().prepare(
       "SELECT id, job_id, sender, payload_json, created_at FROM job_messages "
       "WHERE job_id=? ORDER BY id DESC LIMIT ?");
   st.bind_int(1, job_id);
-  st.bind_int(2, limit);
+  st.bind_int(2, effective_limit);
   while (st.step()) {
     JobMessage m;
     m.id = st.column_int(0);
@@ -216,12 +496,20 @@ std::vector<JobMessage> list_job_messages(Brain& brain, int64_t job_id, int limi
     m.sender = st.column_text(2);
     m.payload_json = st.column_text(3);
     m.created_at = st.column_text(4);
-    out.push_back(std::move(m));
+    result.messages.push_back(std::move(m));
   }
-  return out;
+  result.status = JobOperationStatus::success;
+  return result;
+}
+
+std::vector<JobMessage> list_job_messages(Brain& brain, int64_t job_id, int limit) {
+  auto result = list_job_messages_checked(brain, job_id, limit);
+  if (result.status != JobOperationStatus::success) return {};
+  return std::move(result.messages);
 }
 
 bool pause_job(Brain& brain, int64_t job_id) {
+  if (job_id <= 0) return false;
   auto st = brain.db().prepare(
       "UPDATE jobs SET status='paused', lock_token=NULL, lock_until=NULL, updated_at=? "
       "WHERE id=? AND status IN ('waiting','active')");
@@ -232,6 +520,7 @@ bool pause_job(Brain& brain, int64_t job_id) {
 }
 
 bool resume_job(Brain& brain, int64_t job_id) {
+  if (job_id <= 0) return false;
   auto st = brain.db().prepare(
       "UPDATE jobs SET status='waiting', lock_token=NULL, lock_until=NULL, updated_at=? "
       "WHERE id=? AND status='paused'");
@@ -243,7 +532,8 @@ bool resume_job(Brain& brain, int64_t job_id) {
 
 int reclaim_stalled(Brain& brain, const std::string& queue) {
   auto st = brain.db().prepare(
-      "UPDATE jobs SET status='waiting', lock_token=NULL, lock_until=NULL, updated_at=? "
+      "UPDATE jobs SET status='waiting', lock_token=NULL, lock_until=NULL, "
+      "attempts=attempts+1, updated_at=? "
       "WHERE queue=? AND status='active' AND lock_until IS NOT NULL AND lock_until < datetime('now')");
   st.bind_text(1, util::utc_now());
   st.bind_text(2, queue);
@@ -273,15 +563,24 @@ std::vector<Job> list_jobs(Brain& brain, const std::string& status, int limit) {
 }
 
 std::optional<JobProgress> get_job_progress(Brain& brain, int64_t job_id) {
-  auto j = get_job(brain, job_id);
-  if (!j) return std::nullopt;
+  if (job_id <= 0) return std::nullopt;
+
+  // Keep this read surface limited to the fields permitted by the N14
+  // progress contract. In particular, never load payload/result/lock_token
+  // merely to construct a progress response.
+  auto st = brain.db().prepare(
+      "SELECT id, type, status, attempts, COALESCE(lock_until,''), "
+      "COALESCE(error_text,'') FROM jobs WHERE id=?");
+  st.bind_int(1, job_id);
+  if (!st.step()) return std::nullopt;
+
   JobProgress p;
-  p.id = j->id;
-  p.type = j->type;
-  p.status = j->status;
-  p.attempts = j->attempts;
-  p.lock_until = j->lock_until;
-  p.error_text = j->error_text;
+  p.id = st.column_int(0);
+  p.type = st.column_text(1);
+  p.status = st.column_text(2);
+  p.attempts = static_cast<int>(st.column_int(3));
+  p.lock_until = st.column_text(4);
+  p.error_text = safe_progress_error(st.column_text(5));
   return p;
 }
 

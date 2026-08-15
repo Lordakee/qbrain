@@ -63,6 +63,7 @@ void test_n26_27() {
   ctx.args = {{"mutations", R"([{"op":"add_type","type":"n28_type"}])"}};
   auto mut = qbrain::ops::global_registry().call("schema_apply_mutations", ctx);
   QB_CHECK(mut.ok);
+  ctx.args.clear();
   auto pack = qbrain::ops::global_registry().call("ontology_get", ctx);
   QB_CHECK(pack.json.find("n28_type") != std::string::npos);
 

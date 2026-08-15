@@ -13,6 +13,7 @@ struct Neighbor {
   int depth = 1;
 };
 
-std::vector<Neighbor> neighbors(Brain& brain, const std::string& slug, int depth = 1);
+std::vector<Neighbor> neighbors(Brain& brain, const std::string& slug, int depth = 1,
+                                const std::string& source_id = "default");
 
 }  // namespace qbrain::graph

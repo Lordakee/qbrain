@@ -15,6 +15,8 @@ struct HybridOpts {
   bool rerank = false;    // explicit override; tokenmax enables by default
   bool rerank_llm = false;
   const Config* config = nullptr;  // needed for LLM rerank; optional
+  int* candidate_budget_out = nullptr;  // test hook
+  int* pre_autocut_count_out = nullptr; // test hook
 };
 
 std::vector<SearchHit> fts_search(Brain& brain, const std::string& query, int limit,

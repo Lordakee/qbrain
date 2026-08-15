@@ -2,6 +2,7 @@
 #include "qbrain/ai/http_client.hpp"
 #include "qbrain/core/brain.hpp"
 #include <nlohmann/json.hpp>
+#include <cstdlib>
 
 using json = nlohmann::json;
 
@@ -13,6 +14,18 @@ EmbedResult embed_texts(const Config& cfg, const std::vector<std::string>& texts
   if (texts.empty()) {
     r.ok = true;
     return r;
+  }
+  if (const char* mock = std::getenv("QBRAIN_EMBED_MOCK")) {
+    if (std::string(mock) == "1" || std::string(mock) == "true") {
+      r.ok = true;
+      r.model = "mock-embedding";
+      r.vectors.reserve(texts.size());
+      for (size_t i = 0; i < texts.size(); ++i) {
+        float base = static_cast<float>((texts[i].size() % 17) + 1);
+        r.vectors.push_back({base, 1.0f, static_cast<float>(i + 1)});
+      }
+      return r;
+    }
   }
   auto key = resolve_api_key(cfg, false);
   if (key.empty()) {

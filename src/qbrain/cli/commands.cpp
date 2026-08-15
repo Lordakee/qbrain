@@ -16,6 +16,9 @@
 #include <sstream>
 #include <functional>
 #include <algorithm>
+#include <charconv>
+#include <cstdlib>
+#include <nlohmann/json.hpp>
 
 #ifdef _WIN32
 #ifndef NOMINMAX
@@ -30,18 +33,55 @@
 namespace qbrain::cli {
 namespace {
 
-std::string brain_id_from_args(const std::vector<std::string>& args) {
+}  // namespace
+
+std::string resolve_brain_id(const std::vector<std::string>& args) {
   for (size_t i = 0; i + 1 < args.size(); ++i) {
-    if (args[i] == "--brain") return args[i + 1];
+    if (args[i] == "--brain") return util::normalize_brain_id(args[i + 1]);
+  }
+  if (const char* e = std::getenv("QBRAIN_BRAIN")) {
+    if (*e) return util::normalize_brain_id(e);
   }
   auto c = load_file_config();
-  return c.brain_id.empty() ? "default" : c.brain_id;
+  return c.brain_id.empty() ? "default" : util::normalize_brain_id(c.brain_id);
 }
+
+namespace {
+
+std::string brain_id_from_args(const std::vector<std::string>& args) { return resolve_brain_id(args); }
+
+}  // namespace
+
+// N30 D6: strict numeric parsing for TCP port options. Accepts decimal digits
+// only (no sign, whitespace, or trailing characters) and enforces the valid
+// port range 1-65535. Defined with external linkage so the unit suite can
+// exercise it without a public CLI header.
+bool parse_port_value(const std::string& text, int& out) {
+  if (text.empty()) return false;
+  int value = 0;
+  const char* first = text.data();
+  const char* last = text.data() + text.size();
+  const auto parsed = std::from_chars(first, last, value);
+  if (parsed.ec != std::errc{} || parsed.ptr != last) return false;
+  if (value < 1 || value > 65535) return false;
+  out = value;
+  return true;
+}
+
+namespace {
 
 bool flag(const std::vector<std::string>& args, const std::string& name) {
   for (auto& a : args)
     if (a == name) return true;
   return false;
+}
+
+nlohmann::json operation_json(const ops::OpResult& result) {
+  auto parsed = nlohmann::json::parse(result.json, nullptr, false);
+  if (!parsed.is_discarded()) return parsed;
+  return {{"error",
+           {{"code", "invalid_operation_result"},
+            {"message", "operation returned invalid JSON"}}}};
 }
 
 std::string opt(const std::vector<std::string>& args, const std::string& name,
@@ -98,7 +138,7 @@ void print_help() {
       "  inbox [--watch]                     process %LOCALAPPDATA%\\Qbrain\\inbox\n"
       "  sync <notes-dir> [--watch] [--once]  live-sync notes (mtime state)\n"
       "  worker [--once]                     claim/complete minion jobs + inbox\n"
-      "  dream [--apply] [--phase p] [--json]  multi-phase cycle\n"
+      "  dream [--apply] [--phase p] [--retention-hours N] [--json]\n"
       "  version\n"
       "  help\n\n"
       "MCP:\n"
@@ -143,19 +183,20 @@ int cmd_doctor(const std::vector<std::string>& args) {
     ctx.allow_write = true;
     if (flag(args, "--remediate")) {
       auto r = ops::global_registry().call("doctor_remediate", ctx);
-      if (flag(args, "--json"))
-        std::cout << r.json << "\n";
-      else
-        std::cout << r.text;
+      auto h = ops::global_registry().call("run_doctor", ctx);
+      if (flag(args, "--json")) {
+        nlohmann::json envelope = {{"ok", r.ok && h.ok},
+                                   {"remediation", operation_json(r)},
+                                   {"health", operation_json(h)}};
+        std::cout << envelope.dump(2) << "\n";
+        return r.ok && h.ok ? 0 : 1;
+      }
+      std::cout << r.text;
       if (!r.ok) return 1;
-      auto h = ops::global_registry().call("get_health", ctx);
-      if (flag(args, "--json"))
-        std::cout << h.json << "\n";
-      else
-        std::cout << h.text;
+      std::cout << h.text;
       return h.ok ? 0 : 1;
     }
-    auto r = ops::global_registry().call("get_health", ctx);
+    auto r = ops::global_registry().call("run_doctor", ctx);
     if (flag(args, "--json"))
       std::cout << r.json << "\n";
     else
@@ -359,7 +400,19 @@ int cmd_serve(const std::vector<std::string>& args) {
     }
     int port = 7420;
     auto ps = opt(args, "--port");
-    if (!ps.empty()) port = std::stoi(ps);
+    if (ps.empty()) {
+      // also accept the single-token --port=N form
+      for (auto& a : args) {
+        if (a.rfind("--port=", 0) == 0) {
+          ps = a.substr(std::string("--port=").size());
+          break;
+        }
+      }
+    }
+    if (!ps.empty() && !parse_port_value(ps, port)) {
+      std::cerr << "invalid --port value (expected an integer in 1-65535)\n";
+      return 2;
+    }
     return mcp::run_http_server(b, opts, tok, port);
   }
   return mcp::run_stdio_server(b, opts);
@@ -435,6 +488,7 @@ int cmd_dream(const std::vector<std::string>& args) {
     cycle::DreamOpts opts;
     opts.dry_run = !flag(args, "--apply");
     opts.phase = opt(args, "--phase");
+    opts.retention_hours = opt(args, "--retention-hours");
     if (flag(args, "--json")) {
       auto report = cycle::run_dream(b, opts);
       std::cout << cycle::report_to_json(report) << "\n";

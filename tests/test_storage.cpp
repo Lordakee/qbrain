@@ -82,6 +82,54 @@ void test_storage() {
   auto since_hits = b.chronicle_since(day, 50);
   QB_CHECK(!since_hits.empty());
 
+  // N2: versioning on overwrite + list/revert
+  in.title = "Hello v2";
+  in.body = "World2 [[other]]";
+  b.put_page(in);
+  auto vers = b.list_versions("notes/hello");
+  QB_CHECK(!vers.empty());
+  auto old_body = vers[0].body;
+  QB_CHECK(old_body.find("World") != std::string::npos);
+  QB_CHECK(b.revert_version("notes/hello", vers[0].id));
+  auto got_rev = b.get_page("notes/hello");
+  QB_CHECK(got_rev.has_value());
+  QB_CHECK(got_rev->body == old_body);
+
+  // N2: soft-delete / restore / purge
+  QB_CHECK(b.soft_delete("notes/hello"));
+  QB_CHECK(!b.get_page("notes/hello").has_value());
+  auto vers_del = b.list_versions("notes/hello");
+  QB_CHECK(vers_del.size() >= vers.size());
+  QB_CHECK(b.restore_page("notes/hello"));
+  QB_CHECK(b.get_page("notes/hello").has_value());
+  QB_CHECK(b.purge_deleted(72) == 0);
+
+  // N2: backlinks
+  auto backs = b.get_links_to("other");
+  QB_CHECK(!backs.empty());
+  bool saw_from = false;
+  for (auto& bl : backs) {
+    if (bl.from_slug == "notes/hello") saw_from = true;
+  }
+  QB_CHECK(saw_from);
+
+  // N2.5: source_id validation
+  QB_CHECK(b.ensure_source("team_a"));
+  QB_CHECK(b.ensure_source("Team_A"));  // case-insensitive same id
+  QB_CHECK(!b.ensure_source(""));
+  QB_CHECK(!b.ensure_source("a/b"));
+  QB_CHECK(!b.ensure_source("CON"));
+  QB_CHECK(!b.ensure_source("com1"));
+  QB_CHECK(!b.ensure_source(std::string(65, 'x')));
+  auto sids = b.list_source_ids();
+  bool saw_default = false, saw_team = false;
+  for (auto& s : sids) {
+    if (s == "default") saw_default = true;
+    if (s == "team_a") saw_team = true;
+  }
+  QB_CHECK(saw_default);
+  QB_CHECK(saw_team);
+
   b.close();
   fs::remove_all(dir);
 }

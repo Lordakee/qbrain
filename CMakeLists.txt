@@ -33,7 +33,7 @@ function(qbrain_lib name)
   add_library(qbrain_${name} STATIC ${ARGN})
   target_include_directories(qbrain_${name}
     PUBLIC ${CMAKE_SOURCE_DIR}/include
-    PRIVATE ${NLOHMANN_DIR}
+    PUBLIC ${NLOHMANN_DIR}
   )
   target_link_libraries(qbrain_${name} PUBLIC sqlite3)
 endfunction()
@@ -57,6 +57,12 @@ qbrain_lib(core
   src/qbrain/core/brain.cpp
 )
 target_link_libraries(qbrain_core PUBLIC qbrain_storage qbrain_util)
+
+qbrain_lib(schema
+  src/qbrain/schema/packs.cpp
+  src/qbrain/schema/lint.cpp
+)
+target_link_libraries(qbrain_schema PUBLIC qbrain_core qbrain_util)
 
 qbrain_lib(graph
   src/qbrain/graph/extract.cpp
@@ -111,13 +117,18 @@ qbrain_lib(service
 )
 target_link_libraries(qbrain_service PUBLIC qbrain_core qbrain_ingest qbrain_util)
 
+qbrain_lib(files
+  src/qbrain/files/store.cpp
+)
+
 qbrain_lib(ops
   src/qbrain/ops/registry.cpp
   src/qbrain/ops/handlers.cpp
 )
 target_link_libraries(qbrain_ops PUBLIC
-  qbrain_core qbrain_search qbrain_graph qbrain_ingest qbrain_ai qbrain_jobs qbrain_cycle
-  qbrain_service qbrain_util
+  qbrain_core qbrain_schema qbrain_search qbrain_graph qbrain_codeintel qbrain_ingest
+  qbrain_ai qbrain_jobs qbrain_cycle
+  qbrain_service qbrain_files qbrain_util
 )
 
 qbrain_lib(mcp
@@ -153,11 +164,31 @@ add_executable(qbrain_tests
   tests/test_mcp.cpp
   tests/test_rerank.cpp
   tests/test_minions.cpp
+  tests/test_migration_v6.cpp
+  tests/test_n12_dream.cpp
+  tests/test_live_sync.cpp
+  tests/test_n13.cpp
   tests/test_codeintel.cpp
   tests/test_analytics.cpp
+  tests/test_n19.cpp
+  tests/test_n20.cpp
+  tests/test_n22.cpp
+  tests/test_n23.cpp
+  tests/test_n20_23.cpp
+  tests/test_n24_25.cpp
+  tests/test_n26_27.cpp
+  tests/test_wave4.cpp
+  tests/test_wave5.cpp
+  tests/test_doctor.cpp
+  tests/test_n14.cpp
+  tests/test_n15.cpp
+  tests/test_n16.cpp
+  tests/test_n17.cpp
+  tests/test_n18.cpp
+  tests/test_n30.cpp
 )
 target_link_libraries(qbrain_tests PRIVATE
-  qbrain_mcp qbrain_ops qbrain_search qbrain_jobs qbrain_cycle qbrain_graph qbrain_codeintel qbrain_ingest qbrain_ai
+  qbrain_cli qbrain_mcp qbrain_ops qbrain_schema qbrain_search qbrain_jobs qbrain_cycle qbrain_graph qbrain_codeintel qbrain_ingest qbrain_ai
   qbrain_storage qbrain_core qbrain_util
 )
 if(WIN32)

@@ -32,4 +32,17 @@ std::string utc_date() {
   return oss.str();
 }
 
+std::string utc_seven_day_boundary(
+    std::optional<std::chrono::system_clock::time_point> fixed_now) {
+  using namespace std::chrono;
+  const auto now = fixed_now ? *fixed_now : system_clock::now();
+  const year_month_day boundary{floor<days>(now) - days{6}};
+
+  std::ostringstream oss;
+  oss << std::setfill('0') << std::setw(4) << static_cast<int>(boundary.year()) << '-'
+      << std::setw(2) << static_cast<unsigned>(boundary.month()) << '-' << std::setw(2)
+      << static_cast<unsigned>(boundary.day()) << "T00:00:00Z";
+  return oss.str();
+}
+
 }  // namespace qbrain::util

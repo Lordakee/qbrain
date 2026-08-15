@@ -4,7 +4,8 @@
 
 namespace qbrain::graph {
 
-std::vector<Neighbor> neighbors(Brain& brain, const std::string& slug, int depth) {
+std::vector<Neighbor> neighbors(Brain& brain, const std::string& slug, int depth,
+                                const std::string& source_id) {
   std::vector<Neighbor> out;
   if (depth < 1) return out;
   std::unordered_set<std::string> visited;
@@ -15,7 +16,7 @@ std::vector<Neighbor> neighbors(Brain& brain, const std::string& slug, int depth
     auto [cur, d] = q.front();
     q.pop();
     if (d >= depth) continue;
-    for (const auto& l : brain.get_links_from(cur)) {
+    for (const auto& l : brain.get_links_from(cur, source_id)) {
       Neighbor n{l.to_slug, l.link_type, "out", d + 1};
       out.push_back(n);
       if (!visited.count(l.to_slug)) {
@@ -23,7 +24,7 @@ std::vector<Neighbor> neighbors(Brain& brain, const std::string& slug, int depth
         q.push({l.to_slug, d + 1});
       }
     }
-    for (const auto& l : brain.get_links_to(cur)) {
+    for (const auto& l : brain.get_links_to(cur, source_id)) {
       Neighbor n{l.from_slug, l.link_type, "in", d + 1};
       out.push_back(n);
       if (!visited.count(l.from_slug)) {

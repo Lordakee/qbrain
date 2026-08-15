@@ -7,16 +7,110 @@
 #include "qbrain/search/vector.hpp"
 #include <nlohmann/json.hpp>
 #include <algorithm>
+#include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <set>
 #include <stdexcept>
+#include <string_view>
 
 using json = nlohmann::json;
 
 namespace qbrain {
 
-Brain::Brain(std::string brain_id) : brain_id_(std::move(brain_id)) {}
+namespace {
+
+bool is_utf8_continuation_byte(unsigned char byte) { return (byte & 0xC0u) == 0x80u; }
+
+size_t utf8_sequence_length(std::string_view value, size_t offset) {
+  const auto byte_at = [&](size_t index) {
+    return static_cast<unsigned char>(value[index]);
+  };
+  const size_t remaining = value.size() - offset;
+  const unsigned char first = byte_at(offset);
+  if (first <= 0x7Fu) return 1;
+  if (first >= 0xC2u && first <= 0xDFu)
+    return remaining >= 2 && is_utf8_continuation_byte(byte_at(offset + 1)) ? 2 : 0;
+  if (first == 0xE0u)
+    return remaining >= 3 && byte_at(offset + 1) >= 0xA0u &&
+                   byte_at(offset + 1) <= 0xBFu &&
+                   is_utf8_continuation_byte(byte_at(offset + 2))
+               ? 3
+               : 0;
+  if ((first >= 0xE1u && first <= 0xECu) ||
+      (first >= 0xEEu && first <= 0xEFu))
+    return remaining >= 3 && is_utf8_continuation_byte(byte_at(offset + 1)) &&
+                   is_utf8_continuation_byte(byte_at(offset + 2))
+               ? 3
+               : 0;
+  if (first == 0xEDu)
+    return remaining >= 3 && byte_at(offset + 1) >= 0x80u &&
+                   byte_at(offset + 1) <= 0x9Fu &&
+                   is_utf8_continuation_byte(byte_at(offset + 2))
+               ? 3
+               : 0;
+  if (first == 0xF0u)
+    return remaining >= 4 && byte_at(offset + 1) >= 0x90u &&
+                   byte_at(offset + 1) <= 0xBFu &&
+                   is_utf8_continuation_byte(byte_at(offset + 2)) &&
+                   is_utf8_continuation_byte(byte_at(offset + 3))
+               ? 4
+               : 0;
+  if (first >= 0xF1u && first <= 0xF3u)
+    return remaining >= 4 && is_utf8_continuation_byte(byte_at(offset + 1)) &&
+                   is_utf8_continuation_byte(byte_at(offset + 2)) &&
+                   is_utf8_continuation_byte(byte_at(offset + 3))
+               ? 4
+               : 0;
+  if (first == 0xF4u)
+    return remaining >= 4 && byte_at(offset + 1) >= 0x80u &&
+                   byte_at(offset + 1) <= 0x8Fu &&
+                   is_utf8_continuation_byte(byte_at(offset + 2)) &&
+                   is_utf8_continuation_byte(byte_at(offset + 3))
+               ? 4
+               : 0;
+  return 0;
+}
+
+bool is_valid_utf8_text(std::string_view value) {
+  for (size_t offset = 0; offset < value.size();) {
+    const size_t length = utf8_sequence_length(value, offset);
+    if (length == 0) return false;
+    offset += length;
+  }
+  return true;
+}
+
+std::optional<std::string> canonical_source_id_impl(const std::string& source_id) {
+  if (source_id.empty() || source_id.size() > 64) return std::nullopt;
+  std::string canon;
+  canon.reserve(source_id.size());
+  for (unsigned char c : source_id) {
+    if (c >= 'A' && c <= 'Z') {
+      canon.push_back(static_cast<char>(c - 'A' + 'a'));
+    } else if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_' || c == '-') {
+      canon.push_back(static_cast<char>(c));
+    } else {
+      return std::nullopt;
+    }
+  }
+  static const char* kReserved[] = {"con",  "prn",  "aux",  "nul",  "com1", "com2", "com3",
+                                    "com4", "com5", "com6", "com7", "com8", "com9", "lpt1",
+                                    "lpt2", "lpt3", "lpt4", "lpt5", "lpt6", "lpt7", "lpt8",
+                                    "lpt9"};
+  for (auto* reserved : kReserved) {
+    if (canon == reserved) return std::nullopt;
+  }
+  return canon;
+}
+
+}  // namespace
+
+Brain::Brain(std::string brain_id) : brain_id_(util::normalize_brain_id(std::move(brain_id))) {}
+
+std::optional<std::string> Brain::canonical_source_id(const std::string& source_id) {
+  return canonical_source_id_impl(source_id);
+}
 
 void Brain::open() {
   util::ensure_dir(util::brain_dir(brain_id_));
@@ -25,6 +119,7 @@ void Brain::open() {
 }
 
 void Brain::open_at(const std::string& db_path) {
+  db_path_.clear();
   db_.open(db_path);
   // Always migrate from embedded canonical schema (no CWD-dependent fallback DDL).
   // Optional QBRAIN_SCHEMA path overrides only the v1 SQL text if the file exists.
@@ -35,9 +130,13 @@ void Brain::open_at(const std::string& db_path) {
   }
   storage::apply_migrations(db_, override_path);
   load_config();
+  db_path_ = db_path;
 }
 
-void Brain::close() { db_.close(); }
+void Brain::close() {
+  db_.close();
+  db_path_.clear();
+}
 bool Brain::is_open() const { return db_.is_open(); }
 
 Config load_file_config() {
@@ -143,6 +242,14 @@ std::optional<std::string> Brain::get_config_value(const std::string& key) {
   return std::nullopt;
 }
 
+bool Brain::source_exists(const std::string& source_id) {
+  auto canon = canonical_source_id(source_id);
+  if (!canon) return false;
+  auto st = db_.prepare("SELECT 1 FROM sources WHERE id=? LIMIT 1");
+  st.bind_text(1, *canon);
+  return st.step();
+}
+
 Page Brain::row_to_page(storage::Database::Statement& st) {
   Page p;
   p.id = st.column_int(0);
@@ -160,17 +267,20 @@ Page Brain::row_to_page(storage::Database::Statement& st) {
 }
 
 Page Brain::put_page(const PageInput& in) {
-  if (!ensure_source(in.source_id.empty() ? "default" : in.source_id)) {
+  auto sid = canonical_source_id(in.source_id.empty() ? "default" : in.source_id);
+  if (!sid || !ensure_source(*sid)) {
     throw std::runtime_error("invalid source_id");
   }
+  PageInput normalized = in;
+  normalized.source_id = *sid;
   // version snapshot on update
-  if (auto prev = get_page(in.slug, in.source_id.empty() ? "default" : in.source_id, true)) {
+  if (auto prev = get_page(normalized.slug, normalized.source_id, true)) {
     create_version(prev->id);
   }
-  auto hash = util::content_hash(in.title, in.body);
+  auto hash = util::content_hash(normalized.title, normalized.body);
   auto now = util::utc_now();
-  auto sk = in.source_kind.empty() ? "put_page" : in.source_kind;
-  auto via = in.ingested_via.empty() ? "cli" : in.ingested_via;
+  auto sk = normalized.source_kind.empty() ? "put_page" : normalized.source_kind;
+  auto via = normalized.ingested_via.empty() ? "cli" : normalized.ingested_via;
   auto st = db_.prepare(R"SQL(
 INSERT INTO pages(source_id, slug, type, title, body, frontmatter_json, content_hash, updated_at, deleted_at,
   source_kind, ingested_via, ingested_at)
@@ -186,31 +296,33 @@ ON CONFLICT(source_id, slug) DO UPDATE SET
   source_kind=COALESCE(excluded.source_kind, pages.source_kind),
   ingested_via=COALESCE(excluded.ingested_via, pages.ingested_via)
 )SQL");
-  st.bind_text(1, in.source_id);
-  st.bind_text(2, in.slug);
-  st.bind_text(3, in.type);
-  st.bind_text(4, in.title);
-  st.bind_text(5, in.body);
-  st.bind_text(6, in.frontmatter_json.empty() ? "{}" : in.frontmatter_json);
+  st.bind_text(1, normalized.source_id);
+  st.bind_text(2, normalized.slug);
+  st.bind_text(3, normalized.type);
+  st.bind_text(4, normalized.title);
+  st.bind_text(5, normalized.body);
+  st.bind_text(6, normalized.frontmatter_json.empty() ? "{}" : normalized.frontmatter_json);
   st.bind_text(7, hash);
   st.bind_text(8, now);
   st.bind_text(9, sk);
   st.bind_text(10, via);
   st.bind_text(11, now);
   st.step_done();
-  auto got = get_page(in.slug, in.source_id, true);
+  auto got = get_page(normalized.slug, normalized.source_id, true);
   if (!got) throw std::runtime_error("put_page failed to read back");
   return *got;
 }
 
 std::optional<Page> Brain::get_page(const std::string& slug, const std::string& source_id,
-                                    bool include_deleted) {
+                                     bool include_deleted) {
+  auto canon = canonical_source_id(source_id.empty() ? "default" : source_id);
+  if (!canon) return std::nullopt;
   std::string sql =
       "SELECT id, source_id, slug, type, title, body, frontmatter_json, content_hash, "
       "created_at, updated_at, deleted_at FROM pages WHERE source_id=? AND slug=?";
   if (!include_deleted) sql += " AND deleted_at IS NULL";
   auto st = db_.prepare(sql);
-  st.bind_text(1, source_id);
+  st.bind_text(1, *canon);
   st.bind_text(2, slug);
   if (!st.step()) return std::nullopt;
   return row_to_page(st);
@@ -231,10 +343,48 @@ std::vector<Page> Brain::list_pages(int limit, const std::string& type) {
   return out;
 }
 
+std::vector<Page> Brain::list_pages_for_source(const std::string& source_id, int limit) {
+  std::vector<Page> out;
+  if (limit <= 0) limit = 1;
+  if (limit > 2000) limit = 2000;
+  auto canon = canonical_source_id(source_id);
+  if (!canon) return out;
+  auto st = db_.prepare(
+      "SELECT id, source_id, slug, type, title, body, frontmatter_json, content_hash, "
+      "created_at, updated_at, deleted_at FROM pages "
+      "WHERE source_id=? AND deleted_at IS NULL ORDER BY updated_at DESC, id DESC LIMIT ?");
+  st.bind_text(1, *canon);
+  st.bind_int(2, limit);
+  while (st.step()) out.push_back(row_to_page(st));
+  return out;
+}
+
+std::vector<Page> Brain::list_pages_for_source(const std::string& source_id, int limit,
+                                               const std::string& type) {
+  std::vector<Page> out;
+  if (limit <= 0) limit = 1;
+  if (limit > 2000) limit = 2000;
+  auto canon = canonical_source_id(source_id);
+  if (!canon) return out;
+  auto st = db_.prepare(
+      "SELECT id, source_id, slug, type, title, body, frontmatter_json, content_hash, "
+      "created_at, updated_at, deleted_at FROM pages "
+      "WHERE source_id=? AND type=? AND deleted_at IS NULL "
+      "ORDER BY CASE WHEN updated_at >= created_at THEN updated_at ELSE created_at END DESC, "
+      "id DESC LIMIT ?");
+  st.bind_text(1, *canon);
+  st.bind_text(2, type);
+  st.bind_int(3, limit);
+  while (st.step()) out.push_back(row_to_page(st));
+  return out;
+}
+
 void Brain::enqueue_embed_page(int64_t page_id) {
   auto off = get_config_value("embed.auto");
   if (off && (*off == "0" || *off == "false")) return;
-  if (resolve_api_key(config_, false).empty()) return;
+  const bool embedding_available =
+      embedding_available_override_.value_or(!resolve_api_key(config_, false).empty());
+  if (!embedding_available) return;
   json payload = {{"page_id", page_id}};
   auto st = db_.prepare(
       "INSERT INTO jobs(queue, type, status, payload_json, priority) VALUES('default','embed','waiting',?,50)");
@@ -385,14 +535,11 @@ bool Brain::revert_version(const std::string& slug, int64_t version_id,
 }
 
 bool Brain::ensure_source(const std::string& source_id) {
-  if (source_id.empty()) return false;
-  // reject path traversal-ish
-  if (source_id.find("..") != std::string::npos || source_id.find('/') != std::string::npos ||
-      source_id.find('\\') != std::string::npos)
-    return false;
+  auto canon = canonical_source_id(source_id);
+  if (!canon) return false;
   auto st = db_.prepare("INSERT OR IGNORE INTO sources(id, name) VALUES(?,?)");
-  st.bind_text(1, source_id);
-  st.bind_text(2, source_id);
+  st.bind_text(1, *canon);
+  st.bind_text(2, *canon);
   st.step_done();
   return true;
 }
@@ -405,33 +552,56 @@ std::vector<std::string> Brain::list_source_ids() {
 }
 
 bool Brain::remove_source(const std::string& source_id, bool force) {
-  if (source_id.empty() || source_id == "default") return false;
-  auto stc = db_.prepare("SELECT COUNT(*) FROM pages WHERE source_id=? AND deleted_at IS NULL");
-  stc.bind_text(1, source_id);
+  auto canon = canonical_source_id(source_id);
+  if (!canon || *canon == "default") return false;
+  auto exists = db_.prepare("SELECT 1 FROM sources WHERE id=?");
+  exists.bind_text(1, *canon);
+  if (!exists.step()) return false;
+
+  auto stc = db_.prepare("SELECT COUNT(*) FROM pages WHERE source_id=?");
+  stc.bind_text(1, *canon);
   int64_t pages = 0;
   if (stc.step()) pages = stc.column_int(0);
   if (pages > 0 && !force) return false;
-  if (force && pages > 0) {
-    auto d = db_.prepare("UPDATE pages SET deleted_at=?, updated_at=? WHERE source_id=? AND deleted_at IS NULL");
-    auto now = util::utc_now();
-    d.bind_text(1, now);
-    d.bind_text(2, now);
-    d.bind_text(3, source_id);
-    d.step_done();
+
+  try {
+    db_.exec("BEGIN IMMEDIATE");
+    auto links = db_.prepare("DELETE FROM links WHERE source_id=?");
+    links.bind_text(1, *canon);
+    links.step_done();
+    if (force) {
+      auto facts = db_.prepare(
+          "DELETE FROM facts WHERE page_id IN (SELECT id FROM pages WHERE source_id=?)");
+      facts.bind_text(1, *canon);
+      facts.step_done();
+      auto pages_delete = db_.prepare("DELETE FROM pages WHERE source_id=?");
+      pages_delete.bind_text(1, *canon);
+      pages_delete.step_done();
+    }
+    auto source = db_.prepare("DELETE FROM sources WHERE id=?");
+    source.bind_text(1, *canon);
+    source.step_done();
+    const bool removed = db_.changes() > 0;
+    db_.exec("COMMIT");
+    return removed;
+  } catch (...) {
+    try {
+      db_.exec("ROLLBACK");
+    } catch (...) {
+    }
+    return false;
   }
-  auto st = db_.prepare("DELETE FROM sources WHERE id=?");
-  st.bind_text(1, source_id);
-  st.step_done();
-  return db_.changes() > 0;
 }
 
 Brain::SourceStatus Brain::source_status(const std::string& source_id) {
   SourceStatus s;
-  s.id = source_id;
+  auto canon = canonical_source_id(source_id);
+  if (!canon) return s;
+  s.id = *canon;
   {
     auto st = db_.prepare(
         "SELECT COUNT(*), COALESCE(MAX(updated_at),'') FROM pages WHERE source_id=? AND deleted_at IS NULL");
-    st.bind_text(1, source_id);
+    st.bind_text(1, *canon);
     if (st.step()) {
       s.pages = st.column_int(0);
       s.last_updated = st.column_text(1);
@@ -439,7 +609,7 @@ Brain::SourceStatus Brain::source_status(const std::string& source_id) {
   }
   {
     auto st = db_.prepare("SELECT COUNT(*) FROM links WHERE source_id=?");
-    st.bind_text(1, source_id);
+    st.bind_text(1, *canon);
     if (st.step()) s.links = st.column_int(0);
   }
   return s;
@@ -461,6 +631,7 @@ void Brain::add_fact(const std::string& entity_slug, const std::string& predicat
 
 std::vector<std::string> Brain::list_facts(const std::string& entity_slug, int limit) {
   std::vector<std::string> out;
+  limit = std::clamp(limit, 0, 100);
   auto st = db_.prepare(
       "SELECT predicate || ': ' || object_text FROM facts WHERE entity_slug=? AND active=1 "
       "ORDER BY id DESC LIMIT ?");
@@ -558,7 +729,11 @@ std::vector<std::string> Brain::list_brains() {
   auto root = util::brains_root();
   if (!fs::exists(root)) return out;
   for (auto& e : fs::directory_iterator(root)) {
-    if (e.is_directory()) out.push_back(e.path().filename().string());
+    if (!e.is_directory()) continue;
+    try {
+      out.push_back(util::normalize_brain_id(e.path().filename().string()));
+    } catch (...) {
+    }
   }
   std::sort(out.begin(), out.end());
   return out;
@@ -647,34 +822,44 @@ void Brain::update_chunk_embedding(int64_t chunk_id, const std::vector<float>& e
 }
 
 void Brain::add_link(const Link& link) {
+  auto canon = canonical_source_id(link.source_id.empty() ? "default" : link.source_id);
+  if (!canon) throw std::runtime_error("invalid source_id");
+  Link normalized = link;
+  normalized.source_id = *canon;
   auto st = db_.prepare(R"SQL(
 INSERT INTO links(source_id, from_slug, to_slug, link_type, context, link_source)
 VALUES(?,?,?,?,?,?)
 ON CONFLICT(source_id, from_slug, to_slug, link_type, link_source) DO UPDATE SET
   context=excluded.context
 )SQL");
-  st.bind_text(1, link.source_id);
-  st.bind_text(2, link.from_slug);
-  st.bind_text(3, link.to_slug);
-  st.bind_text(4, link.link_type);
-  st.bind_text(5, link.context);
-  st.bind_text(6, link.link_source);
+  st.bind_text(1, normalized.source_id);
+  st.bind_text(2, normalized.from_slug);
+  st.bind_text(3, normalized.to_slug);
+  st.bind_text(4, normalized.link_type);
+  st.bind_text(5, normalized.context);
+  st.bind_text(6, normalized.link_source);
   st.step_done();
 }
 
 void Brain::replace_extracted_links(const std::string& source_id, const std::string& from_slug,
                                     const std::vector<Link>& links) {
+  auto canon = canonical_source_id(source_id.empty() ? "default" : source_id);
+  if (!canon) throw std::runtime_error("invalid source_id");
   db_.exec("BEGIN;");
   try {
     {
       auto d = db_.prepare(
           "DELETE FROM links WHERE source_id=? AND from_slug=? AND link_source IN "
           "('markdown','wikilink')");
-      d.bind_text(1, source_id);
+      d.bind_text(1, *canon);
       d.bind_text(2, from_slug);
       d.step_done();
     }
-    for (const auto& l : links) add_link(l);
+    for (const auto& l : links) {
+      auto normalized = l;
+      normalized.source_id = *canon;
+      add_link(normalized);
+    }
     db_.exec("COMMIT;");
   } catch (...) {
     try {
@@ -687,10 +872,12 @@ void Brain::replace_extracted_links(const std::string& source_id, const std::str
 
 std::vector<Link> Brain::get_links_from(const std::string& slug, const std::string& source_id) {
   std::vector<Link> out;
+  auto canon = canonical_source_id(source_id.empty() ? "default" : source_id);
+  if (!canon) return out;
   auto st = db_.prepare(
       "SELECT id, source_id, from_slug, to_slug, link_type, context, link_source FROM links "
       "WHERE source_id=? AND from_slug=?");
-  st.bind_text(1, source_id);
+  st.bind_text(1, *canon);
   st.bind_text(2, slug);
   while (st.step()) {
     Link l;
@@ -708,10 +895,12 @@ std::vector<Link> Brain::get_links_from(const std::string& slug, const std::stri
 
 std::vector<Link> Brain::get_links_to(const std::string& slug, const std::string& source_id) {
   std::vector<Link> out;
+  auto canon = canonical_source_id(source_id.empty() ? "default" : source_id);
+  if (!canon) return out;
   auto st = db_.prepare(
       "SELECT id, source_id, from_slug, to_slug, link_type, context, link_source FROM links "
       "WHERE source_id=? AND to_slug=?");
-  st.bind_text(1, source_id);
+  st.bind_text(1, *canon);
   st.bind_text(2, slug);
   while (st.step()) {
     Link l;
@@ -727,13 +916,18 @@ std::vector<Link> Brain::get_links_to(const std::string& slug, const std::string
   return out;
 }
 
-std::vector<Brain::LinkSourceCount> Brain::list_link_sources() {
+std::vector<Brain::LinkSourceCount> Brain::list_link_sources(const std::string& source_id) {
   std::vector<LinkSourceCount> out;
+  auto canon = canonical_source_id(source_id.empty() ? "default" : source_id);
+  if (!canon) return out;
   auto st = db_.prepare(
       "SELECT COALESCE(link_source,''), COUNT(*) FROM links "
-      "GROUP BY link_source ORDER BY COUNT(*) DESC, link_source ASC");
+      "WHERE source_id=? GROUP BY link_source "
+      "ORDER BY COUNT(*) DESC, link_source COLLATE BINARY ASC");
+  st.bind_text(1, *canon);
   while (st.step()) {
     LinkSourceCount c;
+    c.source_id = *canon;
     c.link_source = st.column_text(0);
     c.count = st.column_int(1);
     out.push_back(std::move(c));
@@ -742,167 +936,426 @@ std::vector<Brain::LinkSourceCount> Brain::list_link_sources() {
 }
 
 int64_t Brain::log_ingest(const std::string& event_type, const std::string& path,
-                          const std::string& detail_json, int keep_last) {
-  auto st = db_.prepare(
-      "INSERT INTO ingest_log(event_type, path, detail_json, created_at) VALUES(?,?,?,?)");
-  st.bind_text(1, event_type.empty() ? "import" : event_type);
-  st.bind_text(2, path);
-  st.bind_text(3, detail_json.empty() ? "{}" : detail_json);
-  st.bind_text(4, util::utc_now());
-  st.step_done();
-  int64_t id = db_.last_insert_rowid();
-  if (keep_last > 0) {
-    auto pr = db_.prepare(
-        "DELETE FROM ingest_log WHERE id NOT IN ("
-        "SELECT id FROM (SELECT id FROM ingest_log ORDER BY id DESC LIMIT ?))");
-    pr.bind_int(1, keep_last);
-    pr.step_done();
+                          const std::string& detail_json, int keep_last,
+                          const std::string& source_id) {
+  const auto canon = canonical_source_id(source_id.empty() ? "default" : source_id);
+  if (!canon) throw std::invalid_argument("invalid source_id");
+  const std::string event = event_type.empty() ? "import" : event_type;
+  const std::string detail = detail_json.empty() ? "{}" : detail_json;
+  if (event.size() > 64) throw std::invalid_argument("event_type too long");
+  if (path.size() > 4096) throw std::invalid_argument("path too long");
+  if (detail.size() > 65536) throw std::invalid_argument("detail_json too long");
+  try {
+    (void)json::parse(detail);
+  } catch (...) {
+    throw std::invalid_argument("detail_json must be valid JSON");
   }
-  return id;
+  keep_last = std::clamp(keep_last, 1, 1000);
+
+  db_.exec("BEGIN IMMEDIATE;");
+  try {
+    auto source = db_.prepare("INSERT OR IGNORE INTO sources(id,name) VALUES(?,?)");
+    source.bind_text(1, *canon);
+    source.bind_text(2, *canon);
+    source.step_done();
+
+    auto st = db_.prepare(
+        "INSERT INTO ingest_log(source_id,event_type,path,detail_json,created_at) "
+        "VALUES(?,?,?,?,?)");
+    st.bind_text(1, *canon);
+    st.bind_text(2, event);
+    st.bind_text(3, path);
+    st.bind_text(4, detail);
+    st.bind_text(5, util::utc_now());
+    st.step_done();
+    int64_t id = db_.last_insert_rowid();
+
+    auto prune = db_.prepare(
+        "DELETE FROM ingest_log WHERE source_id=? AND id NOT IN ("
+        "SELECT id FROM ingest_log WHERE source_id=? "
+        "ORDER BY created_at DESC, id DESC LIMIT ?)");
+    prune.bind_text(1, *canon);
+    prune.bind_text(2, *canon);
+    prune.bind_int(3, keep_last);
+    prune.step_done();
+    db_.exec("COMMIT;");
+    return id;
+  } catch (...) {
+    try {
+      db_.exec("ROLLBACK;");
+    } catch (...) {
+    }
+    throw;
+  }
 }
 
-std::vector<Brain::IngestLogEntry> Brain::get_ingest_log(int limit) {
+std::vector<Brain::IngestLogEntry> Brain::get_ingest_log(int limit,
+                                                         const std::string& source_id) {
   std::vector<IngestLogEntry> out;
-  if (limit <= 0) limit = 50;
+  auto canon = canonical_source_id(source_id.empty() ? "default" : source_id);
+  if (!canon) return out;
+  limit = std::clamp(limit, 1, 50);
   auto st = db_.prepare(
-      "SELECT id, event_type, path, detail_json, created_at FROM ingest_log "
-      "ORDER BY id DESC LIMIT ?");
-  st.bind_int(1, limit);
+      "SELECT id, source_id, event_type, path, detail_json, created_at FROM ingest_log "
+      "WHERE source_id=? ORDER BY created_at DESC, id DESC LIMIT ?");
+  st.bind_text(1, *canon);
+  st.bind_int(2, limit);
   while (st.step()) {
     IngestLogEntry e;
     e.id = st.column_int(0);
-    e.event_type = st.column_text(1);
-    e.path = st.column_text(2);
-    e.detail_json = st.column_text(3);
-    e.created_at = st.column_text(4);
+    e.source_id = st.column_text(1);
+    e.event_type = st.column_text(2);
+    e.path = st.column_text(3);
+    e.detail_json = st.column_text(4);
+    e.created_at = st.column_text(5);
     out.push_back(std::move(e));
   }
   return out;
 }
 
-static std::string normalize_iso_ts(std::string s) {
-  if (s.empty()) return s;
-  for (auto& c : s) {
-    if (c == 'T' || c == 't') c = ' ';
-  }
-  if (!s.empty() && (s.back() == 'Z' || s.back() == 'z')) s.pop_back();
-  // date-only → start of day
-  if (s.size() == 10) s += " 00:00:00";
-  return s;
+namespace {
+
+bool all_digits_at(const std::string& s, size_t start, size_t count) {
+  if (start + count > s.size()) return false;
+  for (size_t i = start; i < start + count; ++i)
+    if (s[i] < '0' || s[i] > '9') return false;
+  return true;
 }
 
-std::vector<Brain::ChronicleHit> Brain::chronicle_day(const std::string& day_utc, int limit) {
+int digits_value(const std::string& s, size_t start, size_t count) {
+  int n = 0;
+  for (size_t i = start; i < start + count; ++i) n = n * 10 + (s[i] - '0');
+  return n;
+}
+
+bool leap_year(int year) {
+  return (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+}
+
+int days_in_month(int year, int month) {
+  static const int days[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+  if (month == 2) return leap_year(year) ? 29 : 28;
+  return (month >= 1 && month <= 12) ? days[month] : 0;
+}
+
+std::optional<std::string> normalize_utc_boundary(const std::string& input,
+                                                  bool allow_date_only) {
+  if (input.size() == 10) {
+    if (!allow_date_only || input[4] != '-' || input[7] != '-' ||
+        !all_digits_at(input, 0, 4) || !all_digits_at(input, 5, 2) ||
+        !all_digits_at(input, 8, 2))
+      return std::nullopt;
+    int year = digits_value(input, 0, 4);
+    int month = digits_value(input, 5, 2);
+    int day = digits_value(input, 8, 2);
+    if (year < 1 || days_in_month(year, month) == 0 || day < 1 || day > days_in_month(year, month))
+      return std::nullopt;
+    return input + " 00:00:00";
+  }
+  if (input.size() != 20 || input[4] != '-' || input[7] != '-' ||
+      (input[10] != 'T' && input[10] != ' ') || input[13] != ':' || input[16] != ':' ||
+      input[19] != 'Z' || !all_digits_at(input, 0, 4) || !all_digits_at(input, 5, 2) ||
+      !all_digits_at(input, 8, 2) || !all_digits_at(input, 11, 2) ||
+      !all_digits_at(input, 14, 2) || !all_digits_at(input, 17, 2))
+    return std::nullopt;
+  int year = digits_value(input, 0, 4);
+  int month = digits_value(input, 5, 2);
+  int day = digits_value(input, 8, 2);
+  int hour = digits_value(input, 11, 2);
+  int minute = digits_value(input, 14, 2);
+  int second = digits_value(input, 17, 2);
+  if (year < 1 || days_in_month(year, month) == 0 || day < 1 || day > days_in_month(year, month) ||
+      hour > 23 || minute > 59 || second > 59)
+    return std::nullopt;
+  std::string out = input;
+  out[10] = ' ';
+  out.pop_back();
+  return out;
+}
+
+std::string next_utc_day(std::string day_start) {
+  int year = digits_value(day_start, 0, 4);
+  int month = digits_value(day_start, 5, 2);
+  int day = digits_value(day_start, 8, 2);
+  ++day;
+  if (day > days_in_month(year, month)) {
+    day = 1;
+    ++month;
+    if (month > 12) {
+      month = 1;
+      ++year;
+    }
+  }
+  char buf[32]{};
+  std::snprintf(buf, sizeof(buf), "%04d-%02d-%02d 00:00:00", year, month, day);
+  return buf;
+}
+
+}  // namespace
+
+static void fill_chronicle_hit(Brain::ChronicleHit& h, storage::Database::Statement& st) {
+  h.id = st.column_int(0);
+  h.source_id = st.column_text(1);
+  h.slug = st.column_text(2);
+  h.title = st.column_text(3);
+  h.updated_at = st.column_text(4);
+  h.created_at = st.column_text(5);
+  h.effective_at = st.column_text(6);
+  h.type = st.column_text(7);
+}
+
+std::vector<Brain::ChronicleHit> Brain::chronicle_day(const std::string& day_utc, int limit,
+                                                      const std::string& source_id) {
   std::vector<ChronicleHit> out;
-  if (day_utc.empty()) return out;
-  if (limit <= 0) limit = 100;
-  std::string day = day_utc.substr(0, 10);
+  auto canon = canonical_source_id(source_id.empty() ? "default" : source_id);
+  if (day_utc.size() != 10) return out;
+  auto start = normalize_utc_boundary(day_utc, true);
+  if (!canon || !start) return out;
+  limit = std::clamp(limit, 1, 200);
+  auto end = next_utc_day(*start);
   auto st = db_.prepare(
-      "SELECT slug, title, updated_at, created_at, type FROM pages "
-      "WHERE deleted_at IS NULL AND ("
-      "  substr(updated_at,1,10)=? OR substr(created_at,1,10)=?) "
-      "ORDER BY updated_at DESC LIMIT ?");
-  st.bind_text(1, day);
-  st.bind_text(2, day);
-  st.bind_int(3, limit);
+      "SELECT id, source_id, slug, title, updated_at, created_at, "
+      "CASE WHEN updated_at >= created_at THEN updated_at ELSE created_at END AS effective_at, type "
+      "FROM pages WHERE source_id=? AND deleted_at IS NULL AND "
+      "((created_at>=? AND created_at<?) OR (updated_at>=? AND updated_at<?)) "
+      "ORDER BY effective_at DESC, id DESC LIMIT ?");
+  st.bind_text(1, *canon);
+  st.bind_text(2, *start);
+  st.bind_text(3, end);
+  st.bind_text(4, *start);
+  st.bind_text(5, end);
+  st.bind_int(6, limit);
   while (st.step()) {
     ChronicleHit h;
-    h.slug = st.column_text(0);
-    h.title = st.column_text(1);
-    h.updated_at = st.column_text(2);
-    h.created_at = st.column_text(3);
-    h.type = st.column_text(4);
+    fill_chronicle_hit(h, st);
     out.push_back(std::move(h));
   }
   return out;
 }
 
-std::vector<Brain::ChronicleHit> Brain::chronicle_since(const std::string& since_iso, int limit) {
+std::vector<Brain::ChronicleHit> Brain::chronicle_since(const std::string& since_iso, int limit,
+                                                        const std::string& source_id) {
   std::vector<ChronicleHit> out;
-  if (since_iso.empty()) return out;
-  if (limit <= 0) limit = 100;
-  auto since = normalize_iso_ts(since_iso);
+  auto canon = canonical_source_id(source_id.empty() ? "default" : source_id);
+  auto since = normalize_utc_boundary(since_iso, true);
+  if (!canon || !since) return out;
+  limit = std::clamp(limit, 1, 200);
   auto st = db_.prepare(
-      "SELECT slug, title, updated_at, created_at, type FROM pages "
-      "WHERE deleted_at IS NULL AND (updated_at >= ? OR created_at >= ?) "
-      "ORDER BY updated_at DESC LIMIT ?");
-  st.bind_text(1, since);
-  st.bind_text(2, since);
-  st.bind_int(3, limit);
+      "SELECT id, source_id, slug, title, updated_at, created_at, "
+      "CASE WHEN updated_at >= created_at THEN updated_at ELSE created_at END AS effective_at, type "
+      "FROM pages WHERE source_id=? AND deleted_at IS NULL AND (updated_at>=? OR created_at>=?) "
+      "ORDER BY effective_at DESC, id DESC LIMIT ?");
+  st.bind_text(1, *canon);
+  st.bind_text(2, *since);
+  st.bind_text(3, *since);
+  st.bind_int(4, limit);
   while (st.step()) {
     ChronicleHit h;
-    h.slug = st.column_text(0);
-    h.title = st.column_text(1);
-    h.updated_at = st.column_text(2);
-    h.created_at = st.column_text(3);
-    h.type = st.column_text(4);
+    fill_chronicle_hit(h, st);
     out.push_back(std::move(h));
   }
   return out;
+}
+
+std::vector<Brain::ChronicleOnThisDayHit> Brain::chronicle_on_this_day(
+    const std::string& anchor_date, int limit, const std::string& source_id,
+    bool allow_virtual_leap_day) {
+  const auto canon = canonical_source_id(source_id);
+  const auto anchor = normalize_utc_boundary(anchor_date, true);
+  if (!canon) throw std::invalid_argument("invalid source_id");
+  if (!source_exists(*canon))
+    throw std::invalid_argument("source_id is not registered");
+  const bool virtual_leap_day =
+      allow_virtual_leap_day && anchor_date.size() == 10 && anchor_date[4] == '-' &&
+      anchor_date[7] == '-' && all_digits_at(anchor_date, 0, 4) &&
+      anchor_date.substr(5, 5) == "02-29" && digits_value(anchor_date, 0, 4) >= 1;
+  if (anchor_date.size() != 10 || (!anchor && !virtual_leap_day))
+    throw std::invalid_argument("anchor_date must be a real UTC YYYY-MM-DD");
+
+  const std::string month_day = anchor_date.substr(5, 5);
+  const int anchor_year = digits_value(anchor_date, 0, 4);
+  limit = std::clamp(limit, 1, 200);
+
+  auto st = db_.prepare(
+      "WITH matches AS ("
+      " SELECT id, source_id, slug, title, type, created_at, updated_at,"
+      " CASE"
+      "  WHEN substr(updated_at,6,5)=? AND CAST(substr(updated_at,1,4) AS INTEGER)<?"
+      "   AND NOT (substr(created_at,6,5)=? AND CAST(substr(created_at,1,4) AS INTEGER)<?"
+      "            AND created_at>updated_at) THEN updated_at"
+      "  WHEN substr(created_at,6,5)=? AND CAST(substr(created_at,1,4) AS INTEGER)<?"
+      "   THEN created_at ELSE NULL END AS matched_at"
+      " FROM pages WHERE source_id=? AND deleted_at IS NULL"
+      ")"
+      " SELECT id, source_id, slug, title, type, created_at, updated_at, matched_at"
+      " FROM matches WHERE matched_at IS NOT NULL"
+      " ORDER BY matched_at DESC, id DESC LIMIT ?");
+  st.bind_text(1, month_day);
+  st.bind_int(2, anchor_year);
+  st.bind_text(3, month_day);
+  st.bind_int(4, anchor_year);
+  st.bind_text(5, month_day);
+  st.bind_int(6, anchor_year);
+  st.bind_text(7, *canon);
+  st.bind_int(8, limit);
+
+  std::vector<ChronicleOnThisDayHit> out;
+  while (st.step()) {
+    ChronicleOnThisDayHit hit;
+    hit.id = st.column_int(0);
+    hit.source_id = st.column_text(1);
+    hit.slug = st.column_text(2);
+    hit.title = st.column_text(3);
+    hit.type = st.column_text(4);
+    hit.created_at = st.column_text(5);
+    hit.updated_at = st.column_text(6);
+    hit.matched_at = st.column_text(7);
+    if (hit.matched_at.size() < 4 || !all_digits_at(hit.matched_at, 0, 4))
+      throw std::runtime_error("invalid Chronicle timestamp in storage");
+    hit.years_ago = anchor_year - digits_value(hit.matched_at, 0, 4);
+    out.push_back(std::move(hit));
+  }
+  return out;
+}
+
+std::optional<Brain::ChronicleLastSeen> Brain::chronicle_last_seen(
+    const std::string& entity, const std::string& source_id) {
+  const auto canon = canonical_source_id(source_id);
+  if (!canon) throw std::invalid_argument("invalid source_id");
+  if (!source_exists(*canon))
+    throw std::invalid_argument("source_id is not registered");
+  if (entity.empty()) throw std::invalid_argument("entity is required");
+  if (entity.size() > 4096 || !is_valid_utf8_text(entity))
+    throw std::invalid_argument("entity must be valid UTF-8 within 4096 bytes");
+
+  auto st = db_.prepare(
+      "SELECT CASE WHEN updated_at>=created_at THEN updated_at ELSE created_at END"
+      " FROM pages WHERE source_id=? AND slug=? AND deleted_at IS NULL LIMIT 1");
+  st.bind_text(1, *canon);
+  st.bind_text(2, entity);
+  if (!st.step()) return std::nullopt;
+  ChronicleLastSeen result;
+  result.source_id = *canon;
+  result.entity = entity;
+  result.last_seen = st.column_text(0);
+  return result;
+}
+
+Brain::ChronicleBackfillResult Brain::chronicle_backfill(
+    const std::string& source_id, const std::optional<std::string>& since,
+    int limit, bool dry_run) {
+  const auto canon = canonical_source_id(source_id);
+  if (!canon) throw std::invalid_argument("invalid source_id");
+  if (!source_exists(*canon))
+    throw std::invalid_argument("source_id is not registered");
+
+  std::optional<std::string> normalized_since;
+  if (since) {
+    normalized_since = normalize_utc_boundary(*since, true);
+    if (!normalized_since) throw std::invalid_argument("since must be a UTC date or timestamp");
+  }
+  limit = std::clamp(limit, 1, 1000);
+
+  ChronicleBackfillResult result;
+  result.source_id = *canon;
+  result.dry_run = dry_run;
+
+  const auto select_eligible = [&]() {
+    storage::Database::Statement st;
+    if (normalized_since) {
+      st = db_.prepare(
+          "SELECT p.id, EXISTS(SELECT 1 FROM tags t WHERE t.page_id=p.id AND t.tag='chronicle')"
+          " FROM pages p WHERE p.source_id=? AND p.deleted_at IS NULL"
+          " AND p.type IN ('meeting','conversation','calendar-event')"
+          " AND (CASE WHEN p.updated_at>=p.created_at THEN p.updated_at ELSE p.created_at END)>=?"
+          " ORDER BY CASE WHEN p.updated_at>=p.created_at THEN p.updated_at ELSE p.created_at END DESC,"
+          " p.id DESC LIMIT ?");
+      st.bind_text(1, *canon);
+      st.bind_text(2, *normalized_since);
+      st.bind_int(3, limit);
+    } else {
+      st = db_.prepare(
+          "SELECT p.id, EXISTS(SELECT 1 FROM tags t WHERE t.page_id=p.id AND t.tag='chronicle')"
+          " FROM pages p WHERE p.source_id=? AND p.deleted_at IS NULL"
+          " AND p.type IN ('meeting','conversation','calendar-event')"
+          " ORDER BY CASE WHEN p.updated_at>=p.created_at THEN p.updated_at ELSE p.created_at END DESC,"
+          " p.id DESC LIMIT ?");
+      st.bind_text(1, *canon);
+      st.bind_int(2, limit);
+    }
+    std::vector<std::pair<int64_t, bool>> rows;
+    while (st.step()) rows.emplace_back(st.column_int(0), st.column_int(1) != 0);
+    return rows;
+  };
+
+  const auto apply_rows = [&](const std::vector<std::pair<int64_t, bool>>& selected) {
+    for (const auto& [page_id, already_tagged] : selected) {
+      ++result.scanned;
+      ++result.eligible;
+      if (already_tagged) {
+        ++result.already_tagged;
+        continue;
+      }
+      if (!dry_run) {
+        auto insert = db_.prepare("INSERT INTO tags(page_id,tag) VALUES(?,'chronicle')");
+        insert.bind_int(1, page_id);
+        insert.step_done();
+        if (db_.changes() != 1)
+          throw std::runtime_error("chronicle tag insert produced no change");
+        ++result.tagged;
+      }
+    }
+  };
+
+  if (dry_run) {
+    apply_rows(select_eligible());
+    return result;
+  }
+
+  db_.exec("BEGIN IMMEDIATE;");
+  try {
+    apply_rows(select_eligible());
+    db_.exec("COMMIT;");
+    return result;
+  } catch (...) {
+    try {
+      db_.exec("ROLLBACK;");
+    } catch (...) {
+    }
+    throw;
+  }
 }
 
 std::vector<Brain::ChronicleHit> Brain::chronicle_on_this_day(const std::string& mmdd, int limit) {
+  std::string anchor = mmdd;
+  if (anchor.empty()) anchor = util::utc_date();
+  if (anchor.size() == 5) anchor = util::utc_date().substr(0, 5) + anchor;
   std::vector<ChronicleHit> out;
-  std::string md = mmdd;
-  if (md.empty()) {
-    auto d = util::utc_date();
-    if (d.size() >= 10) md = d.substr(5, 5);  // MM-DD
-  }
-  if (md.size() == 5 && md[2] == '-') {
-    // ok
-  } else if (md.size() >= 10) {
-    md = md.substr(5, 5);
-  } else {
-    return out;
-  }
-  if (limit <= 0) limit = 100;
-  auto st = db_.prepare(
-      "SELECT slug, title, updated_at, created_at, type FROM pages "
-      "WHERE deleted_at IS NULL AND ("
-      "  substr(updated_at,6,5)=? OR substr(created_at,6,5)=?) "
-      "ORDER BY updated_at DESC LIMIT ?");
-  st.bind_text(1, md);
-  st.bind_text(2, md);
-  st.bind_int(3, limit);
-  while (st.step()) {
+  const bool virtual_leap_day = mmdd.size() == 5 && mmdd == "02-29";
+  for (const auto& detailed : chronicle_on_this_day(anchor, limit, "default",
+                                                    virtual_leap_day)) {
     ChronicleHit h;
-    h.slug = st.column_text(0);
-    h.title = st.column_text(1);
-    h.updated_at = st.column_text(2);
-    h.created_at = st.column_text(3);
-    h.type = st.column_text(4);
+    h.id = detailed.id;
+    h.source_id = detailed.source_id;
+    h.slug = detailed.slug;
+    h.title = detailed.title;
+    h.updated_at = detailed.updated_at;
+    h.created_at = detailed.created_at;
+    h.effective_at = detailed.matched_at;
+    h.type = detailed.type;
     out.push_back(std::move(h));
   }
   return out;
 }
 
 std::string Brain::chronicle_last_seen(const std::string& slug) {
-  if (!slug.empty()) {
-    auto st = db_.prepare(
-        "SELECT updated_at FROM pages WHERE slug=? AND deleted_at IS NULL "
-        "ORDER BY updated_at DESC LIMIT 1");
-    st.bind_text(1, slug);
-    if (st.step()) return st.column_text(0);
-    return {};
-  }
-  auto st = db_.prepare(
-      "SELECT updated_at FROM pages WHERE deleted_at IS NULL ORDER BY updated_at DESC LIMIT 1");
-  if (st.step()) return st.column_text(0);
-  return {};
+  if (slug.empty()) return {};
+  auto result = chronicle_last_seen(slug, "default");
+  return result ? result->last_seen : std::string{};
 }
 
 int Brain::chronicle_backfill(int limit) {
-  if (limit <= 0) limit = 1000;
-  // Tag recent pages for chronicle visibility; ensure created_at present (already NOT NULL default)
-  auto pages = list_pages(limit);
-  int n = 0;
-  for (auto& p : pages) {
-    try {
-      add_tag(p.slug, "chronicle", p.source_id);
-      ++n;
-    } catch (...) {
-    }
-  }
-  return n;
+  return chronicle_backfill("default", std::nullopt, limit, false).tagged;
 }
 
 int64_t Brain::put_take(const std::string& entity_slug, const std::string& body,
@@ -1044,10 +1497,38 @@ BrainStats Brain::stats() {
   return s;
 }
 
+Brain::SourceIdentitySnapshot Brain::source_identity_snapshot(const std::string& source_id) {
+  const auto canon = canonical_source_id(source_id);
+  if (!canon) throw std::invalid_argument("invalid source_id");
+
+  const auto integrity = storage::check_schema_integrity(db_);
+  if (!integrity.ok) throw std::runtime_error("schema integrity check failed");
+
+  auto st = db_.prepare(
+      "SELECT "
+      "(SELECT COUNT(*) FROM pages WHERE source_id=?1 AND deleted_at IS NULL), "
+      "(SELECT COUNT(*) FROM content_chunks AS c "
+      " JOIN pages AS p ON p.id=c.page_id WHERE p.source_id=?1), "
+      "(SELECT COUNT(*) FROM links WHERE source_id=?1), "
+      "(SELECT COUNT(*) FROM content_chunks AS c "
+      " JOIN pages AS p ON p.id=c.page_id "
+      " WHERE p.source_id=?1 AND c.embedding IS NOT NULL)");
+  st.bind_text(1, *canon);
+  if (!st.step()) throw std::runtime_error("source identity query failed");
+
+  SourceIdentitySnapshot snapshot;
+  snapshot.source_id = *canon;
+  snapshot.schema_version = integrity.schema_version;
+  snapshot.pages = st.column_int(0);
+  snapshot.chunks = st.column_int(1);
+  snapshot.links = st.column_int(2);
+  snapshot.embedded_chunks = st.column_int(3);
+  return snapshot;
+}
+
 HealthReport Brain::health() {
   HealthReport h;
   h.db_path = util::path_to_utf8(util::brain_db_path(brain_id_));
-  h.stats = stats();
   auto integ = storage::check_schema_integrity(db_);
   h.schema_version = integ.schema_version;
   if (!integ.ok) {
@@ -1059,6 +1540,12 @@ HealthReport Brain::health() {
   if (h.schema_version < 1) {
     h.ok = false;
     h.notes.push_back("schema not migrated");
+  }
+  try {
+    h.stats = stats();
+  } catch (const std::exception& e) {
+    h.ok = false;
+    h.notes.push_back(std::string("stats unavailable: ") + e.what());
   }
   if (h.stats.pages == 0) h.notes.push_back("empty brain: import or capture notes");
   if (h.stats.chunks > 0 && h.stats.embedded_chunks == 0)
@@ -1074,12 +1561,17 @@ HealthReport Brain::health() {
 
 Brain::StatusSnapshot Brain::status_snapshot() {
   StatusSnapshot s;
+  auto integ = storage::check_schema_integrity(db_);
+  if (!integ.ok) {
+    std::string message = "schema integrity check failed";
+    if (!integ.missing.empty()) message += ": " + integ.missing.front();
+    throw std::runtime_error(message);
+  }
   auto st_stats = stats();
   s.pages = st_stats.pages;
   s.chunks = st_stats.chunks;
   s.links = st_stats.links;
   s.embedded_chunks = st_stats.embedded_chunks;
-  auto integ = storage::check_schema_integrity(db_);
   s.schema_version = integ.schema_version;
   auto jc = jobs::count_jobs(*this);
   s.jobs_waiting = jc.waiting;
@@ -1089,39 +1581,68 @@ Brain::StatusSnapshot Brain::status_snapshot() {
   return s;
 }
 
-Brain::RemediateReport Brain::remediate() {
+Brain::RemediateReport Brain::remediate(std::optional<bool> embedding_available_override) {
   RemediateReport r;
-  r.default_source = ensure_source("default");
-  if (!r.default_source) r.notes.push_back("ensure default source failed");
-  r.reclaimed = jobs::reclaim_stalled(*this, "default");
-  r.api_key_present = !resolve_api_key(config_, false).empty();
-  if (!r.api_key_present) {
-    r.notes.push_back("no embedding API key; skipped embed re-enqueue");
+  const auto effective_override =
+      embedding_available_override ? embedding_available_override : embedding_available_override_;
+  r.api_key_present = effective_override.value_or(!resolve_api_key(config_, false).empty());
+  db_.exec("BEGIN IMMEDIATE;");
+  try {
+    r.default_source = ensure_source("default");
+    if (!r.default_source) throw std::runtime_error("ensure default source failed");
+    r.reclaimed = jobs::reclaim_stalled(*this, "default");
+
+    std::set<int64_t> missing_page_ids;
+    auto missing = db_.prepare(
+        "SELECT DISTINCT p.id FROM pages p "
+        "JOIN content_chunks c ON c.page_id=p.id "
+        "WHERE p.deleted_at IS NULL AND c.embedding IS NULL ORDER BY p.id");
+    while (missing.step()) missing_page_ids.insert(missing.column_int(0));
+
+    if (!r.api_key_present) {
+      r.notes.push_back("embedding unavailable; skipped embed re-enqueue");
+    } else {
+      std::set<int64_t> pending_page_ids;
+      auto pending = db_.prepare(
+          "SELECT payload_json FROM jobs WHERE type='embed' "
+          "AND status IN ('waiting','active','paused')");
+      while (pending.step()) {
+        try {
+          auto payload = json::parse(pending.column_text(0));
+          if (!payload.is_object() || !payload.contains("page_id") ||
+              !payload["page_id"].is_number_integer())
+            continue;
+          auto page_id = payload["page_id"].get<int64_t>();
+          if (page_id > 0) pending_page_ids.insert(page_id);
+        } catch (...) {
+        }
+      }
+
+      for (auto page_id : missing_page_ids) {
+        if (pending_page_ids.count(page_id) != 0) continue;
+        auto insert = db_.prepare(
+            "INSERT INTO jobs(queue,type,status,payload_json,priority) "
+            "VALUES('default','embed','waiting',?,50)");
+        insert.bind_text(1, json({{"page_id", page_id}}).dump());
+        insert.step_done();
+        pending_page_ids.insert(page_id);
+        ++r.embed_jobs_enqueued;
+      }
+    }
+
+    if (missing_page_ids.empty())
+      r.notes.push_back("no chunks missing embeddings");
+    else if (r.api_key_present && r.embed_jobs_enqueued == 0)
+      r.notes.push_back("missing embeddings already have pending embed jobs");
+    db_.exec("COMMIT;");
     return r;
+  } catch (...) {
+    try {
+      db_.exec("ROLLBACK;");
+    } catch (...) {
+    }
+    throw;
   }
-  auto missing = list_chunks_missing_embedding(100000);
-  std::set<int64_t> page_ids;
-  for (auto& c : missing) page_ids.insert(c.page_id);
-  for (auto page_id : page_ids) {
-    auto exist = db_.prepare(
-        "SELECT 1 FROM jobs WHERE type='embed' AND status IN ('waiting','active','paused') "
-        "AND payload_json LIKE ? LIMIT 1");
-    std::string needle = "%\"page_id\":" + std::to_string(page_id) + "%";
-    exist.bind_text(1, needle);
-    if (exist.step()) continue;
-    json payload = {{"page_id", page_id}};
-    auto st = db_.prepare(
-        "INSERT INTO jobs(queue, type, status, payload_json, priority) "
-        "VALUES('default','embed','waiting',?,50)");
-    st.bind_text(1, payload.dump());
-    st.step_done();
-    ++r.embed_jobs_enqueued;
-  }
-  if (missing.empty())
-    r.notes.push_back("no chunks missing embeddings");
-  else if (r.embed_jobs_enqueued == 0)
-    r.notes.push_back("missing embeddings already have pending embed jobs");
-  return r;
 }
 
 }  // namespace qbrain

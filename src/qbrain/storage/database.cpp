@@ -126,7 +126,8 @@ double Database::Statement::column_double(int i) const { return sqlite3_column_d
 std::string Database::Statement::column_text(int i) const {
   const unsigned char* p = sqlite3_column_text(stmt_, i);
   if (!p) return {};
-  return reinterpret_cast<const char*>(p);
+  const int size = sqlite3_column_bytes(stmt_, i);
+  return std::string(reinterpret_cast<const char*>(p), static_cast<size_t>(size));
 }
 
 std::vector<uint8_t> Database::Statement::column_blob(int i) const {

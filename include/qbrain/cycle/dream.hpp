@@ -1,5 +1,6 @@
 #pragma once
 #include "qbrain/core/brain.hpp"
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -9,7 +10,8 @@ struct PhaseResult {
   std::string phase;
   std::string status;  // ok | skipped | warn | fail
   std::string summary;
-  int count = 0;
+  int64_t count = 0;
+  int64_t mutations = 0;
   int duration_ms = 0;
 };
 
@@ -23,11 +25,12 @@ struct CycleReport {
 
 struct DreamOpts {
   bool dry_run = true;
-  std::string phase;  // empty = all default phases
+  std::string phase;  // empty = all phases when dry; non-destructive phases when applying
   int page_limit = 50;
+  std::string retention_hours;  // empty = 72; parsed strictly by run_dream
 };
 
-// Multi-phase dream cycle: orphans → extract_facts → consolidate → embed → purge
+// Multi-phase dream cycle. Purge is applied only when phase is explicitly "purge".
 CycleReport run_dream(Brain& brain, const DreamOpts& opts);
 
 std::string report_to_json(const CycleReport& r);

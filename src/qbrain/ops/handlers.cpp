@@ -19,9 +19,20 @@
 #include "qbrain/util/hash.hpp"
 #include "qbrain/util/paths.hpp"
 #include <nlohmann/json.hpp>
+#include <algorithm>
+#include <charconv>
+#include <chrono>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <initializer_list>
+#include <limits>
+#include <optional>
 #include <sstream>
+#include <string_view>
+#include <system_error>
+#include <unordered_map>
+#include <vector>
 
 using json = nlohmann::json;
 
@@ -41,6 +52,443 @@ int arg_int(OpContext& ctx, const std::string& k, int def) {
   } catch (...) {
     return def;
   }
+}
+
+OpResult argument_error(const std::string& code, const std::string& field,
+                         const std::string& message) {
+  OpResult r;
+  r.ok = false;
+  r.exit_code = 1;
+  json j = {{"error", {{"code", code}, {"field", field}, {"message", message}}}};
+  r.json = j.dump();
+  r.text = message;
+  return r;
+}
+
+OpResult n20_error(const std::string& code, const std::string& field,
+                   const std::string& message) {
+  OpResult result = argument_error(code, field, message);
+  result.text = result.json;
+  return result;
+}
+
+OpResult normalize_n20_error(OpResult result) {
+  if (!result.json.empty()) {
+    result.text = result.json;
+    if (result.exit_code == 0) result.exit_code = 1;
+    result.ok = false;
+    return result;
+  }
+  return n20_error("database_error", "database", "schema operation failed");
+}
+
+OpResult n20_pack_error(const schema::PackError& error) {
+  const auto& code = error.code();
+  if (code == "invalid_pack_id")
+    return n20_error(code, "id", "invalid schema pack id");
+  if (code == "pack_not_found")
+    return n20_error(code, "id", "schema pack not found");
+  if (code == "pack_invalid")
+    return n20_error(code, "pack", "schema pack is invalid");
+  if (code == "pack_unsafe")
+    return n20_error(code, "pack", "schema pack candidate is unsafe");
+  if (code == "pack_too_large")
+    return n20_error(code, "pack", "schema pack exceeds the size limit");
+  if (code == "pack_limit_exceeded")
+    return n20_error(code, "pack", "schema pack discovery limit exceeded");
+  if (code == "filesystem_error")
+    return n20_error(code, "pack", "schema pack storage is unavailable");
+  if (code == "database_error")
+    return n20_error(code, "database", "schema pack database operation failed");
+  if (code == "invalid_argument")
+    return n20_error(code, "limit", "schema statistics limit is out of range");
+  if (code == "invalid_source")
+    return n20_error(code, "source_id", "invalid source_id");
+  if (code == "source_not_found")
+    return n20_error(code, "source_id", "source_id is not registered");
+  return n20_error("database_error", "database", "schema operation failed");
+}
+
+std::optional<std::string> optional_n20_pack_id(OpContext& ctx) {
+  const auto requested = ctx.args.find("id");
+  if (requested == ctx.args.end()) return std::nullopt;
+  return requested->second;
+}
+
+json n20_pack_payload(const schema::LoadedPack& loaded) {
+  return {{"id", loaded.id},
+          {"origin", loaded.origin},
+          {"pack", json::parse(schema::manifest_json(loaded.manifest))}};
+}
+
+bool parse_bounded_uint(OpContext& ctx, const std::string& field, uint64_t default_value,
+                         uint64_t minimum, uint64_t maximum, int& out, OpResult& error) {
+  auto it = ctx.args.find(field);
+  uint64_t value = default_value;
+  if (it != ctx.args.end()) {
+    const auto& text = it->second;
+    if (text.empty()) {
+      error = argument_error("invalid_argument", field, "unsigned decimal value required");
+      return false;
+    }
+    const char* first = text.data();
+    const char* last = first + text.size();
+    auto parsed = std::from_chars(first, last, value, 10);
+    if (parsed.ec != std::errc{} || parsed.ptr != last) {
+      error = argument_error("invalid_argument", field, "unsigned decimal value required");
+      return false;
+    }
+  }
+  value = std::clamp(value, minimum, maximum);
+  out = static_cast<int>(value);
+  return true;
+}
+
+std::string bounded_error_field(std::string_view field) {
+  if (field.empty() || field.size() > 64) return "argument";
+  for (const unsigned char c : field) {
+    const bool allowed = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+                         (c >= '0' && c <= '9') || c == '_' || c == '-' || c == '.';
+    if (!allowed) return "argument";
+  }
+  return std::string(field);
+}
+
+bool validate_analytics_args(OpContext& ctx, OpResult& error) {
+  for (const auto& [field, _] : ctx.args) {
+    if (field == "source_id" || field == "limit") continue;
+    error = argument_error("invalid_argument", bounded_error_field(field),
+                           "unexpected argument");
+    return false;
+  }
+  return true;
+}
+
+bool parse_positive_i64(OpContext& ctx, const std::string& field, int64_t& out,
+                        OpResult& error) {
+  auto it = ctx.args.find(field);
+  if (it == ctx.args.end() || it->second.empty()) {
+    error = argument_error("invalid_argument", field, "positive decimal job id required");
+    return false;
+  }
+  uint64_t value = 0;
+  const char* first = it->second.data();
+  const char* last = first + it->second.size();
+  auto parsed = std::from_chars(first, last, value, 10);
+  if (parsed.ec != std::errc{} || parsed.ptr != last || value == 0 ||
+      value > static_cast<uint64_t>(std::numeric_limits<int64_t>::max())) {
+    error = argument_error("invalid_argument", field, "positive decimal job id required");
+    return false;
+  }
+  out = static_cast<int64_t>(value);
+  return true;
+}
+
+bool validate_allowed_args(OpContext& ctx,
+                           std::initializer_list<std::string_view> allowed,
+                           OpResult& error) {
+  std::string unexpected;
+  for (const auto& [field, _] : ctx.args) {
+    const bool is_allowed =
+        std::find(allowed.begin(), allowed.end(), std::string_view(field)) != allowed.end();
+    if (!is_allowed && (unexpected.empty() || field < unexpected)) unexpected = field;
+  }
+  if (unexpected.empty()) return true;
+  error = argument_error("invalid_argument", bounded_error_field(unexpected),
+                         "unexpected argument");
+  return false;
+}
+
+bool parse_positive_i64_text(const std::string& text, int64_t& out) {
+  if (text.empty()) return false;
+  uint64_t value = 0;
+  const char* first = text.data();
+  const char* last = first + text.size();
+  const auto parsed = std::from_chars(first, last, value, 10);
+  if (parsed.ec != std::errc{} || parsed.ptr != last || value == 0 ||
+      value > static_cast<uint64_t>(std::numeric_limits<int64_t>::max()))
+    return false;
+  out = static_cast<int64_t>(value);
+  return true;
+}
+
+bool parse_job_id_alias(OpContext& ctx, int64_t& out, OpResult& error) {
+  const auto canonical = ctx.args.find("job_id");
+  const auto legacy = ctx.args.find("id");
+  if (canonical == ctx.args.end() && legacy == ctx.args.end()) {
+    error = argument_error("invalid_argument", "job_id", "positive decimal job id required");
+    return false;
+  }
+
+  int64_t canonical_id = 0;
+  int64_t legacy_id = 0;
+  if (canonical != ctx.args.end() && !parse_positive_i64_text(canonical->second, canonical_id)) {
+    error = argument_error("invalid_argument", "job_id", "positive decimal job id required");
+    return false;
+  }
+  if (legacy != ctx.args.end() && !parse_positive_i64_text(legacy->second, legacy_id)) {
+    error = argument_error("invalid_argument", "job_id", "positive decimal job id required");
+    return false;
+  }
+  if (canonical != ctx.args.end() && legacy != ctx.args.end() && canonical_id != legacy_id) {
+    error = argument_error("invalid_argument", "job_id", "job_id and id must match");
+    return false;
+  }
+  out = canonical != ctx.args.end() ? canonical_id : legacy_id;
+  return true;
+}
+
+const char* job_input_field_name(jobs::JobInputField field) {
+  switch (field) {
+    case jobs::JobInputField::job_id:
+      return "job_id";
+    case jobs::JobInputField::sender:
+      return "sender";
+    case jobs::JobInputField::payload_json:
+      return "payload_json";
+    case jobs::JobInputField::none:
+      return "job_id";
+  }
+  return "job_id";
+}
+
+bool is_database_busy_error(const std::exception& error) {
+  std::string message = error.what();
+  for (char& c : message) {
+    if (c >= 'A' && c <= 'Z') c = static_cast<char>(c - 'A' + 'a');
+  }
+  return message.find("busy") != std::string::npos ||
+         message.find("locked") != std::string::npos;
+}
+
+bool is_utf8_continuation(unsigned char byte) { return (byte & 0xC0u) == 0x80u; }
+
+size_t utf8_code_point_length(std::string_view value, size_t offset) {
+  const auto byte_at = [&](size_t index) {
+    return static_cast<unsigned char>(value[index]);
+  };
+  const size_t remaining = value.size() - offset;
+  const unsigned char first = byte_at(offset);
+  if (first <= 0x7Fu) return 1;
+  if (first >= 0xC2u && first <= 0xDFu)
+    return remaining >= 2 && is_utf8_continuation(byte_at(offset + 1)) ? 2 : 0;
+  if (first == 0xE0u)
+    return remaining >= 3 && byte_at(offset + 1) >= 0xA0u &&
+                   byte_at(offset + 1) <= 0xBFu &&
+                   is_utf8_continuation(byte_at(offset + 2))
+               ? 3
+               : 0;
+  if ((first >= 0xE1u && first <= 0xECu) ||
+      (first >= 0xEEu && first <= 0xEFu))
+    return remaining >= 3 && is_utf8_continuation(byte_at(offset + 1)) &&
+                   is_utf8_continuation(byte_at(offset + 2))
+               ? 3
+               : 0;
+  if (first == 0xEDu)
+    return remaining >= 3 && byte_at(offset + 1) >= 0x80u &&
+                   byte_at(offset + 1) <= 0x9Fu &&
+                   is_utf8_continuation(byte_at(offset + 2))
+               ? 3
+               : 0;
+  if (first == 0xF0u)
+    return remaining >= 4 && byte_at(offset + 1) >= 0x90u &&
+                   byte_at(offset + 1) <= 0xBFu &&
+                   is_utf8_continuation(byte_at(offset + 2)) &&
+                   is_utf8_continuation(byte_at(offset + 3))
+               ? 4
+               : 0;
+  if (first >= 0xF1u && first <= 0xF3u)
+    return remaining >= 4 && is_utf8_continuation(byte_at(offset + 1)) &&
+                   is_utf8_continuation(byte_at(offset + 2)) &&
+                   is_utf8_continuation(byte_at(offset + 3))
+               ? 4
+               : 0;
+  if (first == 0xF4u)
+    return remaining >= 4 && byte_at(offset + 1) >= 0x80u &&
+                   byte_at(offset + 1) <= 0x8Fu &&
+                   is_utf8_continuation(byte_at(offset + 2)) &&
+                   is_utf8_continuation(byte_at(offset + 3))
+               ? 4
+               : 0;
+  return 0;
+}
+
+bool is_valid_utf8(std::string_view value) {
+  for (size_t offset = 0; offset < value.size();) {
+    const size_t length = utf8_code_point_length(value, offset);
+    if (length == 0) return false;
+    offset += length;
+  }
+  return true;
+}
+
+std::string bounded_display_utf8(std::string_view value, size_t maximum,
+                                 bool mark_truncated) {
+  constexpr std::string_view replacement = "\xEF\xBF\xBD";
+  constexpr std::string_view marker = "[truncated]";
+  std::string output;
+  output.reserve(std::min(value.size(), maximum));
+  size_t offset = 0;
+  while (offset < value.size()) {
+    const size_t length = utf8_code_point_length(value, offset);
+    const size_t unit_size = length == 0 ? replacement.size() : length;
+    if (unit_size > maximum - output.size()) break;
+    if (length == 0)
+      output.append(replacement);
+    else
+      output.append(value.data() + offset, length);
+    offset += length == 0 ? 1 : length;
+  }
+  if (mark_truncated && offset < value.size() && marker.size() <= maximum) {
+    while (!output.empty() && output.size() + marker.size() > maximum) {
+      size_t start = output.size() - 1;
+      while (start > 0 &&
+             is_utf8_continuation(static_cast<unsigned char>(output[start])))
+        --start;
+      output.resize(start);
+    }
+    output.append(marker);
+  }
+  return output;
+}
+
+bool is_ascii_whitespace_only(std::string_view value) {
+  for (const unsigned char c : value) {
+    if (c != ' ' && c != '\t' && c != '\r' && c != '\n' && c != '\f' && c != '\v')
+      return false;
+  }
+  return true;
+}
+
+bool remote_source_allowed(OpContext& ctx, const std::string& source_id) {
+  // N20/N30: any non-CLI caller (network remote or MCP transport) is subject
+  // to the configured source allow-list.
+  if (!(ctx.remote || ctx.via_mcp) || source_id == "default") return true;
+  auto configured = ctx.brain->get_config_value("mcp.allowed_sources");
+  if (!configured) return false;
+  for (auto item : util::split(*configured, ',')) {
+    auto canon = Brain::canonical_source_id(util::trim(item));
+    if (canon && *canon == source_id) return true;
+  }
+  return false;
+}
+
+std::optional<std::string> resolve_source(OpContext& ctx, bool require_existing,
+                                          OpResult& error) {
+  auto it = ctx.args.find("source_id");
+  std::string raw = it == ctx.args.end() ? "default" : it->second;
+  auto canon = Brain::canonical_source_id(raw);
+  if (!canon) {
+    error = argument_error("invalid_source", "source_id", "invalid source_id");
+    return std::nullopt;
+  }
+  if (!remote_source_allowed(ctx, *canon)) {
+    error = argument_error("source_not_allowed", "source_id",
+                           "source_id is not authorized for remote access");
+    return std::nullopt;
+  }
+  if (require_existing && !ctx.brain->source_exists(*canon)) {
+    error = argument_error("source_not_found", "source_id", "source_id is not registered");
+    return std::nullopt;
+  }
+  return canon;
+}
+
+bool date_parts_valid(const std::string& value) {
+  if (value.size() < 10 || value[4] != '-' || value[7] != '-') return false;
+  constexpr size_t digit_positions[] = {0, 1, 2, 3, 5, 6, 8, 9};
+  for (size_t i : digit_positions)
+    if (value[i] < '0' || value[i] > '9') return false;
+  auto number = [&value](size_t start, size_t count) {
+    int n = 0;
+    for (size_t i = start; i < start + count; ++i) n = n * 10 + (value[i] - '0');
+    return n;
+  };
+  int year = number(0, 4);
+  int month = number(5, 2);
+  int day = number(8, 2);
+  static const int days[] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+  if (year < 1 || month < 1 || month > 12) return false;
+  int max_day = days[month];
+  if (month == 2 && ((year % 4 == 0 && year % 100 != 0) || year % 400 == 0)) max_day = 29;
+  return day >= 1 && day <= max_day;
+}
+
+bool valid_utc_day(const std::string& value) {
+  return value.size() == 10 && date_parts_valid(value);
+}
+
+bool valid_utc_since(const std::string& value) {
+  if (value.size() == 10) return date_parts_valid(value);
+  if (value.size() != 20 || !date_parts_valid(value) ||
+      (value[10] != 'T' && value[10] != ' ') || value[13] != ':' || value[16] != ':' ||
+      value[19] != 'Z')
+    return false;
+  constexpr size_t digit_positions[] = {11, 12, 14, 15, 17, 18};
+  for (size_t i : digit_positions)
+    if (value[i] < '0' || value[i] > '9') return false;
+  auto two = [&value](size_t pos) { return (value[pos] - '0') * 10 + value[pos + 1] - '0'; };
+  return two(11) <= 23 && two(14) <= 59 && two(17) <= 59;
+}
+
+bool valid_month_day(const std::string& value) {
+  return value.size() == 5 && value[2] == '-' && valid_utc_day("2000-" + value);
+}
+
+std::optional<std::chrono::sys_days> parse_utc_sys_day(const std::string& value) {
+  if (!valid_utc_day(value)) return std::nullopt;
+  auto component = [&value](size_t start, size_t count) {
+    int result = 0;
+    for (size_t i = start; i < start + count; ++i)
+      result = result * 10 + (value[i] - '0');
+    return result;
+  };
+  const std::chrono::year_month_day date{
+      std::chrono::year{component(0, 4)},
+      std::chrono::month{static_cast<unsigned>(component(5, 2))},
+      std::chrono::day{static_cast<unsigned>(component(8, 2))}};
+  if (!date.ok()) return std::nullopt;
+  return std::chrono::sys_days{date};
+}
+
+bool parse_boolean(OpContext& ctx, const std::string& field, bool default_value,
+                   bool& out, OpResult& error) {
+  const auto it = ctx.args.find(field);
+  if (it == ctx.args.end()) {
+    out = default_value;
+    return true;
+  }
+  if (it->second == "true") {
+    out = true;
+    return true;
+  }
+  if (it->second == "false") {
+    out = false;
+    return true;
+  }
+  error = argument_error("invalid_argument", field, "boolean value required");
+  return false;
+}
+
+json health_report_json(const qbrain::HealthReport& h, bool include_db_path) {
+  const char* overall = h.ok ? "OK" : "FAIL";
+  json j;
+  j["ok"] = h.ok;
+  j["overall"] = overall;
+  if (include_db_path) j["db_path"] = h.db_path;
+  j["schema_version"] = h.schema_version;
+  j["stats"] = {{"pages", h.stats.pages},
+                  {"chunks", h.stats.chunks},
+                  {"links", h.stats.links},
+                  {"embedded_chunks", h.stats.embedded_chunks}};
+  j["checks"] = json::array({
+      {{"name", "database"}, {"status", "OK"}},
+      {{"name", "schema"}, {"status", overall}},
+      {{"name", "critical_tables"}, {"status", overall}},
+      {{"name", "optional"}, {"status", h.notes.empty() ? "OK" : "WARN"}},
+  });
+  j["notes"] = h.notes;
+  return j;
 }
 
 void register_one(const char* name, Scope scope, OpHandler h, bool local_only = false,
@@ -64,20 +512,13 @@ void register_builtin_ops() {
       "get_health", Scope::Read, [](OpContext& ctx) {
     OpResult r;
     auto h = ctx.brain->health();
-    json j;
-    j["ok"] = h.ok;
-    j["db_path"] = h.db_path;
-    j["schema_version"] = h.schema_version;
-    j["stats"] = {{"pages", h.stats.pages},
-                  {"chunks", h.stats.chunks},
-                  {"links", h.stats.links},
-                  {"embedded_chunks", h.stats.embedded_chunks}};
-    j["notes"] = h.notes;
+    // N30 D4: the local database path is only disclosed to local callers.
+    json j = health_report_json(h, !(ctx.remote || ctx.via_mcp));
     r.json = j.dump(2);
     std::ostringstream oss;
-    oss << "Qbrain doctor: " << (h.ok ? "OK" : "DEGRADED") << "\n"
-        << "  db: " << h.db_path << "\n"
-        << "  schema: v" << h.schema_version << "\n"
+    oss << "Qbrain doctor: " << j["overall"].get<std::string>() << "\n";
+    if (!(ctx.remote || ctx.via_mcp)) oss << "  db: " << h.db_path << "\n";
+    oss << "  schema: v" << h.schema_version << "\n"
         << "  pages=" << h.stats.pages << " chunks=" << h.stats.chunks
         << " links=" << h.stats.links << " embedded=" << h.stats.embedded_chunks << "\n";
     for (auto& n : h.notes) oss << "  - " << n << "\n";
@@ -108,13 +549,24 @@ void register_builtin_ops() {
     in.body = arg(ctx, "body");
     in.type = arg(ctx, "type", "note");
     in.source_id = arg(ctx, "source_id", "default");
-    // N2.5: remote may only write default source unless allow-list config
-    if (ctx.remote && in.source_id != "default") {
+    // N2.5: canonicalize + remote allowlist (case-insensitive); always on when remote
+    {
+      std::string sid = in.source_id;
+      for (char& c : sid) {
+        if (c >= 'A' && c <= 'Z') c = static_cast<char>(c - 'A' + 'a');
+      }
+      in.source_id = sid;
+    }
+    if ((ctx.remote || ctx.via_mcp) && in.source_id != "default") {
       auto allow = ctx.brain->get_config_value("mcp.allowed_sources");
       bool ok = false;
       if (allow) {
         for (auto& p : util::split(*allow, ',')) {
-          if (util::trim(p) == in.source_id) ok = true;
+          auto t = util::trim(p);
+          for (char& c : t) {
+            if (c >= 'A' && c <= 'Z') c = static_cast<char>(c - 'A' + 'a');
+          }
+          if (t == in.source_id) ok = true;
         }
       }
       if (!ok) {
@@ -137,7 +589,7 @@ void register_builtin_ops() {
       return r;
     }
     // Provenance: remote MCP stamps mcp:put_page (gbrain-like)
-    if (ctx.remote) {
+    if (ctx.via_mcp) {
       in.source_kind = "mcp:put_page";
       in.ingested_via = "mcp";
     } else {
@@ -149,7 +601,7 @@ void register_builtin_ops() {
     ctx.brain->replace_chunks(page.id, chunks);
     // Remote callers: skip auto-link (gbrain mitigation vs backlink poisoning)
     size_t nlinks = 0;
-    if (!ctx.remote) {
+    if (!ctx.via_mcp) {
       auto links = graph::extract_links(page.source_id, page.slug, page.body);
       ctx.brain->replace_extracted_links(page.source_id, page.slug, links);
       nlinks = links.size();
@@ -315,7 +767,7 @@ void register_builtin_ops() {
     r.json = j.dump(2);
     r.text = cr.content + "\n";
     // save is a write side-effect: only when not remote, or allow_write
-    if (arg(ctx, "save") == "1" && (!ctx.remote || ctx.allow_write)) {
+    if (arg(ctx, "save") == "1" && (!ctx.via_mcp || ctx.allow_write)) {
       PageInput in;
       auto h = util::sha256_hex(q);
       if (h.size() > 8) h = h.substr(0, 8);
@@ -329,7 +781,7 @@ void register_builtin_ops() {
       auto links = graph::extract_links(page.source_id, page.slug, page.body);
       ctx.brain->replace_extracted_links(page.source_id, page.slug, links);
       r.text += "\n[saved " + page.slug + "]\n";
-    } else if (arg(ctx, "save") == "1" && ctx.remote && !ctx.allow_write) {
+    } else if (arg(ctx, "save") == "1" && ctx.via_mcp && !ctx.allow_write) {
       r.text += "\n[save ignored: MCP write disabled; use --allow-write]\n";
     }
     return r;
@@ -346,14 +798,43 @@ void register_builtin_ops() {
       r.text = "text required";
       return r;
     }
-    auto page = ingest::capture_text(*ctx.brain, text, arg(ctx, "type", "note"));
-    // stamp provenance via re-put lightweight fields already set at capture; enqueue embed
+    // N2.5: optional source_id on capture; remote allowlist always enforced
+    auto sid = arg(ctx, "source_id", "default");
+    for (char& c : sid) {
+      if (c >= 'A' && c <= 'Z') c = static_cast<char>(c - 'A' + 'a');
+    }
+    if ((ctx.remote || ctx.via_mcp) && sid != "default") {
+      auto allow = ctx.brain->get_config_value("mcp.allowed_sources");
+      bool ok = false;
+      if (allow) {
+        for (auto& p : util::split(*allow, ',')) {
+          auto t = util::trim(p);
+          for (char& c : t) {
+            if (c >= 'A' && c <= 'Z') c = static_cast<char>(c - 'A' + 'a');
+          }
+          if (t == sid) ok = true;
+        }
+      }
+      if (!ok) {
+        r.ok = false;
+        r.text = "remote source_id not allowed (only default, or mcp.allowed_sources)";
+        return r;
+      }
+    }
+    if (!ctx.brain->ensure_source(sid)) {
+      r.ok = false;
+      r.text = "invalid source_id";
+      return r;
+    }
+    auto page = ingest::capture_text(*ctx.brain, text, arg(ctx, "type", "note"), sid);
     ctx.brain->enqueue_embed_page(page.id);
     r.text = page.slug;
-    r.json = json({{"slug", page.slug}, {"id", page.id}, {"embed_enqueued", true}}).dump(2);
+    r.json = json({{"slug", page.slug}, {"id", page.id}, {"embed_enqueued", true},
+                   {"source_id", sid}})
+                 .dump(2);
     return r;
   }, true, "Quick-capture text into inbox/ (CLI always; MCP needs --allow-write). gbrain capture is CLI-only — Qbrain extension.",
-      R"({"type":"object","properties":{"text":{"type":"string"},"type":{"type":"string"}},"required":["text"]})");
+      R"({"type":"object","properties":{"text":{"type":"string"},"type":{"type":"string"},"source_id":{"type":"string"}},"required":["text"]})");
 
   register_one(
       "get_links", Scope::Read, [](OpContext& ctx) {
@@ -425,7 +906,7 @@ void register_builtin_ops() {
   register_one(
       "purge_deleted_pages", Scope::Admin, [](OpContext& ctx) {
     OpResult r;
-    if (ctx.remote) {
+    if (ctx.via_mcp) {
       r.ok = false;
       r.text = "purge is localOnly";
       return r;
@@ -464,15 +945,26 @@ void register_builtin_ops() {
   register_one(
       "sources_add", Scope::Write, [](OpContext& ctx) {
     OpResult r;
+    // N2.5: true localOnly — remote MCP never registers sources (even with allow-write)
+    if (ctx.via_mcp) {
+      r.ok = false;
+      r.text = "sources_add is localOnly (use CLI)";
+      return r;
+    }
     auto id = arg(ctx, "id");
     if (!ctx.brain->ensure_source(id)) {
       r.ok = false;
       r.text = "invalid source id";
       return r;
     }
-    r.text = "ok " + id;
+    // ensure_source stores canonical lowercase
+    std::string canon = id;
+    for (char& c : canon) {
+      if (c >= 'A' && c <= 'Z') c = static_cast<char>(c - 'A' + 'a');
+    }
+    r.text = "ok " + canon;
     return r;
-  }, true, "Ensure a source id exists",
+  }, true, "Ensure a source id exists (localOnly; remote always denied)",
       R"({"type":"object","properties":{"id":{"type":"string"}},"required":["id"]})");
 
   register_one(
@@ -495,6 +987,12 @@ void register_builtin_ops() {
     OpResult r;
     auto id = arg(ctx, "id", "default");
     auto s = ctx.brain->source_status(id);
+    if (s.id.empty()) {
+      r.ok = false;
+      r.exit_code = 1;
+      r.text = "invalid source_id";
+      return r;
+    }
     r.json = json({{"id", s.id},
                    {"pages", s.pages},
                    {"links", s.links},
@@ -506,33 +1004,67 @@ void register_builtin_ops() {
       R"({"type":"object","properties":{"id":{"type":"string"}}})");
 
   register_one(
-      "find_trajectory", Scope::Read, [](OpContext& ctx) {
+      "list_facts", Scope::Read, [](OpContext& ctx) {
     OpResult r;
-    auto facts = ctx.brain->list_facts(arg(ctx, "entity_slug"), arg_int(ctx, "limit", 50));
+    auto entity = arg(ctx, "entity_slug");
+    if (entity.empty()) entity = arg(ctx, "entity");
+    int limit = std::clamp(arg_int(ctx, "limit", 50), 0, 100);
+    auto facts = ctx.brain->list_facts(entity, limit);
     json arr = json::array();
     for (auto& f : facts) arr.push_back(f);
     r.json = arr.dump(2);
     r.text = r.json;
     return r;
-  }, false, "List facts for an entity slug (minimal trajectory)",
-      R"({"type":"object","properties":{"entity_slug":{"type":"string"}},"required":["entity_slug"]})");
+  }, false, "List active facts for an entity slug",
+      R"({"type":"object","properties":{"entity_slug":{"type":"string"},"entity":{"type":"string"},"limit":{"type":"integer"}}})");
+
+  register_one(
+      "find_trajectory", Scope::Read, [](OpContext& ctx) {
+    OpResult r;
+    auto entity = arg(ctx, "entity_slug");
+    if (entity.empty()) entity = arg(ctx, "entity");
+    if (entity.empty()) entity = arg(ctx, "query");
+    int depth = std::clamp(arg_int(ctx, "depth", 2), 0, 4);
+    int limit = std::clamp(arg_int(ctx, "limit", 50), 0, 100);
+    auto facts = ctx.brain->list_facts(entity, limit);
+    json arr = json::array();
+    int i = 0;
+    for (auto& f : facts) {
+      if (i >= limit) break;
+      arr.push_back({{"kind", "fact"}, {"entity_slug", entity}, {"depth", 0}, {"text", f}});
+      ++i;
+    }
+    r.json = arr.dump(2);
+    r.text = r.json;
+    (void)depth;  // facts are direct steps today; input is still clamped for future traversal.
+    return r;
+  }, false, "Bounded facts/links trajectory for an entity slug",
+      R"({"type":"object","properties":{"entity_slug":{"type":"string"},"entity":{"type":"string"},"query":{"type":"string"},"depth":{"type":"integer"},"limit":{"type":"integer"}}})");
 
   register_one(
       "list_skills", Scope::Read, [](OpContext& ctx) {
     OpResult r;
-    (void)ctx;
-    // N9: scan skills dir next to exe / project
+    // N9: brain-local skills first, then cwd/project pack (brain ids override packs)
     json arr = json::array();
     namespace fs = std::filesystem;
-    std::vector<fs::path> roots = {fs::path("skills"), fs::path("D:/Projects/Qbrain/skills")};
-    for (auto& root : roots) {
-      if (!fs::exists(root)) continue;
-      for (auto& e : fs::directory_iterator(root)) {
+    std::unordered_map<std::string, bool> seen;
+    auto scan = [&](const fs::path& root) {
+      if (!fs::exists(root)) return;
+      std::error_code ec;
+      for (auto& e : fs::directory_iterator(root, ec)) {
         if (!e.is_directory()) continue;
+        auto name = e.path().filename().string();
+        if (name.empty() || name.find("..") != std::string::npos) continue;
         auto skill = e.path() / "SKILL.md";
-        if (fs::exists(skill)) arr.push_back({{"name", e.path().filename().string()}});
+        if (!fs::exists(skill)) continue;
+        if (seen[name]) continue;
+        seen[name] = true;
+        arr.push_back({{"name", name}});
       }
-    }
+    };
+    if (ctx.brain) scan(util::brain_dir(ctx.brain->brain_id()) / "skills");
+    scan(fs::path("skills"));
+    scan(fs::path("D:/Projects/Qbrain/skills"));
     r.json = arr.dump(2);
     r.text = r.json;
     return r;
@@ -542,15 +1074,28 @@ void register_builtin_ops() {
       "get_skill", Scope::Read, [](OpContext& ctx) {
     OpResult r;
     auto name = arg(ctx, "name");
-    if (name.find("..") != std::string::npos || name.find('/') != std::string::npos) {
+    if (name.empty() || name.find("..") != std::string::npos || name.find('/') != std::string::npos ||
+        name.find('\\') != std::string::npos) {
       r.ok = false;
       r.text = "invalid skill name";
       return r;
     }
     namespace fs = std::filesystem;
-    fs::path p = fs::path("skills") / name / "SKILL.md";
-    if (!fs::exists(p)) p = fs::path("D:/Projects/Qbrain/skills") / name / "SKILL.md";
-    if (!fs::exists(p)) {
+    // brain-first override
+    std::vector<fs::path> candidates;
+    if (ctx.brain) candidates.push_back(util::brain_dir(ctx.brain->brain_id()) / "skills" / name / "SKILL.md");
+    candidates.push_back(fs::path("skills") / name / "SKILL.md");
+    candidates.push_back(fs::path("D:/Projects/Qbrain/skills") / name / "SKILL.md");
+    fs::path p;
+    bool found = false;
+    for (auto& c : candidates) {
+      if (fs::exists(c)) {
+        p = c;
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
       r.ok = false;
       r.text = "not found";
       return r;
@@ -568,14 +1113,7 @@ void register_builtin_ops() {
       "run_doctor", Scope::Read, [](OpContext& ctx) {
     OpResult r;
     auto h = ctx.brain->health();
-    json j;
-    j["ok"] = h.ok;
-    j["schema_version"] = h.schema_version;
-    j["stats"] = {{"pages", h.stats.pages},
-                  {"chunks", h.stats.chunks},
-                  {"links", h.stats.links},
-                  {"embedded_chunks", h.stats.embedded_chunks}};
-    j["notes"] = h.notes;
+    json j = health_report_json(h, false);
     r.json = j.dump(2);
     r.text = r.json;
     r.ok = h.ok;
@@ -667,51 +1205,69 @@ void register_builtin_ops() {
 
   register_one(
       "find_anomalies", Scope::Read, [](OpContext& ctx) {
-    OpResult r;
-    auto rows = graph::find_anomalies(*ctx.brain, arg_int(ctx, "limit", 100));
+    OpResult r, error;
+    if (!validate_analytics_args(ctx, error)) return error;
+    int limit = 100;
+    if (!parse_bounded_uint(ctx, "limit", 100, 0, 200, limit, error)) return error;
+    auto source = resolve_source(ctx, true, error);
+    if (!source) return error;
+    auto rows = graph::find_anomalies(*ctx.brain, *source, limit);
     json arr = json::array();
     std::ostringstream oss;
     for (auto& a : rows) {
-      arr.push_back({{"kind", a.kind}, {"slug", a.slug}, {"detail", a.detail}});
-      oss << a.kind << "\t" << a.slug << "\t" << a.detail << "\n";
+      arr.push_back({{"source_id", a.source_id}, {"kind", a.kind},
+                     {"slug", a.slug}, {"detail", a.detail}});
+      oss << a.source_id << "\t" << a.kind << "\t" << a.slug << "\t" << a.detail << "\n";
     }
     r.json = arr.dump(2);
     r.text = oss.str().empty() ? "[]\n" : oss.str();
     return r;
   }, false, "Graph anomalies: missing/deleted link targets, high out-degree",
-      R"({"type":"object","properties":{"limit":{"type":"integer"}}})");
+      R"({"type":"object","additionalProperties":false,"properties":{"source_id":{"type":"string","default":"default"},"limit":{"type":"integer","minimum":0,"maximum":200,"default":100}}})");
 
   register_one(
       "find_contradictions", Scope::Read, [](OpContext& ctx) {
-    OpResult r;
-    auto rows = graph::find_contradictions(*ctx.brain, arg_int(ctx, "limit", 100));
+    OpResult r, error;
+    if (!validate_analytics_args(ctx, error)) return error;
+    int limit = 100;
+    if (!parse_bounded_uint(ctx, "limit", 100, 0, 200, limit, error)) return error;
+    auto source = resolve_source(ctx, true, error);
+    if (!source) return error;
+    auto rows = graph::find_contradictions(*ctx.brain, *source, limit);
     json arr = json::array();
     std::ostringstream oss;
     for (auto& c : rows) {
-      arr.push_back({{"kind", c.kind}, {"slug", c.slug}, {"detail", c.detail}});
-      oss << c.kind << "\t" << c.slug << "\t" << c.detail << "\n";
+      arr.push_back({{"source_id", c.source_id}, {"kind", c.kind},
+                     {"slug", c.slug}, {"detail", c.detail}});
+      oss << c.source_id << "\t" << c.kind << "\t" << c.slug << "\t" << c.detail << "\n";
     }
     r.json = arr.dump(2);
     r.text = oss.str().empty() ? "[]\n" : oss.str();
     return r;
   }, false, "Heuristic fact contradictions (conflicting predicates / dual objects)",
-      R"({"type":"object","properties":{"limit":{"type":"integer"}}})");
+      R"({"type":"object","additionalProperties":false,"properties":{"source_id":{"type":"string","default":"default"},"limit":{"type":"integer","minimum":0,"maximum":200,"default":100}}})");
 
   register_one(
       "find_experts", Scope::Read, [](OpContext& ctx) {
-    OpResult r;
-    auto rows = graph::find_experts(*ctx.brain, arg_int(ctx, "limit", 50));
+    OpResult r, error;
+    if (!validate_analytics_args(ctx, error)) return error;
+    int limit = 50;
+    if (!parse_bounded_uint(ctx, "limit", 50, 0, 200, limit, error)) return error;
+    auto source = resolve_source(ctx, true, error);
+    if (!source) return error;
+    auto rows = graph::find_experts(*ctx.brain, *source, limit);
     json arr = json::array();
     std::ostringstream oss;
     for (auto& e : rows) {
-      arr.push_back({{"slug", e.slug}, {"inbound_count", e.inbound_count}});
-      oss << e.slug << "\t" << e.inbound_count << "\n";
+      arr.push_back({{"source_id", e.source_id}, {"slug", e.slug},
+                     {"inbound_count", e.inbound_count}});
+      oss << e.source_id << "\t" << e.slug << "\t" << e.inbound_count << "\n";
     }
     r.json = arr.dump(2);
     r.text = oss.str().empty() ? "[]\n" : oss.str();
     return r;
   }, false, "Pages ranked by inbound link count (expertise heuristic)",
-      R"({"type":"object","properties":{"limit":{"type":"integer"}}})");
+      R"({"type":"object","additionalProperties":false,"properties":{"source_id":{"type":"string","default":"default"},"limit":{"type":"integer","minimum":0,"maximum":200,"default":50}}})");
 
   register_one(
       "extract_facts", Scope::Write, [](OpContext& ctx) {
@@ -740,7 +1296,7 @@ void register_builtin_ops() {
     r.json = json({{"remote", ctx.remote},
                    {"allow_write", ctx.allow_write},
                    {"brain", ctx.brain ? ctx.brain->brain_id() : ""},
-                   {"transport", ctx.remote ? "mcp" : "cli"}})
+                   {"transport", ctx.via_mcp ? "mcp" : "cli"}})
                  .dump(2);
     r.text = r.json;
     return r;
@@ -808,7 +1364,7 @@ void register_builtin_ops() {
     r.json = json({{"id", id}, {"type", type}, {"status", "waiting"}}).dump(2);
     r.text = "job " + std::to_string(id);
     return r;
-  }, false, "Submit a minion job",
+  }, true, "Submit a minion job (MCP requires --allow-write)",
       R"({"type":"object","properties":{"type":{"type":"string"},"name":{"type":"string"},"payload_json":{"type":"string"},"queue":{"type":"string"},"priority":{"type":"integer"}},"required":["type"]})");
 
   register_one(
@@ -881,7 +1437,7 @@ void register_builtin_ops() {
     }
     r.text = "cancelled";
     return r;
-  }, false, "Cancel a waiting/active job",
+  }, true, "Cancel a waiting/active job (MCP requires --allow-write)",
       R"({"type":"object","properties":{"id":{"type":"integer"}},"required":["id"]})");
 
   register_one(
@@ -891,6 +1447,7 @@ void register_builtin_ops() {
     opts.dry_run = arg(ctx, "apply") != "1" && arg(ctx, "apply") != "true";
     opts.phase = arg(ctx, "phase");
     opts.page_limit = arg_int(ctx, "limit", 50);
+    opts.retention_hours = arg(ctx, "retention_hours");
     auto report = cycle::run_dream(*ctx.brain, opts);
     r.json = cycle::report_to_json(report);
     r.text = cycle::report_to_text(report);
@@ -900,7 +1457,7 @@ void register_builtin_ops() {
     }
     return r;
   }, true, "Run multi-phase dream cycle",
-      R"({"type":"object","properties":{"apply":{"type":"boolean"},"phase":{"type":"string"},"limit":{"type":"integer"}}})");
+      R"({"type":"object","properties":{"apply":{"type":"boolean"},"phase":{"type":"string","enum":["orphans","extract_facts","consolidate","embed","purge"]},"limit":{"type":"integer"},"retention_hours":{"type":"integer","description":"Purge retention; default 72, clamped to 1..8760"}}})");
 
   // N13
   register_one(
@@ -938,8 +1495,8 @@ void register_builtin_ops() {
       r.text = "slug required";
       return r;
     }
-    int depth = arg_int(ctx, "depth", 1);
-    auto ns = graph::neighbors(*ctx.brain, slug, depth);
+    int depth = std::clamp(arg_int(ctx, "depth", 1), 0, 100);
+    auto ns = graph::neighbors(*ctx.brain, slug, depth, arg(ctx, "source_id", "default"));
     json arr = json::array();
     std::ostringstream oss;
     for (auto& n : ns) {
@@ -973,107 +1530,107 @@ void register_builtin_ops() {
     }
     r.text = "retried " + std::to_string(id);
     return r;
-  }, false, "Requeue failed/cancelled job to waiting",
+  }, true, "Requeue failed/cancelled job to waiting",
       R"({"type":"object","properties":{"id":{"type":"integer"}},"required":["id"]})");
 
   register_one(
       "pause_job", Scope::Write, [](OpContext& ctx) {
-    OpResult r;
+    OpResult r, error;
     int64_t id = 0;
+    if (!parse_positive_i64(ctx, "id", id, error)) return error;
     try {
-      id = std::stoll(arg(ctx, "id"));
+      if (!jobs::pause_job(*ctx.brain, id)) {
+        return argument_error("invalid_state", "id",
+                              "job is missing or cannot transition to paused");
+      }
+      auto j = jobs::get_job(*ctx.brain, id);
+      r.json = json({{"id", id}, {"status", j ? j->status : "paused"}}).dump(2);
+      r.text = "paused " + std::to_string(id);
+      return r;
     } catch (...) {
-      r.ok = false;
-      r.text = "id required";
-      return r;
+      return argument_error("database_error", "database", "job pause unavailable");
     }
-    if (!jobs::pause_job(*ctx.brain, id)) {
-      r.ok = false;
-      r.text = "pause failed (need waiting/active)";
-      return r;
-    }
-    auto j = jobs::get_job(*ctx.brain, id);
-    r.json = json({{"id", id}, {"status", j ? j->status : "paused"}}).dump(2);
-    r.text = "paused " + std::to_string(id);
-    return r;
-  }, false, "Pause waiting/active job",
+  }, true, "Pause waiting/active job",
       R"({"type":"object","properties":{"id":{"type":"integer"}},"required":["id"]})");
 
   register_one(
       "resume_job", Scope::Write, [](OpContext& ctx) {
-    OpResult r;
+    OpResult r, error;
     int64_t id = 0;
+    if (!parse_positive_i64(ctx, "id", id, error)) return error;
     try {
-      id = std::stoll(arg(ctx, "id"));
+      if (!jobs::resume_job(*ctx.brain, id)) {
+        return argument_error("invalid_state", "id",
+                              "job is missing or cannot transition to waiting");
+      }
+      r.json = json({{"id", id}, {"status", "waiting"}}).dump(2);
+      r.text = "resumed " + std::to_string(id);
+      return r;
     } catch (...) {
-      r.ok = false;
-      r.text = "id required";
-      return r;
+      return argument_error("database_error", "database", "job resume unavailable");
     }
-    if (!jobs::resume_job(*ctx.brain, id)) {
-      r.ok = false;
-      r.text = "resume failed (need paused)";
-      return r;
-    }
-    r.json = json({{"id", id}, {"status", "waiting"}}).dump(2);
-    r.text = "resumed " + std::to_string(id);
-    return r;
-  }, false, "Resume paused job to waiting",
+  }, true, "Resume paused job to waiting",
       R"({"type":"object","properties":{"id":{"type":"integer"}},"required":["id"]})");
 
   register_one(
       "get_job_progress", Scope::Read, [](OpContext& ctx) {
-    OpResult r;
+    OpResult r, error;
     int64_t id = 0;
+    if (!parse_positive_i64(ctx, "id", id, error)) return error;
     try {
-      id = std::stoll(arg(ctx, "id"));
+      auto p = jobs::get_job_progress(*ctx.brain, id);
+      if (!p) {
+        return argument_error("not_found", "id", "job not found");
+      }
+      r.json = json({{"id", p->id},
+                     {"type", p->type},
+                     {"status", p->status},
+                     {"attempts", p->attempts},
+                     {"lock_until", p->lock_until},
+                     {"error_text", p->error_text}})
+                   .dump(2);
+      r.text = r.json;
+      return r;
     } catch (...) {
-      r.ok = false;
-      r.text = "id required";
-      return r;
+      return argument_error("database_error", "database", "job progress unavailable");
     }
-    auto p = jobs::get_job_progress(*ctx.brain, id);
-    if (!p) {
-      r.ok = false;
-      r.text = "not found";
-      return r;
-    }
-    r.json = json({{"id", p->id},
-                   {"type", p->type},
-                   {"status", p->status},
-                   {"attempts", p->attempts},
-                   {"lock_until", p->lock_until},
-                   {"error_text", p->error_text}})
-                 .dump(2);
-    r.text = r.json;
-    return r;
   }, false, "Job progress (status/attempts/lock/error)",
       R"({"type":"object","properties":{"id":{"type":"integer"}},"required":["id"]})");
 
   register_one(
       "get_status_snapshot", Scope::Read, [](OpContext& ctx) {
-    OpResult r;
-    auto s = ctx.brain->status_snapshot();
-    json j = {{"schema_version", s.schema_version},
-              {"pages", s.pages},
-              {"chunks", s.chunks},
-              {"links", s.links},
-              {"embedded_chunks", s.embedded_chunks},
-              {"jobs",
-               {{"waiting", s.jobs_waiting},
-                {"active", s.jobs_active},
-                {"failed", s.jobs_failed},
-                {"paused", s.jobs_paused}}}};
-    r.json = j.dump(2);
-    r.text = r.json;
-    return r;
+    try {
+      OpResult r;
+      auto s = ctx.brain->status_snapshot();
+      json j = {{"schema_version", s.schema_version},
+                {"pages", s.pages},
+                {"chunks", s.chunks},
+                {"links", s.links},
+                {"embedded_chunks", s.embedded_chunks},
+                {"jobs",
+                 {{"waiting", s.jobs_waiting},
+                  {"active", s.jobs_active},
+                  {"failed", s.jobs_failed},
+                  {"paused", s.jobs_paused}}}};
+      r.json = j.dump(2);
+      r.text = r.json;
+      return r;
+    } catch (...) {
+      return argument_error("database_error", "database", "status snapshot unavailable");
+    }
   }, false, "Pages/chunks/links/jobs counts + schema version",
       R"({"type":"object","properties":{}})");
 
   register_one(
       "doctor_remediate", Scope::Write, [](OpContext& ctx) {
     OpResult r;
-    auto rep = ctx.brain->remediate();
+    Brain::RemediateReport rep;
+    try {
+      rep = ctx.brain->remediate();
+    } catch (...) {
+      return argument_error("remediation_failed", "database",
+                            "remediation rolled back");
+    }
     json j = {{"default_source", rep.default_source},
               {"reclaimed", rep.reclaimed},
               {"embed_jobs_enqueued", rep.embed_jobs_enqueued},
@@ -1105,7 +1662,7 @@ void register_builtin_ops() {
     r.json = json({{"deactivated", n}}).dump(2);
     r.text = "deactivated " + std::to_string(n);
     return r;
-  }, false, "Soft-deactivate facts for entity",
+  }, true, "Soft-deactivate facts for entity",
       R"({"type":"object","properties":{"entity_slug":{"type":"string"},"slug":{"type":"string"},"predicate":{"type":"string"}}})");
 
   register_one(
@@ -1153,176 +1710,220 @@ void register_builtin_ops() {
     json arr = json::array();
     std::ostringstream oss;
     for (auto& h : hits) {
-      arr.push_back({{"slug", h.slug},
+      arr.push_back({{"source_id", h.source_id},
+                     {"slug", h.slug},
                      {"line", h.line},
                      {"snippet", h.snippet},
                      {"kind", h.kind}});
-      oss << h.slug << ":" << h.line << " [" << h.kind << "] " << h.snippet << "\n";
+      oss << h.source_id << "\t" << h.slug << ":" << h.line << " [" << h.kind
+          << "] " << h.snippet << "\n";
     }
     r.json = arr.dump(2);
     r.text = oss.str().empty() ? "(no matches)\n" : oss.str();
     return r;
   };
 
-  register_one(
-      "code_def", Scope::Read, [hits_to_result](OpContext& ctx) {
-    auto symbol = arg(ctx, "symbol");
-    if (symbol.empty()) symbol = arg(ctx, "name");
-    if (symbol.empty()) {
-      OpResult r;
-      r.ok = false;
-      r.text = "symbol required";
-      return r;
+  auto parse_code_request = [](OpContext& ctx, std::string& symbol, std::string& source_id,
+                               int& limit, int& page_limit, OpResult& error) {
+    auto symbol_it = ctx.args.find("symbol");
+    auto name_it = ctx.args.find("name");
+    const bool has_symbol = symbol_it != ctx.args.end() && !symbol_it->second.empty();
+    const bool has_name = name_it != ctx.args.end() && !name_it->second.empty();
+    if (has_symbol && has_name && symbol_it->second != name_it->second) {
+      error = argument_error("invalid_argument", "symbol",
+                             "symbol and name must identify the same value");
+      return false;
     }
-    int limit = arg_int(ctx, "limit", 50);
-    int page_limit = arg_int(ctx, "page_limit", 500);
-    auto hits = codeintel::find_defs(*ctx.brain, symbol, limit, page_limit);
+    symbol = has_symbol ? symbol_it->second : (has_name ? name_it->second : std::string{});
+    if (!codeintel::is_valid_symbol(symbol)) {
+      error = argument_error("invalid_argument", "symbol",
+                             "symbol must be a qualified ASCII identifier");
+      return false;
+    }
+    auto source = resolve_source(ctx, true, error);
+    if (!source) return false;
+    source_id = *source;
+    if (!parse_bounded_uint(ctx, "limit", 50, 1, 200, limit, error) ||
+        !parse_bounded_uint(ctx, "page_limit", 500, 1, 2000, page_limit, error))
+      return false;
+    return true;
+  };
+
+  register_one(
+      "code_def", Scope::Read, [hits_to_result, parse_code_request](OpContext& ctx) {
+    std::string symbol, source;
+    int limit = 50, page_limit = 500;
+    OpResult error;
+    if (!parse_code_request(ctx, symbol, source, limit, page_limit, error)) return error;
+    auto hits = codeintel::find_defs_in_source(*ctx.brain, source, symbol, limit, page_limit);
     return hits_to_result(hits);
   }, false, "Find C++/TS-like symbol definitions in page bodies",
-      R"({"type":"object","properties":{"symbol":{"type":"string"},"name":{"type":"string"},"limit":{"type":"integer"},"page_limit":{"type":"integer"}},"required":["symbol"]})");
+      R"({"type":"object","additionalProperties":false,"properties":{"symbol":{"type":"string","maxLength":256},"name":{"type":"string","maxLength":256},"source_id":{"type":"string","default":"default"},"limit":{"type":"integer","minimum":0,"maximum":200,"default":50},"page_limit":{"type":"integer","minimum":0,"maximum":2000,"default":500}},"anyOf":[{"required":["symbol"]},{"required":["name"]}]})");
 
   register_one(
-      "code_refs", Scope::Read, [hits_to_result](OpContext& ctx) {
-    auto symbol = arg(ctx, "symbol");
-    if (symbol.empty()) symbol = arg(ctx, "name");
-    if (symbol.empty()) {
-      OpResult r;
-      r.ok = false;
-      r.text = "symbol required";
-      return r;
-    }
-    int limit = arg_int(ctx, "limit", 50);
-    int page_limit = arg_int(ctx, "page_limit", 500);
-    auto hits = codeintel::find_refs(*ctx.brain, symbol, limit, page_limit);
+      "code_refs", Scope::Read, [hits_to_result, parse_code_request](OpContext& ctx) {
+    std::string symbol, source;
+    int limit = 50, page_limit = 500;
+    OpResult error;
+    if (!parse_code_request(ctx, symbol, source, limit, page_limit, error)) return error;
+    auto hits = codeintel::find_refs_in_source(*ctx.brain, source, symbol, limit, page_limit);
     return hits_to_result(hits);
   }, false, "Find word-boundary symbol references in page bodies",
-      R"({"type":"object","properties":{"symbol":{"type":"string"},"name":{"type":"string"},"limit":{"type":"integer"},"page_limit":{"type":"integer"}},"required":["symbol"]})");
+      R"({"type":"object","additionalProperties":false,"properties":{"symbol":{"type":"string","maxLength":256},"name":{"type":"string","maxLength":256},"source_id":{"type":"string","default":"default"},"limit":{"type":"integer","minimum":0,"maximum":200,"default":50},"page_limit":{"type":"integer","minimum":0,"maximum":2000,"default":500}},"anyOf":[{"required":["symbol"]},{"required":["name"]}]})");
 
   register_one(
-      "code_callers", Scope::Read, [hits_to_result](OpContext& ctx) {
-    auto symbol = arg(ctx, "symbol");
-    if (symbol.empty()) symbol = arg(ctx, "name");
-    if (symbol.empty()) {
-      OpResult r;
-      r.ok = false;
-      r.text = "symbol required";
-      return r;
-    }
-    int limit = arg_int(ctx, "limit", 50);
-    int page_limit = arg_int(ctx, "page_limit", 500);
-    auto hits = codeintel::find_callers(*ctx.brain, symbol, limit, page_limit);
+      "code_callers", Scope::Read, [hits_to_result, parse_code_request](OpContext& ctx) {
+    std::string symbol, source;
+    int limit = 50, page_limit = 500;
+    OpResult error;
+    if (!parse_code_request(ctx, symbol, source, limit, page_limit, error)) return error;
+    auto hits = codeintel::find_callers_in_source(*ctx.brain, source, symbol, limit, page_limit);
     return hits_to_result(hits);
   }, false, "Find call-ish symbol( references in page bodies",
-      R"({"type":"object","properties":{"symbol":{"type":"string"},"name":{"type":"string"},"limit":{"type":"integer"},"page_limit":{"type":"integer"}},"required":["symbol"]})");
+      R"({"type":"object","additionalProperties":false,"properties":{"symbol":{"type":"string","maxLength":256},"name":{"type":"string","maxLength":256},"source_id":{"type":"string","default":"default"},"limit":{"type":"integer","minimum":0,"maximum":200,"default":50},"page_limit":{"type":"integer","minimum":0,"maximum":2000,"default":500}},"anyOf":[{"required":["symbol"]},{"required":["name"]}]})");
 
   // N15: link sources, ingest log, chronicle, timeline
   register_one(
       "list_link_sources", Scope::Read, [](OpContext& ctx) {
-    OpResult r;
-    auto rows = ctx.brain->list_link_sources();
+    OpResult r, error;
+    auto source = resolve_source(ctx, true, error);
+    if (!source) return error;
+    auto rows = ctx.brain->list_link_sources(*source);
     json arr = json::array();
     std::ostringstream oss;
     for (auto& row : rows) {
-      arr.push_back({{"link_source", row.link_source}, {"count", row.count}});
-      oss << row.link_source << "\t" << row.count << "\n";
+      arr.push_back({{"source_id", row.source_id}, {"link_source", row.link_source},
+                     {"count", row.count}});
+      oss << row.source_id << "\t" << row.link_source << "\t" << row.count << "\n";
     }
-    r.json = arr.dump(2);
+    r.json = json({{"source_id", *source}, {"link_sources", arr}}).dump(2);
     r.text = oss.str();
     return r;
   }, false, "Distinct link_source values with counts",
-      R"({"type":"object","properties":{}})");
+      R"({"type":"object","additionalProperties":false,"properties":{"source_id":{"type":"string","default":"default"}}})");
 
   register_one(
       "log_ingest", Scope::Write, [](OpContext& ctx) {
-    OpResult r;
+    OpResult r, error;
+    auto source = resolve_source(ctx, false, error);
+    if (!source) return error;
     auto path = arg(ctx, "path");
     auto et = arg(ctx, "event_type", "import");
     auto detail = arg(ctx, "detail_json", "{}");
-    int keep = arg_int(ctx, "keep_last", 100);
-    auto id = ctx.brain->log_ingest(et, path, detail, keep);
-    r.json = json({{"id", id}}).dump(2);
-    r.text = "logged " + std::to_string(id);
+    int keep = 100;
+    if (!parse_bounded_uint(ctx, "keep_last", 100, 1, 1000, keep, error)) return error;
+    if (et.size() > 64 || path.size() > 4096 || detail.size() > 65536)
+      return argument_error("invalid_argument", "payload", "ingest payload exceeds size limit");
+    try {
+      (void)json::parse(detail);
+      auto id = ctx.brain->log_ingest(et, path, detail, keep, *source);
+      r.json = json({{"id", id}, {"source_id", *source}}).dump(2);
+      r.text = "logged " + std::to_string(id);
+    } catch (const std::invalid_argument&) {
+      return argument_error("invalid_argument", "detail_json", "valid bounded JSON required");
+    } catch (...) {
+      return argument_error("database_error", "database", "ingest write failed");
+    }
     return r;
-  }, false, "Append ingest log event (keeps last N)",
-      R"({"type":"object","properties":{"path":{"type":"string"},"event_type":{"type":"string"},"detail_json":{"type":"string"},"keep_last":{"type":"integer"}}})");
+  }, true, "Append source-attributed ingest log event (keeps last N per source)",
+      R"({"type":"object","additionalProperties":false,"properties":{"source_id":{"type":"string","default":"default"},"path":{"type":"string","maxLength":4096},"event_type":{"type":"string","maxLength":64,"default":"import"},"detail_json":{"type":"string","maxLength":65536,"default":"{}"},"keep_last":{"type":"integer","minimum":0,"maximum":1000,"default":100}}})");
 
   register_one(
       "get_ingest_log", Scope::Read, [](OpContext& ctx) {
-    OpResult r;
-    auto rows = ctx.brain->get_ingest_log(arg_int(ctx, "limit", 50));
+    OpResult r, error;
+    auto source = resolve_source(ctx, true, error);
+    if (!source) return error;
+    int limit = 20;
+    if (!parse_bounded_uint(ctx, "limit", 20, 1, 50, limit, error)) return error;
+    auto rows = ctx.brain->get_ingest_log(limit, *source);
     json arr = json::array();
     for (auto& e : rows) {
       arr.push_back({{"id", e.id},
+                     {"source_id", e.source_id},
                      {"event_type", e.event_type},
                      {"path", e.path},
                      {"detail_json", e.detail_json},
                      {"created_at", e.created_at}});
     }
-    r.json = arr.dump(2);
+    r.json = json({{"source_id", *source}, {"events", arr}}).dump(2);
     r.text = r.json;
     return r;
   }, false, "Recent ingest log events",
-      R"({"type":"object","properties":{"limit":{"type":"integer"}}})");
+      R"({"type":"object","additionalProperties":false,"properties":{"source_id":{"type":"string","default":"default"},"limit":{"type":"integer","minimum":0,"maximum":50,"default":20}}})");
 
   register_one(
       "chronicle_day", Scope::Read, [](OpContext& ctx) {
-    OpResult r;
+    OpResult r, error;
+    auto source = resolve_source(ctx, true, error);
+    if (!source) return error;
     auto day = arg(ctx, "day");
-    if (day.empty()) day = arg(ctx, "date");
-    if (day.empty()) day = util::utc_date();
-    auto hits = ctx.brain->chronicle_day(day, arg_int(ctx, "limit", 100));
+    if (!valid_utc_day(day))
+      return argument_error("invalid_argument", "day", "real UTC date YYYY-MM-DD required");
+    int limit = 100;
+    if (!parse_bounded_uint(ctx, "limit", 100, 1, 200, limit, error)) return error;
+    auto hits = ctx.brain->chronicle_day(day, limit, *source);
     json arr = json::array();
     std::ostringstream oss;
     for (auto& h : hits) {
-      arr.push_back({{"slug", h.slug},
+      arr.push_back({{"id", h.id}, {"source_id", h.source_id}, {"slug", h.slug},
                      {"title", h.title},
                      {"updated_at", h.updated_at},
                      {"created_at", h.created_at},
+                     {"effective_at", h.effective_at},
                      {"type", h.type}});
       oss << h.slug << "\t" << h.title << "\t" << h.updated_at << "\n";
     }
-    r.json = json({{"day", day.substr(0, 10)}, {"pages", arr}}).dump(2);
+    r.json = json({{"source_id", *source}, {"day", day}, {"pages", arr}}).dump(2);
     r.text = oss.str();
     return r;
   }, false, "Pages created/updated on a UTC day",
-      R"({"type":"object","properties":{"day":{"type":"string"},"date":{"type":"string"},"limit":{"type":"integer"}}})");
+      R"({"type":"object","additionalProperties":false,"properties":{"source_id":{"type":"string","default":"default"},"day":{"type":"string"},"limit":{"type":"integer","minimum":0,"maximum":200,"default":100}},"required":["day"]})");
 
   register_one(
       "chronicle_since", Scope::Read, [](OpContext& ctx) {
-    OpResult r;
+    OpResult r, error;
+    auto source = resolve_source(ctx, true, error);
+    if (!source) return error;
     auto since = arg(ctx, "since");
-    if (since.empty()) since = arg(ctx, "from");
-    if (since.empty()) {
-      r.ok = false;
-      r.text = "since required (ISO date/time)";
-      return r;
-    }
-    auto hits = ctx.brain->chronicle_since(since, arg_int(ctx, "limit", 100));
+    if (!valid_utc_since(since))
+      return argument_error("invalid_argument", "since", "strict UTC date or timestamp required");
+    int limit = 100;
+    if (!parse_bounded_uint(ctx, "limit", 100, 1, 200, limit, error)) return error;
+    auto hits = ctx.brain->chronicle_since(since, limit, *source);
     json arr = json::array();
     std::ostringstream oss;
     for (auto& h : hits) {
-      arr.push_back({{"slug", h.slug},
+      arr.push_back({{"id", h.id}, {"source_id", h.source_id}, {"slug", h.slug},
                      {"title", h.title},
                      {"updated_at", h.updated_at},
                      {"created_at", h.created_at},
+                     {"effective_at", h.effective_at},
                      {"type", h.type}});
       oss << h.slug << "\t" << h.title << "\t" << h.updated_at << "\n";
     }
-    r.json = json({{"since", since}, {"pages", arr}}).dump(2);
+    std::string normalized = since.size() == 10 ? since + "T00:00:00Z" : since;
+    if (normalized.size() == 20 && normalized[10] == ' ') normalized[10] = 'T';
+    r.json = json({{"source_id", *source}, {"since", normalized}, {"pages", arr}}).dump(2);
     r.text = oss.str();
     return r;
   }, false, "Pages created/updated since ISO timestamp",
-      R"({"type":"object","properties":{"since":{"type":"string"},"from":{"type":"string"},"limit":{"type":"integer"}},"required":["since"]})");
+      R"({"type":"object","additionalProperties":false,"properties":{"source_id":{"type":"string","default":"default"},"since":{"type":"string"},"limit":{"type":"integer","minimum":0,"maximum":200,"default":100}},"required":["since"]})");
 
   register_one(
       "add_timeline_entry", Scope::Write, [](OpContext& ctx) {
-    OpResult r;
+    OpResult r, error;
+    auto source = resolve_source(ctx, false, error);
+    if (!source) return error;
     PageInput in;
     in.slug = arg(ctx, "slug");
     if (in.slug.empty()) {
-      auto h = util::sha256_hex(arg(ctx, "body") + util::utc_now());
+      auto h = util::sha256_hex(arg(ctx, "title") + "\n" + arg(ctx, "body") + util::utc_now());
       if (h.size() > 8) h = h.substr(0, 8);
-      in.slug = "timeline/" + util::utc_date() + "-" + h;
+      auto base = "timeline/" + util::utc_date() + "-" + h;
+      in.slug = base;
+      int suffix = 2;
+      while (ctx.brain->get_page(in.slug, *source, true))
+        in.slug = base + "-" + std::to_string(suffix++);
     }
     in.title = arg(ctx, "title");
     in.body = arg(ctx, "body");
@@ -1332,249 +1933,407 @@ void register_builtin_ops() {
       if (in.title.size() > 80) in.title = in.title.substr(0, 80);
     }
     if (in.body.empty() && in.title.empty()) {
-      r.ok = false;
-      r.text = "title or body required";
-      return r;
+      return argument_error("invalid_argument", "body", "title or body required");
     }
     in.type = "timeline";
-    in.source_id = arg(ctx, "source_id", "default");
-    in.source_kind = "timeline";
-    in.ingested_via = "mcp";
+    in.source_id = *source;
+    in.source_kind = ctx.via_mcp ? "mcp:add_timeline_entry" : "timeline";
+    in.ingested_via = ctx.via_mcp ? "mcp" : "cli";
     auto page = ctx.brain->put_page(in);
     auto chunks = ingest::chunk_markdown(page.title, page.body);
     ctx.brain->replace_chunks(page.id, chunks);
+    if (!ctx.via_mcp) {
+      auto links = graph::extract_links(page.source_id, page.slug, page.body);
+      ctx.brain->replace_extracted_links(page.source_id, page.slug, links);
+    }
     ctx.brain->enqueue_embed_page(page.id);
-    r.json = json({{"slug", page.slug}, {"id", page.id}, {"type", page.type}}).dump(2);
+    r.json = json({{"source_id", page.source_id}, {"slug", page.slug},
+                   {"id", page.id}, {"type", page.type}}).dump(2);
     r.text = "timeline " + page.slug;
     return r;
-  }, false, "Create a type=timeline page (thin put_page)",
-      R"({"type":"object","properties":{"title":{"type":"string"},"body":{"type":"string"},"slug":{"type":"string"},"source_id":{"type":"string"}}})");
+  }, true, "Create a type=timeline page (thin put_page subset)",
+      R"({"type":"object","additionalProperties":false,"properties":{"title":{"type":"string"},"body":{"type":"string"},"slug":{"type":"string"},"source_id":{"type":"string","default":"default"}},"anyOf":[{"required":["title"]},{"required":["body"]}]})");
 
   // N17 job replay + messages
   register_one(
       "replay_job", Scope::Write, [](OpContext& ctx) {
-    OpResult r;
+    OpResult r, error;
+    if (!validate_allowed_args(ctx, {"job_id", "id"}, error)) return error;
     int64_t id = 0;
+    if (!parse_job_id_alias(ctx, id, error)) return error;
     try {
-      id = std::stoll(arg(ctx, "id"));
-    } catch (...) {
-      r.ok = false;
-      r.text = "id required";
+      const auto replay = jobs::replay_job_checked(*ctx.brain, id);
+      if (replay.status == jobs::JobOperationStatus::not_found)
+        return argument_error("not_found", "job_id", "job not found");
+      if (replay.status == jobs::JobOperationStatus::invalid_state)
+        return argument_error("invalid_state", "job_id", "job is not replayable");
+      if (replay.status != jobs::JobOperationStatus::success)
+        return argument_error("invalid_argument", job_input_field_name(replay.field),
+                              "invalid replay argument");
+      r.json = json({{"original_id", replay.original_id},
+                     {"new_id", replay.new_id},
+                     {"status", "waiting"}})
+                   .dump(2);
+      r.text = "replayed " + std::to_string(replay.original_id) + " -> " +
+               std::to_string(replay.new_id);
       return r;
+    } catch (const std::exception& e) {
+      if (is_database_busy_error(e))
+        return argument_error("database_busy", "database", "job replay temporarily busy");
+      return argument_error("database_error", "database", "job replay failed");
     }
-    auto nid = jobs::replay_job(*ctx.brain, id);
-    if (nid <= 0) {
-      r.ok = false;
-      r.text = "replay failed";
-      return r;
-    }
-    r.json = json({{"original_id", id}, {"new_id", nid}, {"status", "waiting"}}).dump(2);
-    r.text = "replayed " + std::to_string(id) + " -> " + std::to_string(nid);
-    return r;
-  }, false, "Clone job to a new waiting job",
-      R"({"type":"object","properties":{"id":{"type":"integer"}},"required":["id"]})");
+  }, true, "Replay a failed/completed job as a fresh waiting job",
+      R"({"type":"object","additionalProperties":false,"properties":{"job_id":{"type":"integer","minimum":1,"maximum":9223372036854775807},"id":{"type":"integer","minimum":1,"maximum":9223372036854775807}},"anyOf":[{"required":["job_id"]},{"required":["id"]}]})");
 
   register_one(
       "send_job_message", Scope::Write, [](OpContext& ctx) {
-    OpResult r;
+    OpResult r, error;
+    if (!validate_allowed_args(ctx, {"job_id", "id", "sender", "payload_json"}, error))
+      return error;
     int64_t id = 0;
+    if (!parse_job_id_alias(ctx, id, error)) return error;
+    const auto sender_it = ctx.args.find("sender");
+    const auto payload_it = ctx.args.find("payload_json");
+    const std::string sender = sender_it == ctx.args.end() ? "system" : sender_it->second;
+    const std::string payload = payload_it == ctx.args.end() ? "{}" : payload_it->second;
     try {
-      id = std::stoll(arg(ctx, "id"));
-    } catch (...) {
-      try {
-        id = std::stoll(arg(ctx, "job_id"));
-      } catch (...) {
-        r.ok = false;
-        r.text = "id required";
-        return r;
-      }
-    }
-    auto mid = jobs::send_job_message(*ctx.brain, id, arg(ctx, "sender", "system"),
-                                      arg(ctx, "payload_json", "{}"));
-    if (mid <= 0) {
-      r.ok = false;
-      r.text = "send failed";
+      const auto sent = jobs::send_job_message_checked(*ctx.brain, id, sender, payload);
+      if (sent.status == jobs::JobOperationStatus::not_found)
+        return argument_error("not_found", "job_id", "job not found");
+      if (sent.status != jobs::JobOperationStatus::success)
+        return argument_error("invalid_argument", job_input_field_name(sent.field),
+                              sent.field == jobs::JobInputField::sender
+                                  ? "valid bounded sender required"
+                                  : "valid bounded JSON payload required");
+      r.json = json({{"message_id", sent.message_id}, {"job_id", id}}).dump(2);
+      r.text = "message " + std::to_string(sent.message_id);
       return r;
+    } catch (const std::exception& e) {
+      if (is_database_busy_error(e))
+        return argument_error("database_busy", "database", "message write temporarily busy");
+      return argument_error("database_error", "database", "message write failed");
     }
-    r.json = json({{"message_id", mid}, {"job_id", id}}).dump(2);
-    r.text = "message " + std::to_string(mid);
-    return r;
-  }, false, "Append a message to a job inbox",
-      R"({"type":"object","properties":{"id":{"type":"integer"},"job_id":{"type":"integer"},"sender":{"type":"string"},"payload_json":{"type":"string"}}})");
+  }, true, "Append a validated JSON message to a job inbox",
+      R"({"type":"object","additionalProperties":false,"properties":{"job_id":{"type":"integer","minimum":1,"maximum":9223372036854775807},"id":{"type":"integer","minimum":1,"maximum":9223372036854775807},"sender":{"type":"string","minLength":1,"maxLength":128,"default":"system"},"payload_json":{"type":"string","minLength":1,"maxLength":65536,"default":"{}"}},"anyOf":[{"required":["job_id"]},{"required":["id"]}]})");
 
-  // N19 identity / context / timeline
+  register_one(
+      "list_job_messages", Scope::Read, [](OpContext& ctx) {
+    OpResult r, error;
+    if (!validate_allowed_args(ctx, {"job_id", "id", "limit"}, error)) return error;
+    int64_t id = 0;
+    if (!parse_job_id_alias(ctx, id, error)) return error;
+    int limit = jobs::kJobMessageDefaultLimit;
+    if (!parse_bounded_uint(ctx, "limit", jobs::kJobMessageDefaultLimit, 1,
+                            jobs::kJobMessageMaxLimit, limit, error))
+      return error;
+    try {
+      auto listed = jobs::list_job_messages_checked(*ctx.brain, id, limit);
+      if (listed.status == jobs::JobOperationStatus::not_found)
+        return argument_error("not_found", "job_id", "job not found");
+      if (listed.status != jobs::JobOperationStatus::success)
+        return argument_error("invalid_argument", job_input_field_name(listed.field),
+                              "invalid message-list argument");
+      json messages = json::array();
+      for (const auto& message : listed.messages) {
+        messages.push_back({{"id", message.id},
+                            {"job_id", message.job_id},
+                            {"sender", message.sender},
+                            {"payload_json", message.payload_json},
+                            {"created_at", message.created_at}});
+      }
+      r.json = messages.dump(2);
+      r.text = r.json;
+      return r;
+    } catch (const std::exception& e) {
+      if (is_database_busy_error(e))
+        return argument_error("database_busy", "database", "message list temporarily busy");
+      return argument_error("database_error", "database", "message list failed");
+    }
+  }, false, "List a job inbox newest first",
+      R"({"type":"object","additionalProperties":false,"properties":{"job_id":{"type":"integer","minimum":1,"maximum":9223372036854775807},"id":{"type":"integer","minimum":1,"maximum":9223372036854775807},"limit":{"type":"integer","minimum":0,"maximum":200,"default":50}},"anyOf":[{"required":["job_id"]},{"required":["id"]}]})");
+
+  // N19 identity / context / timeline / Chronicle reads
   register_one(
       "get_brain_identity", Scope::Read, [](OpContext& ctx) {
-    OpResult r;
-    auto snap = ctx.brain->status_snapshot();
-    auto st = ctx.brain->stats();
-    r.json = json({{"brain_id", ctx.brain->brain_id()},
-                   {"db_path", util::path_to_utf8(util::brain_db_path(ctx.brain->brain_id()))},
-                   {"schema_version", snap.schema_version},
-                   {"pages", st.pages},
-                   {"chunks", st.chunks},
-                   {"links", st.links},
-                   {"embedded_chunks", st.embedded_chunks}})
-                 .dump(2);
-    r.text = r.json;
-    return r;
-  }, false, "Brain identity and stats", R"({"type":"object","properties":{}})");
+    OpResult r, error;
+    if (!validate_allowed_args(ctx, {"source_id"}, error)) return error;
+    try {
+      auto source = resolve_source(ctx, true, error);
+      if (!source) return error;
+      const auto snapshot = ctx.brain->source_identity_snapshot(*source);
+      json result = {{"brain_id", ctx.brain->brain_id()},
+                     {"source_id", snapshot.source_id},
+                     {"schema_version", snapshot.schema_version},
+                     {"pages", snapshot.pages},
+                     {"chunks", snapshot.chunks},
+                     {"links", snapshot.links},
+                     {"embedded_chunks", snapshot.embedded_chunks}};
+      if (!(ctx.remote || ctx.via_mcp)) result["db_path"] = ctx.brain->db_path();
+      r.json = result.dump(2);
+      r.text = r.json;
+      return r;
+    } catch (const std::exception&) {
+      return argument_error("database_error", "database", "brain identity read failed");
+    }
+  }, false, "Read source-scoped identity counters for the selected brain",
+      R"({"type":"object","additionalProperties":false,"properties":{"source_id":{"type":"string","default":"default"}}})");
 
   register_one(
       "volunteer_context", Scope::Read, [](OpContext& ctx) {
-    OpResult r;
-    auto q = arg(ctx, "query");
-    if (q.empty()) q = arg(ctx, "q");
-    int limit = arg_int(ctx, "limit", 8);
-    json arr = json::array();
-    if (!q.empty()) {
-      search::HybridOpts opts;
-      opts.limit = limit;
-      opts.use_vector = false;
-      opts.mode = "conservative";
-      opts.config = &ctx.brain->config();
-      auto hits = search::hybrid_search(*ctx.brain, q, nullptr, opts);
-      for (auto& h : hits) {
-        arr.push_back({{"slug", h.slug},
-                       {"title", h.title},
-                       {"snippet", h.snippet},
-                       {"score", h.score}});
-      }
-    } else {
-      auto pages = ctx.brain->list_pages(limit);
-      for (auto& p : pages) {
-        arr.push_back({{"slug", p.slug},
-                       {"title", p.title},
-                       {"type", p.type},
-                       {"updated_at", p.updated_at}});
-      }
+    OpResult r, error;
+    if (!validate_allowed_args(ctx, {"source_id", "query", "q", "limit"}, error))
+      return error;
+    const auto query_it = ctx.args.find("query");
+    const auto alias_it = ctx.args.find("q");
+    if (query_it != ctx.args.end() && alias_it != ctx.args.end() &&
+        !query_it->second.empty() && !alias_it->second.empty() &&
+        query_it->second != alias_it->second) {
+      return argument_error("invalid_argument", "query", "query and q must match");
     }
-    r.json = arr.dump(2);
-    r.text = r.json;
-    return r;
-  }, false, "Volunteer recent or search context",
-      R"({"type":"object","properties":{"query":{"type":"string"},"q":{"type":"string"},"limit":{"type":"integer"}}})");
+    std::string query;
+    if (query_it != ctx.args.end() && !query_it->second.empty())
+      query = query_it->second;
+    else if (alias_it != ctx.args.end())
+      query = alias_it->second;
+    if (query.size() > 4096 || !is_valid_utf8(query))
+      return argument_error("invalid_argument", "query", "valid bounded UTF-8 query required");
+    int limit = 8;
+    if (!parse_bounded_uint(ctx, "limit", 8, 1, 50, limit, error)) return error;
+    try {
+      auto source = resolve_source(ctx, true, error);
+      if (!source) return error;
+      json rows = json::array();
+      if (!query.empty() && !is_ascii_whitespace_only(query)) {
+        search::HybridOpts opts;
+        opts.limit = limit;
+        opts.use_vector = false;
+        opts.source_id = *source;
+        opts.mode = "conservative";
+        opts.rerank = false;
+        opts.rerank_llm = false;
+        auto hits = search::hybrid_search(*ctx.brain, query, nullptr, opts);
+        for (const auto& hit : hits) {
+          rows.push_back({{"source_id", *source},
+                          {"slug", hit.slug},
+                          {"title", bounded_display_utf8(hit.title, 512, true)},
+                          {"snippet", bounded_display_utf8(hit.snippet, 512, true)},
+                          {"score", hit.score}});
+        }
+      } else {
+        auto pages = ctx.brain->list_pages_for_source(*source, limit);
+        for (const auto& page : pages) {
+          rows.push_back({{"source_id", *source},
+                          {"slug", page.slug},
+                          {"title", bounded_display_utf8(page.title, 512, true)},
+                          {"type", page.type},
+                          {"updated_at", page.updated_at}});
+        }
+      }
+      r.json = rows.dump(2);
+      r.text = r.json;
+      return r;
+    } catch (const std::exception&) {
+      return argument_error("database_error", "database", "context read failed");
+    }
+  }, false, "Read bounded source-scoped conservative search or recent-page context",
+      R"({"type":"object","additionalProperties":false,"properties":{"source_id":{"type":"string","default":"default"},"query":{"type":"string","maxLength":4096},"q":{"type":"string","maxLength":4096},"limit":{"type":"integer","minimum":0,"maximum":50,"default":8}}})");
 
   register_one(
       "get_timeline", Scope::Read, [](OpContext& ctx) {
-    OpResult r;
-    int limit = arg_int(ctx, "limit", 50);
-    auto pages = ctx.brain->list_pages(limit, "timeline");
-    json arr = json::array();
-    for (auto& p : pages) {
-      arr.push_back({{"slug", p.slug},
-                     {"title", p.title},
-                     {"updated_at", p.updated_at},
-                     {"created_at", p.created_at}});
+    OpResult r, error;
+    if (!validate_allowed_args(ctx, {"source_id", "limit"}, error)) return error;
+    int limit = 50;
+    if (!parse_bounded_uint(ctx, "limit", 50, 1, 200, limit, error)) return error;
+    try {
+      auto source = resolve_source(ctx, true, error);
+      if (!source) return error;
+      auto pages = ctx.brain->list_pages_for_source(*source, limit, "timeline");
+      json rows = json::array();
+      for (const auto& page : pages) {
+        const auto effective_at =
+            page.updated_at >= page.created_at ? page.updated_at : page.created_at;
+        rows.push_back({{"source_id", *source},
+                        {"slug", page.slug},
+                        {"type", page.type},
+                        {"title", bounded_display_utf8(page.title, 512, true)},
+                        {"created_at", page.created_at},
+                        {"updated_at", page.updated_at},
+                        {"effective_at", effective_at}});
+      }
+      r.json = rows.dump(2);
+      r.text = r.json;
+      return r;
+    } catch (const std::exception&) {
+      return argument_error("database_error", "database", "timeline read failed");
     }
-    r.json = arr.dump(2);
-    r.text = r.json;
-    return r;
-  }, false, "List timeline-type pages",
-      R"({"type":"object","properties":{"limit":{"type":"integer"}}})");
+  }, false, "Read the bounded source-scoped thin timeline-page subset",
+      R"({"type":"object","additionalProperties":false,"properties":{"source_id":{"type":"string","default":"default"},"limit":{"type":"integer","minimum":0,"maximum":200,"default":50}}})");
 
   register_one(
       "volunteer_chronicle", Scope::Read, [](OpContext& ctx) {
-    OpResult r;
-    int limit = arg_int(ctx, "limit", 50);
-    auto since = arg(ctx, "since");
-    std::vector<Brain::ChronicleHit> hits;
-    if (!since.empty()) {
-      hits = ctx.brain->chronicle_since(since, limit);
-    } else {
-      auto day = util::utc_date();
-      hits = ctx.brain->chronicle_day(day, limit);
-      if (hits.empty()) hits = ctx.brain->chronicle_since("2000-01-01", limit);
+    OpResult r, error;
+    if (!validate_allowed_args(ctx, {"source_id", "since", "limit"}, error)) return error;
+    const auto since_it = ctx.args.find("since");
+    std::string since = since_it == ctx.args.end() ? util::utc_seven_day_boundary()
+                                                   : since_it->second;
+    if (since_it != ctx.args.end() && (since.empty() || !valid_utc_since(since)))
+      return argument_error("invalid_argument", "since", "valid UTC date or timestamp required");
+    int limit = 50;
+    if (!parse_bounded_uint(ctx, "limit", 50, 1, 200, limit, error)) return error;
+    try {
+      auto source = resolve_source(ctx, true, error);
+      if (!source) return error;
+      auto hits = ctx.brain->chronicle_since(since, limit, *source);
+      json rows = json::array();
+      for (const auto& hit : hits) {
+        rows.push_back({{"source_id", *source},
+                        {"slug", hit.slug},
+                        {"title", bounded_display_utf8(hit.title, 512, true)},
+                        {"created_at", hit.created_at},
+                        {"updated_at", hit.updated_at},
+                        {"effective_at", hit.effective_at},
+                        {"type", hit.type}});
+      }
+      r.json = rows.dump(2);
+      r.text = r.json;
+      return r;
+    } catch (const std::exception&) {
+      return argument_error("database_error", "database", "Chronicle read failed");
     }
-    json arr = json::array();
-    for (auto& h : hits) {
-      arr.push_back({{"slug", h.slug},
-                     {"title", h.title},
-                     {"updated_at", h.updated_at},
-                     {"type", h.type}});
-    }
-    r.json = arr.dump(2);
-    r.text = r.json;
-    return r;
-  }, false, "Volunteer recent chronicle pages",
-      R"({"type":"object","properties":{"since":{"type":"string"},"limit":{"type":"integer"}}})");
+  }, false, "Read bounded source-scoped Chronicle page activity",
+      R"({"type":"object","additionalProperties":false,"properties":{"source_id":{"type":"string","default":"default"},"since":{"type":"string"},"limit":{"type":"integer","minimum":0,"maximum":200,"default":50}}})");
 
   // N20 schema packs
   register_one(
       "list_schema_packs", Scope::Read, [](OpContext& ctx) {
-    OpResult r;
-    auto packs = schema::list_packs(*ctx.brain);
-    json arr = json::array();
-    for (auto& p : packs)
-      arr.push_back({{"id", p.id}, {"path", p.path}, {"active", p.active}});
-    r.json = arr.dump(2);
-    r.text = r.json;
-    return r;
-  }, false, "List schema packs", R"({"type":"object","properties":{}})");
+    OpResult r, error;
+    if (!validate_allowed_args(ctx, {}, error)) return normalize_n20_error(std::move(error));
+    try {
+      const auto packs = schema::list_packs(*ctx.brain);
+      json rows = json::array();
+      std::string active_id;
+      for (const auto& pack : packs) {
+        rows.push_back(
+            {{"id", pack.id}, {"origin", pack.origin}, {"active", pack.active}});
+        if (pack.active) active_id = pack.id;
+      }
+      json payload = {{"active_id", active_id}, {"packs", std::move(rows)}};
+      r.json = payload.dump();
+      r.text = r.json;
+      return r;
+    } catch (const schema::PackError& pack_error) {
+      return n20_pack_error(pack_error);
+    } catch (const std::exception&) {
+      return n20_error("filesystem_error", "pack", "schema pack storage is unavailable");
+    }
+  }, false, "List validated schema pack identities",
+      R"({"type":"object","additionalProperties":false,"properties":{}})");
 
   register_one(
       "get_active_schema_pack", Scope::Read, [](OpContext& ctx) {
-    OpResult r;
-    auto id = schema::active_pack_id(*ctx.brain);
-    auto raw = schema::load_pack_json(*ctx.brain, id);
     try {
-      r.json = json({{"id", id}, {"pack", json::parse(raw)}}).dump(2);
-    } catch (...) {
-      r.json = json({{"id", id}, {"raw", raw}}).dump(2);
+      OpResult r, error;
+      if (!validate_allowed_args(ctx, {}, error))
+        return normalize_n20_error(std::move(error));
+      r.json = n20_pack_payload(schema::load_pack(*ctx.brain)).dump();
+      r.text = r.json;
+      return r;
+    } catch (const schema::PackError& pack_error) {
+      return n20_pack_error(pack_error);
+    } catch (const std::exception&) {
+      return n20_error("filesystem_error", "pack", "schema pack storage is unavailable");
     }
-    r.text = r.json;
-    return r;
-  }, false, "Active schema pack", R"({"type":"object","properties":{}})");
+  }, false, "Read the active validated schema pack",
+      R"({"type":"object","additionalProperties":false,"properties":{}})");
 
   register_one(
       "reload_schema_pack", Scope::Write, [](OpContext& ctx) {
-    OpResult r;
-    auto id = arg(ctx, "id", schema::active_pack_id(*ctx.brain));
-    schema::ensure_default_pack();
-    if (!schema::set_active_pack(*ctx.brain, id)) {
-      r.ok = false;
-      r.text = "pack not found";
+    OpResult r, error;
+    if (!validate_allowed_args(ctx, {"id"}, error))
+      return normalize_n20_error(std::move(error));
+    try {
+      const auto reloaded = schema::reload_pack(*ctx.brain, optional_n20_pack_id(ctx));
+      r.json = json({{"id", reloaded.id}, {"changed", reloaded.changed}}).dump();
+      r.text = r.json;
       return r;
+    } catch (const schema::PackError& pack_error) {
+      return n20_pack_error(pack_error);
+    } catch (const std::exception&) {
+      return n20_error("database_error", "database", "schema pack reload failed");
     }
-    r.text = "active " + id;
-    r.json = json({{"id", id}}).dump(2);
-    return r;
-  }, false, "Set active schema pack",
-      R"({"type":"object","properties":{"id":{"type":"string"}}})");
+  }, true, "Validate and select an installed schema pack",
+      R"({"type":"object","additionalProperties":false,"properties":{"id":{"type":"string","minLength":1,"maxLength":64,"pattern":"^[A-Za-z0-9_-]+$"}}})");
 
   register_one(
       "schema_stats", Scope::Read, [](OpContext& ctx) {
-    OpResult r;
-    auto st = ctx.brain->db().prepare(
-        "SELECT type, COUNT(*) FROM pages WHERE deleted_at IS NULL GROUP BY type ORDER BY COUNT(*) DESC");
-    json arr = json::array();
-    while (st.step()) arr.push_back({{"type", st.column_text(0)}, {"count", st.column_int(1)}});
-    r.json = arr.dump(2);
-    r.text = r.json;
-    return r;
-  }, false, "Page counts by type", R"({"type":"object","properties":{}})");
+    OpResult r, error;
+    if (!validate_allowed_args(ctx, {"source_id", "limit"}, error))
+      return normalize_n20_error(std::move(error));
+    int limit = 100;
+    if (!parse_bounded_uint(ctx, "limit", 100, 1, 256, limit, error))
+      return normalize_n20_error(std::move(error));
+    try {
+      auto source = resolve_source(ctx, true, error);
+      if (!source) return normalize_n20_error(std::move(error));
+      const auto stats = schema::read_schema_stats(*ctx.brain, *source, limit);
+      json type_counts = json::array();
+      for (const auto& row : stats.type_counts)
+        type_counts.push_back({{"type", row.type}, {"count", row.count}});
+      json payload = {{"source_id", stats.source_id},
+                      {"active_pack_id", stats.active_pack_id},
+                      {"schema_version", stats.schema_version},
+                      {"total_active_pages", stats.total_active_pages},
+                      {"type_counts", std::move(type_counts)},
+                      {"truncated", stats.truncated}};
+      r.json = payload.dump();
+      r.text = r.json;
+      return r;
+    } catch (const schema::PackError& pack_error) {
+      return n20_pack_error(pack_error);
+    } catch (const std::exception& exception) {
+      if (is_database_busy_error(exception))
+        return n20_error("database_busy", "database", "schema statistics database is busy");
+      return n20_error("database_error", "database", "schema statistics read failed");
+    }
+  }, false, "Read bounded source-scoped schema statistics",
+      R"({"type":"object","additionalProperties":false,"properties":{"source_id":{"type":"string","minLength":1,"maxLength":64,"pattern":"^[A-Za-z0-9_-]+$","default":"default"},"limit":{"type":"integer","minimum":0,"maximum":256,"default":100}}})");
 
   register_one(
       "ontology_get", Scope::Read, [](OpContext& ctx) {
-    OpResult r;
-    r.json = schema::load_pack_json(*ctx.brain, arg(ctx, "id"));
-    r.text = r.json;
-    return r;
-  }, false, "Ontology/pack JSON", R"({"type":"object","properties":{"id":{"type":"string"}}})");
+    OpResult r, error;
+    if (!validate_allowed_args(ctx, {"id"}, error))
+      return normalize_n20_error(std::move(error));
+    try {
+      r.json = n20_pack_payload(
+                   schema::load_pack(*ctx.brain, optional_n20_pack_id(ctx)))
+                   .dump();
+      r.text = r.json;
+      return r;
+    } catch (const schema::PackError& pack_error) {
+      return n20_pack_error(pack_error);
+    } catch (const std::exception&) {
+      return n20_error("filesystem_error", "pack", "schema pack storage is unavailable");
+    }
+  }, false, "Read a validated schema pack ontology declaration",
+      R"({"type":"object","additionalProperties":false,"properties":{"id":{"type":"string","minLength":1,"maxLength":64,"pattern":"^[A-Za-z0-9_-]+$"}}})");
 
   register_one(
       "ontology_dimensions", Scope::Read, [](OpContext& ctx) {
-    OpResult r;
+    OpResult r, error;
+    if (!validate_allowed_args(ctx, {"id"}, error))
+      return normalize_n20_error(std::move(error));
     try {
-      auto j = json::parse(schema::load_pack_json(*ctx.brain, arg(ctx, "id")));
-      r.json = j.value("dimensions", json::array()).dump(2);
-    } catch (...) {
-      r.json = "[]";
+      const auto loaded = schema::load_pack(*ctx.brain, optional_n20_pack_id(ctx));
+      r.json = json({{"id", loaded.id}, {"dimensions", loaded.manifest.dimensions}}).dump();
+      r.text = r.json;
+      return r;
+    } catch (const schema::PackError& pack_error) {
+      return n20_pack_error(pack_error);
+    } catch (const std::exception&) {
+      return n20_error("filesystem_error", "pack", "schema pack storage is unavailable");
     }
-    r.text = r.json;
-    return r;
-  }, false, "Ontology dimensions from pack",
-      R"({"type":"object","properties":{"id":{"type":"string"}}})");
+  }, false, "Read dimensions declared by a validated ontology schema pack",
+      R"({"type":"object","additionalProperties":false,"properties":{"id":{"type":"string","minLength":1,"maxLength":64,"pattern":"^[A-Za-z0-9_-]+$"}}})");
 
   // N21 takes
   register_one(
@@ -1646,113 +2405,329 @@ void register_builtin_ops() {
   }, false, "Calibration profile stub", R"({"type":"object","properties":{}})");
 
   // N22 code intel extensions
-  register_one(
-      "code_callees", Scope::Read, [](OpContext& ctx) {
-    OpResult r;
-    auto symbol = arg(ctx, "symbol");
-    if (symbol.empty()) symbol = arg(ctx, "name");
-    if (symbol.empty()) {
-      r.ok = false;
-      r.text = "symbol required";
-      return r;
+  auto parse_n22_symbol = [](OpContext& ctx,
+                             std::initializer_list<std::string_view> aliases,
+                             std::string_view canonical, std::string& symbol,
+                             OpResult& error) {
+    const std::string* selected = nullptr;
+    for (const auto alias : aliases) {
+      const auto it = ctx.args.find(std::string(alias));
+      if (it == ctx.args.end()) continue;
+      if (it->second.empty()) {
+        error = argument_error("invalid_argument", std::string(canonical),
+                               "qualified ASCII identifier required");
+        return false;
+      }
+      if (!selected) {
+        selected = &it->second;
+      } else if (*selected != it->second) {
+        error = argument_error("invalid_argument", std::string(canonical),
+                               "symbol aliases must match");
+        return false;
+      }
     }
-    auto hits = codeintel::find_callees(*ctx.brain, symbol, arg_int(ctx, "limit", 50),
-                                        arg_int(ctx, "page_limit", 500));
+    if (!selected || !codeintel::is_valid_symbol(*selected)) {
+      error = argument_error("invalid_argument", std::string(canonical),
+                             "qualified ASCII identifier required");
+      return false;
+    }
+    symbol = *selected;
+    return true;
+  };
+
+  auto n22_hits_to_result = [](const std::vector<codeintel::Hit>& hits) {
+    OpResult r;
     json arr = json::array();
-    for (auto& h : hits)
-      arr.push_back({{"slug", h.slug}, {"line", h.line}, {"snippet", h.snippet}, {"kind", h.kind}});
+    std::ostringstream text;
+    for (const auto& hit : hits) {
+      arr.push_back({{"source_id", hit.source_id},
+                     {"slug", hit.slug},
+                     {"line", hit.line},
+                     {"snippet", hit.snippet},
+                     {"kind", hit.kind}});
+      text << hit.source_id << "\t" << hit.slug << ":" << hit.line << " ["
+           << hit.kind << "] " << hit.snippet << "\n";
+    }
     r.json = arr.dump(2);
-    r.text = r.json;
+    r.text = text.str().empty() ? "(no matches)\n" : text.str();
     return r;
-  }, false, "Heuristic callees of a symbol",
-      R"({"type":"object","properties":{"symbol":{"type":"string"},"limit":{"type":"integer"}}})");
+  };
+
+  auto parse_n22_source_request = [parse_n22_symbol](
+      OpContext& ctx, std::initializer_list<std::string_view> allowed,
+      std::initializer_list<std::string_view> aliases, std::string_view canonical,
+      std::string& symbol, std::string& source, int& limit, int& page_limit,
+      OpResult& error) {
+    if (!validate_allowed_args(ctx, allowed, error)) return false;
+    if (!parse_n22_symbol(ctx, aliases, canonical, symbol, error)) return false;
+    if (!parse_bounded_uint(ctx, "limit", 50, 1, 200, limit, error) ||
+        !parse_bounded_uint(ctx, "page_limit", 500, 1, 2000, page_limit, error))
+      return false;
+    auto resolved = resolve_source(ctx, true, error);
+    if (!resolved) return false;
+    source = *resolved;
+    return true;
+  };
 
   register_one(
-      "code_flow", Scope::Read, [](OpContext& ctx) {
-    OpResult r;
-    auto symbol = arg(ctx, "symbol");
-    if (symbol.empty()) symbol = arg(ctx, "name");
-    if (symbol.empty()) {
-      r.ok = false;
-      r.text = "symbol required";
-      return r;
+      "code_callees", Scope::Read, [parse_n22_source_request, n22_hits_to_result](OpContext& ctx) {
+    OpResult error;
+    std::string symbol, source;
+    int limit = 50, page_limit = 500;
+    try {
+      if (!parse_n22_source_request(
+              ctx, {"symbol", "name", "source_id", "limit", "page_limit"},
+              {"symbol", "name"}, "symbol", symbol, source, limit, page_limit, error))
+        return error;
+      return n22_hits_to_result(
+          codeintel::find_callees_in_source(*ctx.brain, source, symbol, limit, page_limit));
+    } catch (const std::length_error&) {
+      return argument_error("resource_limit", "source_id", "source text exceeds scan budget");
+    } catch (const std::exception& exception) {
+      if (is_database_busy_error(exception))
+        return argument_error("database_busy", "database", "code scan database is busy");
+      return argument_error("database_error", "database", "code scan failed");
     }
-    auto hits = codeintel::find_flow(*ctx.brain, symbol, arg_int(ctx, "depth", 2),
-                                     arg_int(ctx, "limit", 50), arg_int(ctx, "page_limit", 500));
-    json arr = json::array();
-    for (auto& h : hits)
-      arr.push_back({{"slug", h.slug}, {"line", h.line}, {"snippet", h.snippet}, {"kind", h.kind}});
-    r.json = arr.dump(2);
-    r.text = r.json;
-    return r;
-  }, false, "Depth-limited call flow",
-      R"({"type":"object","properties":{"symbol":{"type":"string"},"depth":{"type":"integer"}}})");
+  }, false,
+      "Stateless bounded source-text heuristic (16 KiB/page, 8 MiB and 16384 lines/corpus): "
+      "one-hop source-scoped bounded brace-body "
+      "callee scan with exact lexical identifier matching; no AST, tree-sitter, "
+      "or compiler index; no overload/type resolution; no persisted call "
+      "edges/cache; not recursive/transitive upstream parity",
+      R"({"type":"object","additionalProperties":false,"properties":{"symbol":{"type":"string","minLength":1,"maxLength":256},"name":{"type":"string","minLength":1,"maxLength":256},"source_id":{"type":"string","minLength":1,"maxLength":64,"pattern":"^(?!(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9])$)[A-Za-z0-9_-]+$","default":"default"},"limit":{"type":"integer","minimum":0,"maximum":200,"default":50},"page_limit":{"type":"integer","minimum":0,"maximum":2000,"default":500}},"anyOf":[{"required":["symbol"]},{"required":["name"]}]})");
 
   register_one(
-      "code_blast", Scope::Read, [](OpContext& ctx) {
-    OpResult r;
-    auto symbol = arg(ctx, "symbol");
-    if (symbol.empty()) symbol = arg(ctx, "name");
-    if (symbol.empty()) {
-      r.ok = false;
-      r.text = "symbol required";
-      return r;
+      "code_flow", Scope::Read,
+      [parse_n22_symbol, n22_hits_to_result](OpContext& ctx) {
+    OpResult error;
+    try {
+      if (!validate_allowed_args(ctx, {"entry_point", "symbol", "name", "source_id",
+                                       "depth", "limit", "page_limit"}, error))
+        return error;
+      std::string symbol;
+      if (!parse_n22_symbol(ctx, {"entry_point", "symbol", "name"}, "entry_point",
+                             symbol, error))
+        return error;
+      int depth = 2, limit = 50, page_limit = 500;
+      if (!parse_bounded_uint(ctx, "depth", 2, 1, 8, depth, error) ||
+          !parse_bounded_uint(ctx, "limit", 50, 1, 200, limit, error) ||
+          !parse_bounded_uint(ctx, "page_limit", 500, 1, 2000, page_limit, error))
+        return error;
+      auto source = resolve_source(ctx, true, error);
+      if (!source) return error;
+      return n22_hits_to_result(codeintel::find_flow_in_source(
+          *ctx.brain, *source, symbol, depth, limit, page_limit));
+    } catch (const std::length_error&) {
+      return argument_error("resource_limit", "source_id", "source text exceeds scan budget");
+    } catch (const std::exception& exception) {
+      if (is_database_busy_error(exception))
+        return argument_error("database_busy", "database", "code flow database is busy");
+      return argument_error("database_error", "database", "code flow scan failed");
     }
-    auto hits = codeintel::find_blast(*ctx.brain, symbol, arg_int(ctx, "limit", 80),
-                                      arg_int(ctx, "page_limit", 500));
-    json arr = json::array();
-    for (auto& h : hits)
-      arr.push_back({{"slug", h.slug}, {"line", h.line}, {"snippet", h.snippet}, {"kind", h.kind}});
-    r.json = arr.dump(2);
-    r.text = r.json;
-    return r;
-  }, false, "Union neighborhood around symbol",
-      R"({"type":"object","properties":{"symbol":{"type":"string"},"limit":{"type":"integer"}}})");
+  }, false,
+      "Stateless bounded source-text heuristic (16 KiB/page, 8 MiB and 16384 lines/corpus): "
+      "deterministic breadth-first "
+      "traversal over source-scoped brace-body callees with exact lexical "
+      "identifier matching; no AST, tree-sitter, or compiler index; no "
+      "overload/type resolution; no persisted call edges/cache; not "
+      "recursive/transitive upstream parity; no terminal/sink classification",
+      R"({"type":"object","additionalProperties":false,"properties":{"entry_point":{"type":"string","minLength":1,"maxLength":256},"symbol":{"type":"string","minLength":1,"maxLength":256},"name":{"type":"string","minLength":1,"maxLength":256},"source_id":{"type":"string","minLength":1,"maxLength":64,"pattern":"^(?!(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9])$)[A-Za-z0-9_-]+$","default":"default"},"depth":{"type":"integer","minimum":0,"maximum":8,"default":2},"limit":{"type":"integer","minimum":0,"maximum":200,"default":50},"page_limit":{"type":"integer","minimum":0,"maximum":2000,"default":500}},"anyOf":[{"required":["entry_point"]},{"required":["symbol"]},{"required":["name"]}]})");
+
+  register_one(
+      "code_blast", Scope::Read,
+      [parse_n22_symbol, n22_hits_to_result](OpContext& ctx) {
+    OpResult error;
+    try {
+      std::string symbol, source;
+      int limit = 80, page_limit = 500;
+      if (!validate_allowed_args(ctx,
+                                 {"symbol", "name", "source_id", "limit", "page_limit"},
+                                 error))
+        return error;
+      if (!parse_n22_symbol(ctx, {"symbol", "name"}, "symbol", symbol, error))
+        return error;
+      if (!parse_bounded_uint(ctx, "limit", 80, 1, 200, limit, error) ||
+          !parse_bounded_uint(ctx, "page_limit", 500, 1, 2000, page_limit, error))
+        return error;
+      auto resolved = resolve_source(ctx, true, error);
+      if (!resolved) return error;
+      source = *resolved;
+      return n22_hits_to_result(
+          codeintel::find_blast_in_source(*ctx.brain, source, symbol, limit, page_limit));
+    } catch (const std::length_error&) {
+      return argument_error("resource_limit", "source_id", "source text exceeds scan budget");
+    } catch (const std::exception& exception) {
+      if (is_database_busy_error(exception))
+        return argument_error("database_busy", "database", "code blast database is busy");
+      return argument_error("database_error", "database", "code blast scan failed");
+    }
+  }, false,
+      "Stateless bounded source-text heuristic (16 KiB/page, 8 MiB and 16384 lines/corpus): "
+      "bounded one-hop source-scoped "
+      "def/ref/caller/callee heuristic subset using brace-body callees and exact "
+      "lexical identifier matching; no AST, tree-sitter, or compiler index; no "
+      "overload/type resolution; no persisted call edges/cache; not "
+      "recursive/transitive upstream parity",
+      R"({"type":"object","additionalProperties":false,"properties":{"symbol":{"type":"string","minLength":1,"maxLength":256},"name":{"type":"string","minLength":1,"maxLength":256},"source_id":{"type":"string","minLength":1,"maxLength":64,"pattern":"^(?!(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9])$)[A-Za-z0-9_-]+$","default":"default"},"limit":{"type":"integer","minimum":0,"maximum":200,"default":80},"page_limit":{"type":"integer","minimum":0,"maximum":2000,"default":500}},"anyOf":[{"required":["symbol"]},{"required":["name"]}]})");
 
   register_one(
       "code_traversal_cache_clear", Scope::Admin, [](OpContext& ctx) {
-    (void)ctx;
+    OpResult r, error;
+    if (!validate_allowed_args(ctx, {}, error)) return error;
     codeintel::clear_traversal_cache();
-    OpResult r;
-    r.text = "ok";
-    return r;
-  }, false, "No-op cache clear (stateless scanners)", R"({"type":"object","properties":{}})");
-
-  // N23 chronicle remaining
-  register_one(
-      "chronicle_on_this_day", Scope::Read, [](OpContext& ctx) {
-    OpResult r;
-    auto md = arg(ctx, "date");
-    if (md.empty()) md = arg(ctx, "mmdd");
-    auto hits = ctx.brain->chronicle_on_this_day(md, arg_int(ctx, "limit", 100));
-    json arr = json::array();
-    for (auto& h : hits)
-      arr.push_back({{"slug", h.slug}, {"title", h.title}, {"updated_at", h.updated_at}});
-    r.json = arr.dump(2);
+    const json payload = {{"cleared", 0}, {"stateless", true}};
+    r.json = payload.dump();
     r.text = r.json;
     return r;
-  }, false, "Pages matching MM-DD any year",
-      R"({"type":"object","properties":{"date":{"type":"string"},"mmdd":{"type":"string"},"limit":{"type":"integer"}}})");
+  }, true,
+      "Guarded stateless compatibility no-op; clears zero rows; no persisted "
+      "traversal cache, no cache table, and no schema migration",
+      R"({"type":"object","additionalProperties":false,"properties":{}})");
+
+  // N23 source-scoped Chronicle page-activity/tagging subset
+  register_one(
+      "chronicle_on_this_day", Scope::Read, [](OpContext& ctx) {
+    OpResult r, error;
+    if (!validate_allowed_args(ctx, {"source_id", "date", "mmdd", "limit"}, error))
+      return error;
+
+    const auto date_it = ctx.args.find("date");
+    const auto mmdd_it = ctx.args.find("mmdd");
+    if (date_it != ctx.args.end() && !valid_utc_day(date_it->second))
+      return argument_error("invalid_argument", "date", "real UTC YYYY-MM-DD required");
+    if (mmdd_it != ctx.args.end() && !valid_month_day(mmdd_it->second))
+      return argument_error("invalid_argument", "mmdd", "real MM-DD required");
+
+    std::string anchor = date_it == ctx.args.end() ? util::utc_date() : date_it->second;
+    if (mmdd_it != ctx.args.end()) {
+      if (date_it != ctx.args.end() && anchor.substr(5, 5) != mmdd_it->second)
+        return argument_error("invalid_argument", "date", "date and mmdd must match");
+      if (date_it == ctx.args.end()) anchor = util::utc_date().substr(0, 5) + mmdd_it->second;
+    }
+
+    int limit = 50;
+    if (!parse_bounded_uint(ctx, "limit", 50, 1, 200, limit, error)) return error;
+    try {
+      auto source = resolve_source(ctx, true, error);
+      if (!source) return error;
+      const bool virtual_leap_day = date_it == ctx.args.end() && mmdd_it != ctx.args.end() &&
+                                    mmdd_it->second == "02-29";
+      const auto hits = ctx.brain->chronicle_on_this_day(anchor, limit, *source,
+                                                          virtual_leap_day);
+      json rows = json::array();
+      for (const auto& hit : hits) {
+        rows.push_back({{"source_id", hit.source_id},
+                        {"slug", hit.slug},
+                        {"title", bounded_display_utf8(hit.title, 512, true)},
+                        {"type", hit.type},
+                        {"created_at", hit.created_at},
+                        {"updated_at", hit.updated_at},
+                        {"matched_at", hit.matched_at},
+                        {"years_ago", hit.years_ago}});
+      }
+      r.json = rows.dump(2);
+      r.text = r.json;
+      return r;
+    } catch (const std::exception&) {
+      return argument_error("database_error", "database", "Chronicle history read failed");
+    }
+  }, false,
+      "Qbrain Chronicle subset: read prior-year same-UTC-day page activity in one authorized "
+      "canonical source; "
+      "no timeline-event storage, extraction jobs, narrative generation, or full Chronicle parity",
+      R"({"type":"object","additionalProperties":false,"properties":{"source_id":{"type":"string","minLength":1,"maxLength":64,"x-maxUtf8Bytes":64,"pattern":"^(?!(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9])$)[A-Za-z0-9_-]+$","description":"1-64 ASCII bytes; canonicalized to lowercase; Windows reserved device names rejected.","default":"default"},"date":{"type":"string","minLength":10,"maxLength":10,"pattern":"^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},"mmdd":{"type":"string","minLength":5,"maxLength":5,"pattern":"^[0-9]{2}-[0-9]{2}$"},"limit":{"type":"integer","minimum":0,"maximum":200,"default":50}}})");
 
   register_one(
       "chronicle_last_seen", Scope::Read, [](OpContext& ctx) {
-    OpResult r;
-    auto ts = ctx.brain->chronicle_last_seen(arg(ctx, "slug"));
-    r.json = json({{"last_seen", ts}, {"slug", arg(ctx, "slug")}}).dump(2);
-    r.text = r.json;
-    return r;
-  }, false, "Last updated_at for slug or brain",
-      R"({"type":"object","properties":{"slug":{"type":"string"}}})");
+    OpResult r, error;
+    if (!validate_allowed_args(ctx, {"source_id", "entity", "slug", "asof"}, error))
+      return error;
+
+    const auto entity_it = ctx.args.find("entity");
+    const auto slug_it = ctx.args.find("slug");
+    if (entity_it == ctx.args.end() && slug_it == ctx.args.end())
+      return argument_error("invalid_argument", "entity", "entity is required");
+    if (entity_it != ctx.args.end() && slug_it != ctx.args.end() &&
+        entity_it->second != slug_it->second)
+      return argument_error("invalid_argument", "entity", "entity and slug must match");
+    const std::string entity = entity_it != ctx.args.end() ? entity_it->second : slug_it->second;
+    if (entity.empty() || entity.size() > 4096 || !is_valid_utf8(entity))
+      return argument_error("invalid_argument", "entity", "valid bounded UTF-8 entity required");
+
+    const auto asof_it = ctx.args.find("asof");
+    const std::string asof = asof_it == ctx.args.end() ? util::utc_date() : asof_it->second;
+    const auto asof_day = parse_utc_sys_day(asof);
+    if (!asof_day)
+      return argument_error("invalid_argument", "asof", "real UTC YYYY-MM-DD required");
+
+    try {
+      auto source = resolve_source(ctx, true, error);
+      if (!source) return error;
+      auto found = ctx.brain->chronicle_last_seen(entity, *source);
+      if (!found)
+        return argument_error("not_found", "entity", "entity was not found in the source");
+      if (found->last_seen.size() < 10)
+        return argument_error("database_error", "database", "invalid Chronicle timestamp");
+      const auto last_seen_day = parse_utc_sys_day(found->last_seen.substr(0, 10));
+      if (!last_seen_day)
+        return argument_error("database_error", "database", "invalid Chronicle timestamp");
+      const auto days_ago = (*asof_day - *last_seen_day).count();
+      json result = {{"source_id", found->source_id},
+                     {"entity", found->entity},
+                     {"last_seen", found->last_seen},
+                     {"days_ago", days_ago}};
+      r.json = result.dump(2);
+      r.text = r.json;
+      return r;
+    } catch (const std::exception&) {
+      return argument_error("database_error", "database", "Chronicle last-seen read failed");
+    }
+  }, false,
+      "Qbrain Chronicle subset: read one entity page's source-scoped effective activity in "
+      "one authorized canonical source; "
+      "no timeline-event storage, extraction jobs, narrative generation, or full Chronicle parity",
+      R"({"type":"object","additionalProperties":false,"properties":{"source_id":{"type":"string","minLength":1,"maxLength":64,"x-maxUtf8Bytes":64,"pattern":"^(?!(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9])$)[A-Za-z0-9_-]+$","description":"1-64 ASCII bytes; canonicalized to lowercase; Windows reserved device names rejected.","default":"default"},"entity":{"type":"string","minLength":1,"x-maxUtf8Bytes":4096,"description":"Valid UTF-8 entity identifier; at most 4096 UTF-8 bytes."},"slug":{"type":"string","minLength":1,"x-maxUtf8Bytes":4096,"description":"Legacy entity alias; valid UTF-8 and at most 4096 UTF-8 bytes."},"asof":{"type":"string","minLength":10,"maxLength":10,"pattern":"^[0-9]{4}-[0-9]{2}-[0-9]{2}$"}},"anyOf":[{"required":["entity"]},{"required":["slug"]}]})");
 
   register_one(
       "chronicle_backfill", Scope::Write, [](OpContext& ctx) {
-    OpResult r;
-    int n = ctx.brain->chronicle_backfill(arg_int(ctx, "limit", 1000));
-    r.json = json({{"tagged", n}}).dump(2);
-    r.text = r.json;
-    return r;
-  }, false, "Tag recent pages chronicle",
-      R"({"type":"object","properties":{"limit":{"type":"integer"}}})");
+    OpResult r, error;
+    if (!validate_allowed_args(ctx, {"source_id", "since", "limit", "dry_run"}, error))
+      return error;
+    const auto since_it = ctx.args.find("since");
+    std::optional<std::string> since;
+    if (since_it != ctx.args.end()) {
+      if (since_it->second.empty() || !valid_utc_since(since_it->second))
+        return argument_error("invalid_argument", "since", "valid UTC date or timestamp required");
+      since = since_it->second;
+    }
+    int limit = 1000;
+    if (!parse_bounded_uint(ctx, "limit", 1000, 1, 1000, limit, error)) return error;
+    bool dry_run = false;
+    if (!parse_boolean(ctx, "dry_run", false, dry_run, error)) return error;
+
+    try {
+      auto source = resolve_source(ctx, true, error);
+      if (!source) return error;
+      const auto result = ctx.brain->chronicle_backfill(*source, since, limit, dry_run);
+      json payload = {{"source_id", result.source_id},
+                      {"scanned", result.scanned},
+                      {"eligible", result.eligible},
+                      {"tagged", result.tagged},
+                      {"already_tagged", result.already_tagged},
+                      {"dry_run", result.dry_run}};
+      r.json = payload.dump(2);
+      r.text = r.json;
+      return r;
+    } catch (const std::exception& exception) {
+      if (is_database_busy_error(exception))
+        return argument_error("database_busy", "database", "Chronicle backfill database is busy");
+      return argument_error("database_error", "database", "Chronicle backfill failed");
+    }
+  }, true,
+      "Qbrain Chronicle subset: tag eligible pages in one authorized canonical source "
+      "idempotently; no timeline-event "
+      "storage, extraction jobs, narrative generation, or full Chronicle parity",
+      R"({"type":"object","additionalProperties":false,"properties":{"source_id":{"type":"string","minLength":1,"maxLength":64,"x-maxUtf8Bytes":64,"pattern":"^(?!(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9])$)[A-Za-z0-9_-]+$","description":"1-64 ASCII bytes; canonicalized to lowercase; Windows reserved device names rejected.","default":"default"},"since":{"type":"string","minLength":10,"maxLength":20,"pattern":"^[0-9]{4}-[0-9]{2}-[0-9]{2}([T ][0-9]{2}:[0-9]{2}:[0-9]{2}Z)?$"},"limit":{"type":"integer","minimum":0,"maximum":1000,"default":1000},"dry_run":{"type":"boolean","default":false}}})");
 
   // N24 files
   register_one(
@@ -1783,9 +2758,11 @@ void register_builtin_ops() {
     auto rows = files::list_files(*ctx.brain, arg_int(ctx, "limit", 100));
     json arr = json::array();
     for (auto& e : rows)
+      // N30 D4: remote callers get the stored file name as a relative
+      // identifier; the absolute storage path stays local-only.
       arr.push_back({{"id", e.id},
                      {"name", e.name},
-                     {"path", e.path},
+                   {"path", (ctx.remote || ctx.via_mcp) ? e.name : e.path},
                      {"size", e.size},
                      {"mime", e.mime}});
     r.json = arr.dump(2);
@@ -1811,10 +2788,27 @@ void register_builtin_ops() {
       r.text = "not found";
       return r;
     }
+    if (ctx.remote || ctx.via_mcp) {
+      // N30 D4: file:/// URLs disclose the local filesystem layout; remote
+      // callers receive identifiers only.
+      json j = json::object();
+      if (!id_s.empty()) {
+        try {
+          j["id"] = std::stoll(id_s);
+        } catch (...) {
+          j["id"] = id_s;
+        }
+      }
+      auto name = arg(ctx, "name");
+      if (!name.empty()) j["name"] = name;
+      r.json = j.dump(2);
+      r.text = r.json;
+      return r;
+    }
     r.json = json({{"url", url}}).dump(2);
     r.text = url;
     return r;
-  }, false, "file:// URL for attachment",
+  }, false, "file:// URL for attachment (file URL disclosed to local callers only)",
       R"({"type":"object","properties":{"id":{"type":"integer"},"name":{"type":"string"}}})");
 
   // N25 schema/ontology deep

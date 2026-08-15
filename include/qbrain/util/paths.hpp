@@ -9,6 +9,7 @@ namespace fs = std::filesystem;
 fs::path local_app_data();
 fs::path qbrain_root();
 fs::path brains_root();
+std::string normalize_brain_id(const std::string& brain_id);
 fs::path brain_dir(const std::string& brain_id);
 fs::path brain_db_path(const std::string& brain_id);
 fs::path config_path();

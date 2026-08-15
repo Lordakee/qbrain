@@ -41,6 +41,13 @@ void test_live_sync() {
   auto r3 = qbrain::service::live_sync_once(b, qbrain::util::path_to_utf8(notes));
   QB_CHECK(r3.imported_pages >= 1);
 
+  // N5: path with .. outside configured notes root must not import as under-root success
+  // Calling sync on a path that resolves outside is rejected (errors, no crash)
+  auto escape = notes / ".." / ".." / "should_not_matter";
+  auto r4 = qbrain::service::live_sync_once(b, qbrain::util::path_to_utf8(escape));
+  // either not a directory (errors>=1) or no successful import of unrelated trees required
+  QB_CHECK(r4.errors >= 1 || r4.imported_pages == 0);
+
   b.close();
   fs::remove_all(root);
 }

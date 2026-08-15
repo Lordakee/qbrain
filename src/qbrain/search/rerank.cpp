@@ -4,242 +4,406 @@
 #include "qbrain/util/hash.hpp"
 #include "qbrain/util/string_util.hpp"
 #include <algorithm>
-#include <cctype>
+#include <chrono>
+#include <cmath>
+#include <cstdint>
 #include <cstdlib>
+#include <ctime>
 #include <filesystem>
 #include <fstream>
+#include <iomanip>
+#include <mutex>
 #include <nlohmann/json.hpp>
+#include <random>
 #include <sstream>
-#include <unordered_set>
+#include <string_view>
+#include <vector>
 
 using json = nlohmann::json;
 
 namespace qbrain::search {
 namespace {
 
-void log_rerank_failure(const std::string& reason, const std::string& query,
-                        int doc_count, const std::string& err) noexcept {
+constexpr std::uintmax_t kMaxAuditBytes = 1024U * 1024U;
+constexpr int kAuditRotationCount = 5;
+constexpr size_t kMaxAuditDocCount = 1000;
+constexpr int kMaxRerankTimeoutMs = 3000;
+
+enum class FailureReason {
+  local_exception,
+  transport_error,
+  transport_timeout,
+  empty_response,
+  malformed_response,
+  membership_mismatch,
+  empty_guard,
+  size_guard,
+};
+
+const char* failure_reason_name(FailureReason reason) noexcept {
+  switch (reason) {
+    case FailureReason::local_exception:
+      return "local_exception";
+    case FailureReason::transport_error:
+      return "transport_error";
+    case FailureReason::transport_timeout:
+      return "transport_timeout";
+    case FailureReason::empty_response:
+      return "empty_response";
+    case FailureReason::malformed_response:
+      return "malformed_response";
+    case FailureReason::membership_mismatch:
+      return "membership_mismatch";
+    case FailureReason::empty_guard:
+      return "empty_guard";
+    case FailureReason::size_guard:
+      return "size_guard";
+  }
+  return "local_exception";
+}
+
+std::string utc_timestamp() {
+  const auto now = std::chrono::system_clock::now();
+  const std::time_t value = std::chrono::system_clock::to_time_t(now);
+  std::tm utc{};
+#ifdef _WIN32
+  gmtime_s(&utc, &value);
+#else
+  gmtime_r(&value, &utc);
+#endif
+  std::ostringstream out;
+  out << std::put_time(&utc, "%Y-%m-%dT%H:%M:%SZ");
+  return out.str();
+}
+
+const std::string& process_query_salt() {
+  static const std::string salt = [] {
+    std::random_device random;
+    std::string bytes(32, '\0');
+    for (char& byte : bytes) byte = static_cast<char>(random() & 0xffU);
+    return bytes;
+  }();
+  return salt;
+}
+
+std::string salted_query_hash(std::string_view query) {
+  std::string input;
+  const auto& salt = process_query_salt();
+  input.reserve(salt.size() + query.size());
+  input.append(salt);
+  input.append(query);
+  return util::sha256_hex(input);
+}
+
+std::filesystem::path rotated_audit_path(const std::filesystem::path& path, int generation) {
+  return std::filesystem::path(path.string() + "." + std::to_string(generation));
+}
+
+bool rename_replacing(const std::filesystem::path& from,
+                      const std::filesystem::path& to) noexcept {
+  std::error_code ec;
+  if (!std::filesystem::exists(from, ec) || ec) return !ec;
+  std::filesystem::remove(to, ec);
+  ec.clear();
+  std::filesystem::rename(from, to, ec);
+  return !ec;
+}
+
+bool rotate_audit_if_needed(const std::filesystem::path& path,
+                            std::uintmax_t next_record_bytes) noexcept {
+  std::error_code ec;
+  if (!std::filesystem::exists(path, ec)) return !ec;
+  const auto current_bytes = std::filesystem::file_size(path, ec);
+  if (ec) return false;
+  if (current_bytes <= kMaxAuditBytes &&
+      next_record_bytes <= kMaxAuditBytes - current_bytes) {
+    return true;
+  }
+
+  std::filesystem::remove(rotated_audit_path(path, kAuditRotationCount), ec);
+  ec.clear();
+  for (int generation = kAuditRotationCount - 1; generation >= 1; --generation) {
+    if (!rename_replacing(rotated_audit_path(path, generation),
+                          rotated_audit_path(path, generation + 1))) {
+      return false;
+    }
+  }
+  return rename_replacing(path, rotated_audit_path(path, 1));
+}
+
+void log_rerank_failure(FailureReason reason, const std::string& query,
+                        size_t doc_count) noexcept {
   try {
-    auto path = rerank_audit_path();
-    if (path.empty()) return;
-    auto parent = std::filesystem::path(path).parent_path();
+    const auto raw_path = rerank_audit_path();
+    if (raw_path.empty()) return;
+
+    json record = {{"timestamp", utc_timestamp()},
+                   {"query_hash", salted_query_hash(query)},
+                   {"failure_reason", failure_reason_name(reason)},
+                   {"fallback_taken", true},
+                   {"doc_count", std::min(doc_count, kMaxAuditDocCount)}};
+    std::string line = record.dump();
+    line.push_back('\n');
+    if (line.size() > kMaxAuditBytes) return;
+
+    static std::mutex audit_mutex;
+    const std::lock_guard<std::mutex> lock(audit_mutex);
+    const std::filesystem::path path(raw_path);
+    const auto parent = path.parent_path();
     std::error_code ec;
     std::filesystem::create_directories(parent, ec);
-    std::ofstream out(path, std::ios::app);
+    if (ec || !rotate_audit_if_needed(path, line.size())) return;
+
+    std::ofstream out(path, std::ios::binary | std::ios::app);
     if (!out) return;
-    std::string summary = err;
-    if (summary.size() > 200) summary.resize(200);
-    json j = {{"reason", reason},
-              {"query_hash", util::sha256_hex(query).substr(0, 8)},
-              {"doc_count", doc_count},
-              {"error_summary", summary}};
-    out << j.dump() << "\n";
+    out.write(line.data(), static_cast<std::streamsize>(line.size()));
   } catch (...) {
-    // Audit must never break search.
+    // Search must remain available even if the audit sink is unavailable.
   }
 }
 
-double local_relevance(const std::string& query, const SearchHit& h) {
-  auto ql = util::to_lower(query);
-  auto text = util::to_lower(h.title + " " + h.snippet);
-  auto tokens = util::split(ql, ' ');
-  if (tokens.empty()) return 0.0;
-  int hits = 0;
-  int weight = 0;
-  for (auto& t : tokens) {
-    t = util::trim(t);
-    if (t.size() < 2) continue;
-    ++weight;
-    if (text.find(t) != std::string::npos) ++hits;
-    if (util::to_lower(h.title).find(t) != std::string::npos) hits += 1;
+double local_relevance(const std::string& query, const SearchHit& hit) {
+  const auto query_lower = util::to_lower(query);
+  const auto title_lower = util::to_lower(hit.title);
+  const auto text_lower = title_lower + " " + util::to_lower(hit.snippet);
+  auto tokens = util::split(query_lower, ' ');
+  size_t token_count = 0;
+  size_t match_points = 0;
+  for (auto& token : tokens) {
+    token = util::trim(token);
+    if (token.size() < 2) continue;
+    ++token_count;
+    if (text_lower.find(token) != std::string::npos) ++match_points;
+    if (title_lower.find(token) != std::string::npos) ++match_points;
   }
-  if (weight == 0) return 0.0;
-  return static_cast<double>(hits) / static_cast<double>(weight * 2);
+  if (token_count == 0) return 0.0;
+  const double relevance = static_cast<double>(match_points) /
+                           static_cast<double>(token_count * 2U);
+  return std::isfinite(relevance) ? std::clamp(relevance, 0.0, 1.0) : 0.0;
 }
 
-std::vector<SearchHit> local_reorder(const std::string& query, std::vector<SearchHit> head) {
-  for (auto& h : head) {
-    double rel = local_relevance(query, h);
-    h.rerank_score = rel;
-    h.score = h.score * (1.0 + 0.5 * rel) + rel;
+std::vector<SearchHit> local_baseline(const std::string& query,
+                                      std::vector<SearchHit> results,
+                                      size_t rerank_count) {
+  for (auto& hit : results) {
+    hit.rerank_score = local_relevance(query, hit);
+    hit.reranker_delta = 0;
   }
-  std::stable_sort(head.begin(), head.end(),
-                   [](const SearchHit& a, const SearchHit& b) {
-                     if (a.rerank_score != b.rerank_score) return a.rerank_score > b.rerank_score;
-                     return a.score > b.score;
+  rerank_count = std::min(rerank_count, results.size());
+  std::stable_sort(results.begin(),
+                   results.begin() + static_cast<std::ptrdiff_t>(rerank_count),
+                   [](const SearchHit& left, const SearchHit& right) {
+                     return left.rerank_score > right.rerank_score;
                    });
-  return head;
+  return results;
 }
 
-std::vector<int> parse_index_order(const std::string& content, int n) {
-  std::vector<int> order;
+void sanitize_fallback_scores(std::vector<SearchHit>& results) noexcept {
+  for (auto& hit : results) {
+    if (!std::isfinite(hit.rerank_score)) hit.rerank_score = 0.0;
+    hit.rerank_score = std::clamp(hit.rerank_score, 0.0, 1.0);
+    hit.reranker_delta = 0;
+  }
+}
+
+bool same_identity(const SearchHit& left, const SearchHit& right) noexcept {
+  return left.page_id == right.page_id && left.slug == right.slug;
+}
+
+bool canonicalize_callback_order(const std::vector<SearchHit>& proposed,
+                                 const std::vector<SearchHit>& baseline,
+                                 std::vector<SearchHit>& canonical) {
+  if (proposed.size() != baseline.size()) return false;
+  std::vector<bool> used(baseline.size(), false);
+  canonical.clear();
+  canonical.reserve(baseline.size());
+  for (size_t position = 0; position < proposed.size(); ++position) {
+    size_t source_index = baseline.size();
+    for (size_t index = 0; index < baseline.size(); ++index) {
+      if (!used[index] && same_identity(proposed[position], baseline[index])) {
+        source_index = index;
+        break;
+      }
+    }
+    if (source_index == baseline.size()) return false;
+    used[source_index] = true;
+    auto hit = baseline[source_index];
+    hit.reranker_delta = static_cast<int>(source_index) - static_cast<int>(position);
+    canonical.push_back(std::move(hit));
+  }
+  return true;
+}
+
+void assign_llm_scores(std::vector<SearchHit>& results) noexcept {
+  if (results.empty()) return;
+  const double denominator = results.size() > 1 ? static_cast<double>(results.size() - 1U) : 1.0;
+  for (size_t position = 0; position < results.size(); ++position) {
+    results[position].rerank_score =
+        results.size() == 1 ? 1.0 : 1.0 - static_cast<double>(position) / denominator;
+  }
+}
+
+struct LlmAttempt {
+  bool ok = false;
+  std::vector<SearchHit> results;
+  FailureReason failure_reason = FailureReason::transport_error;
+};
+
+LlmAttempt reorder_from_callback(const std::vector<SearchHit>& proposed,
+                                 const std::vector<SearchHit>& baseline) {
+  if (proposed.empty()) return {false, {}, FailureReason::empty_response};
+  std::vector<SearchHit> canonical;
+  if (!canonicalize_callback_order(proposed, baseline, canonical)) {
+    return {false, {}, FailureReason::membership_mismatch};
+  }
+  assign_llm_scores(canonical);
+  return {true, std::move(canonical), FailureReason::transport_error};
+}
+
+LlmAttempt reorder_from_content(const std::string& content,
+                                const std::vector<SearchHit>& baseline) {
+  if (util::trim(content).empty()) return {false, {}, FailureReason::empty_response};
+
+  json parsed;
   try {
-    auto j = json::parse(content);
-    if (j.is_array()) {
-      for (auto& el : j) {
-        int idx = el.is_number_integer() ? el.get<int>()
-                  : el.is_object() && el.contains("index") ? el["index"].get<int>()
-                                                           : -1;
-        if (idx >= 0 && idx < n) order.push_back(idx);
-      }
-      return order;
-    }
+    parsed = json::parse(content);
   } catch (...) {
+    return {false, {}, FailureReason::malformed_response};
   }
-  std::string digits;
-  for (char c : content) {
-    if (std::isdigit(static_cast<unsigned char>(c))) {
-      digits.push_back(c);
-    } else if (!digits.empty()) {
-      try {
-        int idx = std::stoi(digits);
-        if (idx >= 0 && idx < n) order.push_back(idx);
-      } catch (...) {
-      }
-      digits.clear();
+  if (!parsed.is_array()) return {false, {}, FailureReason::malformed_response};
+  if (parsed.empty()) return {false, {}, FailureReason::empty_response};
+
+  std::vector<int> order;
+  order.reserve(parsed.size());
+  for (const auto& element : parsed) {
+    if (!element.is_number_integer()) {
+      return {false, {}, FailureReason::malformed_response};
     }
-  }
-  if (!digits.empty()) {
-    try {
-      int idx = std::stoi(digits);
-      if (idx >= 0 && idx < n) order.push_back(idx);
-    } catch (...) {
+    const auto index = element.get<int64_t>();
+    if (index < 0 || index >= static_cast<int64_t>(baseline.size())) {
+      return {false, {}, FailureReason::membership_mismatch};
     }
+    order.push_back(static_cast<int>(index));
   }
-  return order;
+  if (order.size() != baseline.size()) {
+    return {false, {}, FailureReason::membership_mismatch};
+  }
+  std::vector<bool> seen(baseline.size(), false);
+  std::vector<SearchHit> reordered;
+  reordered.reserve(baseline.size());
+  for (size_t position = 0; position < order.size(); ++position) {
+    const size_t index = static_cast<size_t>(order[position]);
+    if (seen[index]) return {false, {}, FailureReason::membership_mismatch};
+    seen[index] = true;
+    auto hit = baseline[index];
+    hit.reranker_delta = static_cast<int>(index) - static_cast<int>(position);
+    reordered.push_back(std::move(hit));
+  }
+  assign_llm_scores(reordered);
+  return {true, std::move(reordered), FailureReason::transport_error};
 }
 
-std::vector<SearchHit> llm_reorder(const Config& cfg, const std::string& query,
-                                   const std::vector<SearchHit>& head) {
-  if (head.empty()) return head;
-  std::ostringstream docs;
-  for (size_t i = 0; i < head.size(); ++i) {
-    auto snip = head[i].snippet;
-    if (snip.size() > 240) snip = snip.substr(0, 240);
-    docs << i << ". title=" << head[i].title << " | " << snip << "\n";
+LlmAttempt request_llm_reorder(const Config& cfg, const std::string& query,
+                               const std::vector<SearchHit>& baseline,
+                               int timeout_ms) {
+  std::ostringstream documents;
+  for (size_t index = 0; index < baseline.size(); ++index) {
+    auto snippet = baseline[index].snippet;
+    if (snippet.size() > 240) snippet.resize(240);
+    documents << index << ". title=" << baseline[index].title << " | " << snippet << "\n";
   }
-  std::string system =
-      "You are a search reranker. Reply with ONLY a JSON array of document indices "
-      "sorted by relevance to the query (most relevant first). Example: [2,0,1]";
-  std::string user = "Query: " + query + "\nDocuments:\n" + docs.str();
-  auto cr = ai::chat_complete(cfg, {{"system", system}, {"user", user}}, 0.0);
-  if (!cr.ok) {
-    log_rerank_failure("llm_error", query, static_cast<int>(head.size()), cr.error);
-    return head;
+  const std::string system =
+      "You are a search reranker. Reply with ONLY a JSON array containing every "
+      "document index exactly once, sorted by relevance. Example: [2,0,1]";
+  const std::string user = "Query: " + query + "\nDocuments:\n" + documents.str();
+  const auto chat =
+      ai::chat_complete(cfg, {{"system", system}, {"user", user}}, 0.0, timeout_ms);
+  if (!chat.ok) {
+    if (chat.failure_kind == ai::ChatFailureKind::transport_timeout) {
+      return {false, {}, FailureReason::transport_timeout};
+    }
+    if (chat.failure_kind == ai::ChatFailureKind::malformed_response) {
+      return {false, {}, FailureReason::malformed_response};
+    }
+    return {false, {}, FailureReason::transport_error};
   }
-  auto order = parse_index_order(cr.content, static_cast<int>(head.size()));
-  if (order.empty()) {
-    log_rerank_failure("bad_shape", query, static_cast<int>(head.size()),
-                       cr.content.substr(0, 120));
-    return head;
-  }
-  std::unordered_set<int> seen;
-  std::vector<SearchHit> out;
-  out.reserve(head.size());
-  int pos = 0;
-  for (int idx : order) {
-    if (seen.count(idx)) continue;
-    seen.insert(idx);
-    auto item = head[static_cast<size_t>(idx)];
-    item.rerank_score = 1.0 - (pos * 0.01);
-    item.reranker_delta = idx - pos;
-    out.push_back(std::move(item));
-    ++pos;
-  }
-  for (int i = 0; i < static_cast<int>(head.size()); ++i) {
-    if (!seen.count(i)) out.push_back(head[static_cast<size_t>(i)]);
-  }
-  return out;
+  return reorder_from_content(chat.content, baseline);
 }
 
-bool same_membership(const std::vector<SearchHit>& a, const std::vector<SearchHit>& b) {
-  if (a.size() != b.size()) return false;
-  std::unordered_set<std::string> sa, sb;
-  for (auto& h : a) sa.insert(h.slug.empty() ? std::to_string(h.page_id) : h.slug);
-  for (auto& h : b) sb.insert(h.slug.empty() ? std::to_string(h.page_id) : h.slug);
-  return sa == sb;
+void apply_positive_truncation(std::vector<SearchHit>& results, int top_n_out) {
+  if (top_n_out > 0 && results.size() > static_cast<size_t>(top_n_out)) {
+    results.resize(static_cast<size_t>(top_n_out));
+  }
 }
 
 }  // namespace
 
 std::string rerank_audit_path() {
-  auto home = std::getenv("LOCALAPPDATA");
-  if (!home) return {};
-  return std::string(home) + "\\Qbrain\\audit\\rerank-failures.jsonl";
+  const auto* local_app_data = std::getenv("LOCALAPPDATA");
+  if (!local_app_data) return {};
+  return std::string(local_app_data) + "\\Qbrain\\audit\\rerank-failures.jsonl";
 }
 
 std::vector<SearchHit> apply_reranker(const Config& cfg, const std::string& query,
                                       std::vector<SearchHit> results,
                                       const RerankerOpts& opts) {
   if (!opts.enabled || results.empty() || opts.top_n_in <= 0) return results;
+
   const auto original = results;
   try {
-    size_t n = std::min(results.size(), static_cast<size_t>(opts.top_n_in));
-    std::vector<SearchHit> head(results.begin(), results.begin() + static_cast<std::ptrdiff_t>(n));
-    std::vector<SearchHit> tail(results.begin() + static_cast<std::ptrdiff_t>(n), results.end());
-    const auto head_backup = head;
+    const size_t rerank_count =
+        std::min(results.size(), static_cast<size_t>(opts.top_n_in));
+    auto baseline = local_baseline(query, std::move(results), rerank_count);
 
-    // Local lexical reorder (also fail-open: restore on throw)
-    try {
-      head = local_reorder(query, head);
-    } catch (...) {
-      log_rerank_failure("local_exception", query, static_cast<int>(n), "local_reorder");
-      head = head_backup;
-    }
-    if (head.size() != head_backup.size() || !same_membership(head, head_backup)) {
-      log_rerank_failure("local_membership", query, static_cast<int>(n), "size/membership mismatch");
-      head = head_backup;
-    }
-
-    // Optional LLM pass (fail-open; never move-from head into fallible call)
-    if (opts.use_llm || opts.llm_fn_for_test) {
+    if (opts.use_llm || opts.llm_fn_for_test || opts.llm_response_for_test) {
+      std::vector<SearchHit> head(baseline.begin(),
+                                  baseline.begin() + static_cast<std::ptrdiff_t>(rerank_count));
+      LlmAttempt attempt;
       try {
-        std::vector<SearchHit> reordered;
         if (opts.llm_fn_for_test) {
-          reordered = opts.llm_fn_for_test(query, head);
+          attempt = reorder_from_callback(opts.llm_fn_for_test(query, head), head);
+        } else if (opts.llm_response_for_test) {
+          attempt = reorder_from_content(opts.llm_response_for_test(query, head), head);
         } else {
-          reordered = llm_reorder(cfg, query, head);
+          const int timeout_ms = opts.timeout_ms > 0
+                                     ? std::min(opts.timeout_ms, kMaxRerankTimeoutMs)
+                                     : kMaxRerankTimeoutMs;
+          attempt = request_llm_reorder(cfg, query, head, timeout_ms);
         }
-        if (reordered.empty() || reordered.size() != head.size() ||
-            !same_membership(reordered, head)) {
-          log_rerank_failure("bad_shape", query, static_cast<int>(n),
-                             "empty_or_membership_mismatch");
-          // keep head (local order)
-        } else {
-          head = std::move(reordered);
-        }
-      } catch (const std::exception& e) {
-        log_rerank_failure("exception", query, static_cast<int>(n), e.what());
-        // head still local order
       } catch (...) {
-        log_rerank_failure("exception", query, static_cast<int>(n), "unknown");
+        attempt = {false, {}, FailureReason::local_exception};
+      }
+
+      if (!attempt.ok) {
+        log_rerank_failure(attempt.failure_reason, query, original.size());
+      } else {
+        std::move(attempt.results.begin(), attempt.results.end(), baseline.begin());
       }
     }
 
-    std::vector<SearchHit> combined;
-    combined.reserve(head.size() + tail.size());
-    for (auto& h : head) combined.push_back(std::move(h));
-    for (auto& h : tail) combined.push_back(std::move(h));
-
-    if (opts.top_n_out > 0 && static_cast<int>(combined.size()) > opts.top_n_out)
-      combined.resize(static_cast<size_t>(opts.top_n_out));
-
-    // Hard fail-open: never empty a non-empty input when not truncating
-    if (combined.empty() && !original.empty()) {
-      log_rerank_failure("empty_guard", query, static_cast<int>(original.size()), "restored");
-      return original;
+    if (baseline.empty()) {
+      auto fallback = original;
+      sanitize_fallback_scores(fallback);
+      log_rerank_failure(FailureReason::empty_guard, query, original.size());
+      apply_positive_truncation(fallback, opts.top_n_out);
+      return fallback;
     }
-    if (opts.top_n_out == 0 && combined.size() != original.size()) {
-      log_rerank_failure("size_guard", query, static_cast<int>(original.size()), "restored");
-      return original;
+    if (baseline.size() != original.size()) {
+      auto fallback = original;
+      sanitize_fallback_scores(fallback);
+      log_rerank_failure(FailureReason::size_guard, query, original.size());
+      apply_positive_truncation(fallback, opts.top_n_out);
+      return fallback;
     }
-    return combined;
-  } catch (const std::exception& e) {
-    log_rerank_failure("exception", query, static_cast<int>(original.size()), e.what());
-    return original;
+
+    apply_positive_truncation(baseline, opts.top_n_out);
+    return baseline;
   } catch (...) {
-    log_rerank_failure("exception", query, static_cast<int>(original.size()), "unknown");
-    return original;
+    auto fallback = original;
+    sanitize_fallback_scores(fallback);
+    log_rerank_failure(FailureReason::local_exception, query, original.size());
+    apply_positive_truncation(fallback, opts.top_n_out);
+    return fallback;
   }
 }
 

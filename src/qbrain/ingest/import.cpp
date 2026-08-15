@@ -30,12 +30,13 @@ static void index_page(Brain& brain, Page& page) {
   brain.enqueue_embed_page(page.id);
 }
 
-static Page put_file(Brain& brain, const fs::path& file, const fs::path& root) {
+static Page put_file(Brain& brain, const fs::path& file, const fs::path& root,
+                     const std::string& source_id) {
   auto rel = fs::relative(file, root);
   auto text = read_all(file);
   auto [fm, body] = split_frontmatter(text);
   PageInput in;
-  in.source_id = "default";
+  in.source_id = source_id;
   in.slug = slug_from_path(util::path_to_utf8(rel));
   in.title = title_from_body(body, in.slug);
   in.body = body;
@@ -54,24 +55,37 @@ static Page put_file(Brain& brain, const fs::path& file, const fs::path& root) {
   return page;
 }
 
-ImportResult import_path(Brain& brain, const std::string& path) {
+ImportResult import_path(Brain& brain, const std::string& path, const std::string& source_id) {
   ImportResult r;
+  auto canon = Brain::canonical_source_id(source_id.empty() ? "default" : source_id);
+  if (!canon) {
+    ++r.errors;
+    return r;
+  }
+  const auto& sid = *canon;
+  if (!brain.ensure_source(sid)) {
+    ++r.errors;
+    return r;
+  }
   fs::path p = util::utf8_to_path(path);
   if (!fs::exists(p)) {
     ++r.errors;
     try {
       brain.log_ingest("import", path,
-                       nlohmann::json({{"pages", 0}, {"errors", 1}, {"reason", "missing"}}).dump());
+                       nlohmann::json({{"pages", 0}, {"files", 0},
+                                       {"links", 0}, {"errors", 1}})
+                           .dump(),
+                       100, sid);
     } catch (...) {
     }
     return r;
   }
   if (fs::is_regular_file(p)) {
     try {
-      auto page = put_file(brain, p, p.parent_path());
+      auto page = put_file(brain, p, p.parent_path(), sid);
       ++r.files;
       ++r.pages;
-      r.links += static_cast<int>(brain.get_links_from(page.slug).size());
+      r.links += static_cast<int>(brain.get_links_from(page.slug, sid).size());
     } catch (...) {
       ++r.errors;
     }
@@ -80,7 +94,8 @@ ImportResult import_path(Brain& brain, const std::string& path) {
           "import", path,
           nlohmann::json({{"pages", r.pages}, {"files", r.files}, {"links", r.links},
                           {"errors", r.errors}})
-              .dump());
+              .dump(),
+          100, sid);
     } catch (...) {
     }
     return r;
@@ -91,10 +106,10 @@ ImportResult import_path(Brain& brain, const std::string& path) {
     auto ext = util::to_lower(util::path_to_utf8(it->path().extension()));
     if (ext != ".md" && ext != ".markdown" && ext != ".txt") continue;
     try {
-      auto page = put_file(brain, it->path(), p);
+      auto page = put_file(brain, it->path(), p, sid);
       ++r.files;
       ++r.pages;
-      r.links += static_cast<int>(brain.get_links_from(page.slug).size());
+      r.links += static_cast<int>(brain.get_links_from(page.slug, sid).size());
     } catch (...) {
       ++r.errors;
     }
@@ -104,13 +119,15 @@ ImportResult import_path(Brain& brain, const std::string& path) {
         "import", path,
         nlohmann::json({{"pages", r.pages}, {"files", r.files}, {"links", r.links},
                         {"errors", r.errors}})
-            .dump());
+            .dump(),
+        100, sid);
   } catch (...) {
   }
   return r;
 }
 
-Page capture_text(Brain& brain, const std::string& text, const std::string& type) {
+Page capture_text(Brain& brain, const std::string& text, const std::string& type,
+                  const std::string& source_id) {
   auto h = util::sha256_hex(text);
   if (h.size() > 8) h = h.substr(0, 8);
   PageInput in;
@@ -118,6 +135,7 @@ Page capture_text(Brain& brain, const std::string& text, const std::string& type
   in.title = title_from_body(text, "capture");
   in.body = text;
   in.type = type;
+  in.source_id = source_id;
   in.source_kind = "capture";
   in.ingested_via = "cli";
   auto page = brain.put_page(in);

@@ -12,7 +12,8 @@ struct LiveSyncResult {
 };
 
 // One-shot poll of notes directory: import new/changed .md/.txt/.markdown.
-// State file: %LOCALAPPDATA%\Qbrain\sync-state\<hash>.json (mtime+size per path).
+// State file: %LOCALAPPDATA%\Qbrain\sync-state\<scope-hash>.json, scoped by
+// canonical brain id, source id, and notes root (mtime+size per path).
 LiveSyncResult live_sync_once(Brain& brain, const std::string& notes_dir,
                               const std::string& source_id = "default");
 

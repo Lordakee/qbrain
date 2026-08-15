@@ -58,9 +58,10 @@ void test_analytics() {
       b.add_link(l);
     }
 
-    auto anom = qbrain::graph::find_anomalies(b, 200);
+    auto anom = qbrain::graph::find_anomalies(b, "default", 200);
     bool saw_missing = false, saw_deleted = false, saw_high = false;
     for (auto& a : anom) {
+      QB_CHECK(a.source_id == "default");
       if (a.kind == "link_to_missing_page" && a.slug == "hub/page") saw_missing = true;
       if (a.kind == "link_to_deleted_page" && a.slug == "hub/page") saw_deleted = true;
       if (a.kind == "high_out_degree" && a.slug == "hub/page") saw_high = true;
@@ -72,14 +73,21 @@ void test_analytics() {
 
   // --- find_contradictions ---
   {
-    b.add_fact("people/alice", "titled", "CEO");
-    b.add_fact("people/alice", "titled", "CTO");  // same predicate different object
-    b.add_fact("people/bob", "supports", "plan-a");
-    b.add_fact("people/bob", "opposes", "plan-a");  // conflicting pair
+    qbrain::PageInput owner_a;
+    owner_a.slug = "facts/alice"; owner_a.title = "Alice"; owner_a.body = "facts";
+    auto alice_page = b.put_page(owner_a);
+    qbrain::PageInput owner_b;
+    owner_b.slug = "facts/bob"; owner_b.title = "Bob"; owner_b.body = "facts";
+    auto bob_page = b.put_page(owner_b);
+    b.add_fact("people/alice", "titled", "CEO", alice_page.id);
+    b.add_fact("people/alice", "titled", "CTO", alice_page.id);
+    b.add_fact("people/bob", "supports", "plan-a", bob_page.id);
+    b.add_fact("people/bob", "opposes", "plan-a", bob_page.id);
 
-    auto cons = qbrain::graph::find_contradictions(b, 50);
+    auto cons = qbrain::graph::find_contradictions(b, "default", 50);
     bool same_pred = false, pair = false;
     for (auto& c : cons) {
+      QB_CHECK(c.source_id == "default");
       if (c.slug == "people/alice" && c.kind == "same_predicate_different_object") same_pred = true;
       if (c.slug == "people/bob" && c.kind == "conflicting_predicates") pair = true;
     }
@@ -131,11 +139,12 @@ void test_analytics() {
       b.add_link(l);
     }
 
-    auto experts = qbrain::graph::find_experts(b, 10);
+    auto experts = qbrain::graph::find_experts(b, "default", 10);
     QB_CHECK(experts.size() >= 2);
     // alpha should rank at or above beta
     int alpha_rank = -1, beta_rank = -1;
     for (int i = 0; i < static_cast<int>(experts.size()); ++i) {
+      QB_CHECK(experts[i].source_id == "default");
       if (experts[i].slug == "experts/alpha") {
         alpha_rank = i;
         QB_CHECK(experts[i].inbound_count >= 3);
