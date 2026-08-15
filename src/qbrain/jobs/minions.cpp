@@ -3,6 +3,7 @@
 #include "qbrain/util/time_util.hpp"
 #include <nlohmann/json.hpp>
 #include <algorithm>
+#include <map>
 #include <sstream>
 #include <string_view>
 
@@ -638,6 +639,433 @@ int drain_jobs(Brain& brain, int max_jobs, const std::string& worker_token) {
     ++n;
   }
   return n;
+}
+
+// --- N34-A: lifecycle (D2) -------------------------------------------------
+// Bounded parent/child hierarchy state machine (plan N34 D2). Everything in
+// this section is additive: the N12 functions above are untouched and every
+// depth-0 / legacy job (parent_id NULL, depth 0) keeps its exact old path.
+//
+// State machine:
+//   parent:  waiting --spawn_children(txn)--> waiting_children
+//            waiting_children --aggregate_if_ready(all children terminal)-->
+//            completed (result_json carries the deterministic aggregation)
+//            waiting/waiting_children/active --cancel_job_tree--> cancelled
+//            (+ every non-terminal child cancelled in the same transaction)
+//   child:   waiting -> active -> completed|failed|cancelled (N12 fence path)
+//            child spawn is rejected: depth stays <= 1 (no grandchildren)
+namespace n34a {
+
+bool is_terminal(std::string_view status) {
+  return status == "completed" || status == "failed" || status == "cancelled" ||
+         status == "dead";
+}
+
+struct ParentRow {
+  bool found = false;
+  std::string status;
+  int64_t parent_id = 0;  // 0 = NULL (root)
+  int depth = 0;
+  std::string queue = "default";
+};
+
+ParentRow load_parent(Brain& brain, int64_t job_id) {
+  ParentRow row;
+  auto st = brain.db().prepare("SELECT status, parent_id, depth, queue FROM jobs WHERE id=?");
+  st.bind_int(1, job_id);
+  if (st.step()) {
+    row.found = true;
+    row.status = st.column_text(0);
+    row.parent_id = st.column_is_null(1) ? 0 : st.column_int(1);
+    row.depth = static_cast<int>(st.column_int(2));
+    row.queue = st.column_text(3);
+  }
+  return row;
+}
+
+int64_t count_children(Brain& brain, int64_t parent_id) {
+  auto st = brain.db().prepare("SELECT COUNT(*) FROM jobs WHERE parent_id=?");
+  st.bind_int(1, parent_id);
+  return st.step() ? st.column_int(0) : 0;
+}
+
+int64_t count_non_terminal_children(Brain& brain, int64_t parent_id) {
+  auto st = brain.db().prepare(
+      "SELECT COUNT(*) FROM jobs WHERE parent_id=? AND status NOT IN "
+      "('completed','failed','cancelled','dead')");
+  st.bind_int(1, parent_id);
+  return st.step() ? st.column_int(0) : 0;
+}
+
+}  // namespace n34a
+
+SpawnChildrenResult spawn_children(Brain& brain, int64_t parent_id,
+                                   std::span<const ChildSpec> children) {
+  SpawnChildrenResult r;
+  r.parent_id = parent_id;
+  if (parent_id <= 0) {
+    r.status = JobOperationStatus::invalid_argument;
+    r.reason = "parent_id";
+    return r;
+  }
+  if (children.empty()) {
+    r.status = JobOperationStatus::invalid_argument;
+    r.reason = "children";
+    return r;
+  }
+  if (children.size() > kJobMaxChildFanout) {
+    r.status = JobOperationStatus::invalid_argument;
+    r.reason = "fanout";
+    return r;
+  }
+  // Validate every child spec (and canonicalize payloads) before opening the
+  // transaction: a rejected spec must leave zero rows behind.
+  std::vector<std::string> payloads;
+  payloads.reserve(children.size());
+  for (const auto& spec : children) {
+    if (spec.type.empty()) {
+      r.status = JobOperationStatus::invalid_argument;
+      r.reason = "children.type";
+      return r;
+    }
+    // Child payload bounds reuse the existing job-message payload contract
+    // (kJobChildPayloadMaxBytes == kJobMessagePayloadMaxBytes): valid UTF-8
+    // JSON, canonical form within the bound; empty defaults to "{}".
+    auto canonical =
+        canonical_message_payload(spec.payload_json.empty() ? "{}" : spec.payload_json);
+    if (!canonical) {
+      r.status = JobOperationStatus::invalid_argument;
+      r.reason = "children.payload_json";
+      return r;
+    }
+    payloads.push_back(std::move(*canonical));
+  }
+
+  const auto parent = n34a::load_parent(brain, parent_id);
+  if (!parent.found) {
+    r.status = JobOperationStatus::not_found;
+    r.reason = "parent_id";
+    return r;
+  }
+  if (parent.parent_id != 0) {
+    // This job is itself a child: tree depth stays <= 2 (no grandchildren).
+    r.status = JobOperationStatus::invalid_argument;
+    r.reason = "depth";
+    return r;
+  }
+
+  auto& database = brain.db();
+  database.exec("BEGIN IMMEDIATE;");
+  bool txn_open = true;
+  try {
+    // Guarded parent transition: only a still-waiting parent may enter
+    // waiting_children. A concurrent claim/cancel makes changes()==0 and the
+    // whole spawn (children included) rolls back.
+    auto flip = database.prepare(
+        "UPDATE jobs SET status='waiting_children', lock_token=NULL, "
+        "lock_until=NULL, updated_at=? WHERE id=? AND status='waiting'");
+    flip.bind_text(1, util::utc_now());
+    flip.bind_int(2, parent_id);
+    flip.step_done();
+    if (database.changes() == 0) {
+      database.exec("ROLLBACK;");
+      txn_open = false;
+      r.status = JobOperationStatus::invalid_state;
+      r.reason = "parent_status";
+      return r;
+    }
+    auto insert = database.prepare(
+        "INSERT INTO jobs(queue, type, status, payload_json, priority, parent_id, depth) "
+        "VALUES(?,?,'waiting',?,?,?,?)");
+    const int child_depth = parent.depth + 1;  // == 1 (parent is depth 0)
+    for (size_t i = 0; i < children.size(); ++i) {
+      // step_done() does not auto-reset: without reset() the re-bind of a
+      // statement in DONE state silently fails (SQLITE_MISUSE) and every
+      // child after the first would inherit the first child's bindings.
+      insert.reset();
+      const auto& spec = children[i];
+      insert.bind_text(1, spec.queue.empty() ? parent.queue : spec.queue);
+      insert.bind_text(2, spec.type);
+      insert.bind_text(3, payloads[i]);
+      insert.bind_int(4, spec.priority);
+      insert.bind_int(5, parent_id);
+      insert.bind_int(6, child_depth);
+      insert.step_done();
+      r.child_ids.push_back(database.last_insert_rowid());
+    }
+    database.exec("COMMIT;");
+    txn_open = false;
+  } catch (...) {
+    if (txn_open) {
+      try {
+        database.exec("ROLLBACK;");
+      } catch (...) {
+      }
+    }
+    throw;
+  }
+  r.status = JobOperationStatus::success;
+  return r;
+}
+
+std::optional<std::string> compute_aggregate_json(Brain& brain, int64_t parent_id) {
+  if (parent_id <= 0) return std::nullopt;
+  auto& database = brain.db();
+  if (n34a::count_children(brain, parent_id) == 0) return std::nullopt;
+
+  // std::map keeps child_counts keys sorted; nlohmann::json serializes map
+  // keys in sorted order, so the dump is byte-deterministic.
+  std::map<std::string, int64_t> counts;
+  {
+    auto st = database.prepare(
+        "SELECT status, COUNT(*) FROM jobs WHERE parent_id=? GROUP BY status");
+    st.bind_int(1, parent_id);
+    while (st.step()) counts[st.column_text(0)] = st.column_int(1);
+  }
+  for (const auto& [status, n] : counts) {
+    (void)n;
+    if (!n34a::is_terminal(status)) return std::nullopt;  // not ready
+  }
+
+  // Error summaries: failed children, child_id ascending, capped at 8.
+  // safe_progress_error redacts credential/path-like content and bounds the
+  // text, so the aggregate leaks no local paths or secrets.
+  json errors = json::array();
+  {
+    auto st = database.prepare(
+        "SELECT id, COALESCE(error_text,'') FROM jobs WHERE parent_id=? AND "
+        "status='failed' ORDER BY id ASC");
+    st.bind_int(1, parent_id);
+    while (st.step() && errors.size() < kJobAggregateErrorMaxEntries) {
+      errors.push_back(json{
+          {"child_id", st.column_int(0)},
+          {"error", safe_progress_error(st.column_text(1))},
+      });
+    }
+  }
+
+  json out;
+  out["child_counts"] = counts;
+  out["errors"] = errors;
+  out["order"] = "child_id";
+  return out.dump();
+}
+
+AggregateResult aggregate_if_ready(Brain& brain, int64_t parent_id) {
+  AggregateResult r;
+  if (parent_id <= 0) {
+    r.status = JobOperationStatus::invalid_argument;
+    r.reason = "parent_id";
+    return r;
+  }
+  const auto parent = n34a::load_parent(brain, parent_id);
+  if (!parent.found) {
+    r.status = JobOperationStatus::not_found;
+    r.reason = "parent_id";
+    return r;
+  }
+  if (n34a::count_children(brain, parent_id) == 0) {
+    r.status = JobOperationStatus::invalid_state;
+    r.reason = "not_parent";
+    return r;
+  }
+  if (parent.status == "completed") {
+    // Idempotent: aggregation already happened; return the stored JSON.
+    r.status = JobOperationStatus::success;
+    r.ready = true;
+    r.aggregated = false;
+    r.aggregate_json = [&] {
+      auto job = get_job(brain, parent_id);
+      return job ? job->result_json : std::string();
+    }();
+    return r;
+  }
+  if (parent.status != "waiting_children") {
+    r.status = JobOperationStatus::invalid_state;
+    r.reason = "parent_status";
+    return r;
+  }
+  auto aggregate = compute_aggregate_json(brain, parent_id);
+  if (!aggregate) {
+    // Normal intermediate observation while children are still running.
+    r.status = JobOperationStatus::invalid_state;
+    r.reason = "not_ready";
+    return r;
+  }
+
+  auto& database = brain.db();
+  database.exec("BEGIN IMMEDIATE;");
+  bool txn_open = true;
+  try {
+    // Exactly-once guard (N34-B contract): consumed inside the completing
+    // transaction. The guarded UPDATE below stays authoritative: if a prior
+    // attempt crashed after consuming the fence but before committing, this
+    // self-heals; if another worker already committed, changes()==0 and the
+    // deterministic content makes this a harmless no-op.
+    (void)try_begin_aggregation(brain, parent_id);
+    auto flip = database.prepare(
+        "UPDATE jobs SET status='completed', result_json=?, lock_token=NULL, "
+        "lock_until=NULL, error_text=NULL, updated_at=? WHERE id=? AND "
+        "status='waiting_children'");
+    flip.bind_text(1, *aggregate);
+    flip.bind_text(2, util::utc_now());
+    flip.bind_int(3, parent_id);
+    flip.step_done();
+    r.aggregated = database.changes() > 0;
+    database.exec("COMMIT;");
+    txn_open = false;
+  } catch (...) {
+    if (txn_open) {
+      try {
+        database.exec("ROLLBACK;");
+      } catch (...) {
+      }
+    }
+    throw;
+  }
+  r.status = JobOperationStatus::success;
+  r.ready = true;
+  r.aggregate_json = *aggregate;
+  return r;
+}
+
+std::optional<JobHierarchy> get_job_hierarchy(Brain& brain, int64_t job_id) {
+  if (job_id <= 0) return std::nullopt;
+  const auto row = n34a::load_parent(brain, job_id);
+  if (!row.found) return std::nullopt;
+  JobHierarchy h;
+  h.id = job_id;
+  h.parent_id = row.parent_id;
+  h.depth = row.depth;
+  h.child_count = n34a::count_children(brain, job_id);
+  if (h.child_count > 0) {
+    std::string sql = std::string("SELECT ") + kSelectCols +
+                      " FROM jobs WHERE parent_id=? ORDER BY id ASC";
+    auto st = brain.db().prepare(sql);
+    st.bind_int(1, job_id);
+    while (st.step()) h.children.push_back(row_to_job(st));
+  }
+  return h;
+}
+
+CancelTreeResult cancel_job_tree(Brain& brain, int64_t job_id) {
+  CancelTreeResult r;
+  if (job_id <= 0) {
+    r.status = JobOperationStatus::invalid_argument;
+    r.reason = "job_id";
+    return r;
+  }
+  const auto row = n34a::load_parent(brain, job_id);
+  if (!row.found) {
+    r.status = JobOperationStatus::not_found;
+    r.reason = "job_id";
+    return r;
+  }
+  if (n34a::count_children(brain, job_id) == 0) {
+    // Leaf / child: exact N12 semantics; siblings are never touched.
+    const bool cancelled = cancel_job(brain, job_id);
+    r.status = cancelled ? JobOperationStatus::success : JobOperationStatus::invalid_state;
+    r.cancelled = cancelled;
+    return r;
+  }
+  // Parent: cancel the parent (waiting/active/waiting_children) and every
+  // non-terminal child in one transaction.
+  auto& database = brain.db();
+  database.exec("BEGIN IMMEDIATE;");
+  bool txn_open = true;
+  try {
+    auto kids = database.prepare(
+        "UPDATE jobs SET status='cancelled', lock_token=NULL, lock_until=NULL, "
+        "updated_at=? WHERE parent_id=? AND status IN ('waiting','active')");
+    kids.bind_text(1, util::utc_now());
+    kids.bind_int(2, job_id);
+    kids.step_done();
+    r.cancelled_children = database.changes();
+    auto self = database.prepare(
+        "UPDATE jobs SET status='cancelled', lock_token=NULL, lock_until=NULL, "
+        "updated_at=? WHERE id=? AND status IN ('waiting','active','waiting_children')");
+    self.bind_text(1, util::utc_now());
+    self.bind_int(2, job_id);
+    self.step_done();
+    r.cancelled = database.changes() > 0;
+    database.exec("COMMIT;");
+    txn_open = false;
+  } catch (...) {
+    if (txn_open) {
+      try {
+        database.exec("ROLLBACK;");
+      } catch (...) {
+      }
+    }
+    throw;
+  }
+  r.status = (r.cancelled || r.cancelled_children > 0) ? JobOperationStatus::success
+                                                       : JobOperationStatus::invalid_state;
+  return r;
+}
+
+RetryTreeResult retry_job_hierarchy(Brain& brain, int64_t job_id) {
+  RetryTreeResult r;
+  if (job_id <= 0) {
+    r.status = JobOperationStatus::invalid_argument;
+    r.reason = "job_id";
+    return r;
+  }
+  const auto row = n34a::load_parent(brain, job_id);
+  if (!row.found) {
+    r.status = JobOperationStatus::not_found;
+    r.reason = "job_id";
+    return r;
+  }
+  if (n34a::count_children(brain, job_id) > 0) {
+    // Leaf-only retry policy. The plan's mandatory rejection is the
+    // non-terminal-children case; an all-terminal parent is still rejected
+    // ("parent_not_retryable") because the aggregated parent is not itself
+    // executable.
+    r.status = JobOperationStatus::invalid_state;
+    r.reason = n34a::count_non_terminal_children(brain, job_id) > 0
+                   ? "non_terminal_children"
+                   : "parent_not_retryable";
+    return r;
+  }
+  // Leaf / child: exact N12 semantics (failed/cancelled/dead -> waiting).
+  const bool requeued = retry_job(brain, job_id);
+  r.status = requeued ? JobOperationStatus::success : JobOperationStatus::invalid_state;
+  r.reason = requeued ? "" : "not_retryable_status";
+  r.requeued = requeued;
+  return r;
+}
+
+// --- N34-B: fence/aggregate-atomicity (D3) ---------------------------------
+// Aggregate-once guard for N34 parent fan-out aggregation (plan D3, points 2
+// and 3). The N12 single-job claim/complete token fence above is intentionally
+// untouched: siblings MAY be claimed by different workers in parallel.
+//
+// N34-A's child-completion path calls this guard inside the completing
+// transaction. The guard is an idempotent fence row keyed on the parent id
+// (INSERT OR IGNORE semantics): when the last two children complete
+// concurrently on two worker connections, SQLite serializes the two inserts
+// and exactly one caller observes changes()>0, so the parent aggregation
+// fires EXACTLY once. Every later call (same connection or any other) sees
+// the existing row and returns false. The row is never deleted, so the
+// exactly-once property survives crash/reopen (P2-1).
+bool try_begin_aggregation(Brain& brain, int64_t parent_id) {
+  if (parent_id <= 0) return false;
+  auto& database = brain.db();
+  // The v13 migration normally creates this table; the guarded CREATE keeps
+  // the fence self-sufficient and idempotent on any schema state (including
+  // a pre-migration v12 brain opened by an older binary alongside a newer
+  // one — column/table additions do not break the older reader).
+  database.exec(
+      "CREATE TABLE IF NOT EXISTS job_aggregation_fence ("
+      "parent_id INTEGER NOT NULL PRIMARY KEY, "
+      "created_at TEXT NOT NULL DEFAULT (datetime('now'))"
+      ");");
+  auto st = database.prepare(
+      "INSERT OR IGNORE INTO job_aggregation_fence(parent_id) VALUES(?);");
+  st.bind_int(1, parent_id);
+  st.step_done();
+  return database.changes() > 0;
 }
 
 }  // namespace qbrain::jobs

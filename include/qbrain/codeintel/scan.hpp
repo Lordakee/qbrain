@@ -62,4 +62,37 @@ std::vector<Hit> find_blast_in_source(Brain& brain, const std::string& source_id
                                       const std::string& symbol, int limit = 80,
                                       int page_limit = 500);
 
+// N32: scan-mode metadata for the structured (astlite) integration.
+// mode is "structured" when every scanned page went through the bounded parser
+// successfully (and at least one did); "heuristic" when any scanned page used
+// the legacy regex fallback (unsupported language, over-limit degradation, or
+// parse failure). degraded_reason is non-empty only when a structured attempt
+// actually degraded (e.g. "timeout", depth/size/symbol limits).
+struct ScanOutcome {
+  std::string mode = "heuristic";
+  std::string degraded_reason;
+};
+
+// N32: outcome-aware variants of the six source-scoped code ops. Row shape and
+// ordering match the overloads above; the additional ScanOutcome& out parameter
+// reports structured/heuristic mode plus the first degradation reason.
+std::vector<Hit> find_defs_in_source(Brain& brain, const std::string& source_id,
+                                     const std::string& symbol, int limit, int page_limit,
+                                     ScanOutcome& outcome);
+std::vector<Hit> find_refs_in_source(Brain& brain, const std::string& source_id,
+                                     const std::string& symbol, int limit, int page_limit,
+                                     ScanOutcome& outcome);
+std::vector<Hit> find_callers_in_source(Brain& brain, const std::string& source_id,
+                                        const std::string& symbol, int limit, int page_limit,
+                                        ScanOutcome& outcome);
+std::vector<Hit> find_callees_in_source(Brain& brain, const std::string& source_id,
+                                        const std::string& symbol, int limit, int page_limit,
+                                        ScanOutcome& outcome);
+std::vector<Hit> find_flow_in_source(Brain& brain, const std::string& source_id,
+                                     const std::string& symbol, int depth, int limit,
+                                     int page_limit, ScanOutcome& outcome);
+std::vector<Hit> find_blast_in_source(Brain& brain, const std::string& source_id,
+                                      const std::string& symbol, int limit, int page_limit,
+                                      ScanOutcome& outcome);
+
 }  // namespace qbrain::codeintel

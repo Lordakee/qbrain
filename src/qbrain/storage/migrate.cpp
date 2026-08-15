@@ -55,6 +55,13 @@ static std::string ascii_upper(std::string value) {
   return value;
 }
 
+static bool sqlite_table_exists(Database& db, const std::string& name) {
+  auto st = db.prepare(
+      "SELECT 1 FROM sqlite_master WHERE type IN ('table','view') AND name=? LIMIT 1");
+  st.bind_text(1, name);
+  return st.step();
+}
+
 static void apply_v6_minion_migration(Database& db) {
   db.exec("BEGIN;");
   try {
@@ -74,6 +81,47 @@ static void apply_v6_minion_migration(Database& db) {
   }
 }
 
+// N34 D1: pre-migration file backup. For an already-populated database whose
+// version is about to advance, copy the database file (via the SQLite online
+// backup API, which includes committed WAL content) next to the original as
+// "<db>.pre-v13.bak" so the node rollback path is "restore the backup file"
+// (column leftovers after restore are harmless: ADD COLUMN only). In-memory
+// and anonymous temporary databases have no file to back up and are skipped.
+// Backup failure is fatal: the migration contract requires a rollback artifact
+// to exist before any DDL runs.
+static void backup_db_file_before_migration(Database& db, const char* suffix) {
+  const char* main_file = sqlite3_db_filename(db.handle(), "main");
+  if (!main_file || !*main_file) return;  // :memory: / temp store
+  const std::string dest = std::string(main_file) + "." + suffix + ".bak";
+  sqlite3* to = nullptr;
+  if (sqlite3_open(dest.c_str(), &to) != SQLITE_OK) {
+    if (to) sqlite3_close(to);
+    throw std::runtime_error("pre-migration backup open failed: " + dest);
+  }
+  bool ok = true;
+  sqlite3_backup* bak = sqlite3_backup_init(to, "main", db.handle(), "main");
+  if (bak) {
+    const int rc = sqlite3_backup_step(bak, -1);
+    sqlite3_backup_finish(bak);
+    ok = rc == SQLITE_DONE && sqlite3_errcode(to) == SQLITE_OK;
+  } else {
+    ok = false;
+  }
+  // The backup image inherits the source WAL mode; checkpoint it back to a
+  // rollback journal so the .bak is one self-contained file (no -wal/-shm
+  // sidecars to lose) and the rollback path is a plain file restore.
+  if (ok) {
+    char* err = nullptr;
+    const int rc = sqlite3_exec(to, "PRAGMA journal_mode=DELETE;", nullptr, nullptr, &err);
+    if (err) sqlite3_free(err);
+    ok = rc == SQLITE_OK;
+  }
+  const int close_rc = sqlite3_close(to);
+  if (!ok || close_rc != SQLITE_OK) {
+    throw std::runtime_error("pre-migration backup failed: " + dest);
+  }
+}
+
 void apply_migrations(Database& db, const std::string& schema_sql_path) {
   db.exec(R"SQL(
     CREATE TABLE IF NOT EXISTS schema_version (
@@ -87,6 +135,11 @@ void apply_migrations(Database& db, const std::string& schema_sql_path) {
     auto st = db.prepare("SELECT COALESCE(MAX(version),0) FROM schema_version");
     if (st.step()) ver = static_cast<int>(st.column_int(0));
   }
+  // Version the database already had when apply_migrations started. Used to
+  // distinguish "an existing v12 database is being upgraded" (take the N34
+  // pre-migration file backup) from a fresh bootstrap running v1..v13 in one
+  // call (nothing pre-existing to back up).
+  const int ver_at_entry = ver;
 
   // v1: always use embedded canonical schema (single source of truth).
   // Optional path override only if env/file explicitly provided and non-empty.
@@ -303,6 +356,43 @@ INSERT OR IGNORE INTO schema_version(version) VALUES (11);
     }
     ver = 12;
   }
+
+  // v13: bounded parent/child minion hierarchy (N34 D1).
+  // Adds jobs.parent_id (NULL = legacy/leaf/root job) and jobs.depth (0 for
+  // every pre-existing row). jobs.status gains one documented value,
+  // 'waiting_children' (parent with spawned children awaiting completion);
+  // the column stays free-text TEXT exactly as before. Idempotent: column
+  // existence is checked inside the transaction so a partially applied state
+  // (or a fresh v1 bootstrap that already ran later steps) is a no-op, and a
+  // failure rolls the whole step back atomically. Existing rows are untouched:
+  // parent_id NULL / depth 0 keeps every legacy path byte-identical.
+  //
+  // A database at v12 WITHOUT a jobs table (e.g. a partial legacy fixture or
+  // a corrupt store) cannot receive the hierarchy columns: the step is skipped
+  // and the database stays at v12 so every future open succeeds; doctor
+  // already fails closed on the missing jobs table.
+  if (ver < 13 && sqlite_table_exists(db, "jobs")) {
+    // Only an already-v12 database needs a rollback artifact; a fresh
+    // bootstrap (ver_at_entry < 12) created all of v1..v12 in this same call.
+    if (ver_at_entry >= 12) backup_db_file_before_migration(db, "pre-v13");
+    db.exec("BEGIN IMMEDIATE;");
+    try {
+      if (!jobs_has_column(db, "parent_id"))
+        db.exec("ALTER TABLE jobs ADD COLUMN parent_id INTEGER;");
+      if (!jobs_has_column(db, "depth"))
+        db.exec("ALTER TABLE jobs ADD COLUMN depth INTEGER NOT NULL DEFAULT 0;");
+      db.exec("CREATE INDEX IF NOT EXISTS idx_jobs_parent ON jobs(parent_id);");
+      db.exec("INSERT OR IGNORE INTO schema_version(version) VALUES (13);");
+      db.exec("COMMIT;");
+    } catch (...) {
+      try {
+        db.exec("ROLLBACK;");
+      } catch (...) {
+      }
+      throw;
+    }
+    ver = 13;
+  }
 }
 
 SchemaIntegrity check_schema_integrity(Database& db) {
@@ -344,7 +434,7 @@ SchemaIntegrity check_schema_integrity(Database& db) {
 
   // N30 D8: complete v12 required-object set. Every table/index created by the
   // canonical v1 schema (include/qbrain/storage/schema_sql.hpp) plus every
-  // additive migration v2..v12 must be present; doctor fails closed otherwise.
+  // additive migration v2..v13 must be present; doctor fails closed otherwise.
   const char* tables[] = {"schema_version", "sources",
                           "pages",         "content_chunks",
                           "links",         "tags",
@@ -376,7 +466,8 @@ SchemaIntegrity check_schema_integrity(Database& db) {
                            "idx_takes_entity",
                            "idx_takes_body",
                            "idx_file_index_name",
-                           "idx_raw_data_key"};
+                           "idx_raw_data_key",
+                           "idx_jobs_parent"};
   for (auto* i : indexes) {
     if (!has_index(i)) {
       r.ok = false;
@@ -395,12 +486,15 @@ SchemaIntegrity check_schema_integrity(Database& db) {
     r.missing.push_back(std::string("jobs column check failed: ") + e.what());
   }
   // N30 D8: required columns on v4 (pages provenance) and v5/v9/v10/v11 tables.
+  // N34 D1 (7b): jobs.parent_id / jobs.depth are required columns from v13 on;
+  // removing either column must fail doctor closed.
   const std::pair<const char*, const char*> required_columns[] = {
       {"pages", "source_kind"},   {"pages", "ingested_via"},
       {"pages", "ingested_at"},   {"ingest_log", "source_id"},
       {"page_versions", "page_id"}, {"facts", "entity_slug"},
       {"takes", "entity_slug"},   {"file_index", "path"},
-      {"raw_data", "key"}};
+      {"raw_data", "key"},        {"jobs", "parent_id"},
+      {"jobs", "depth"}};
   for (const auto& [table, column] : required_columns) {
     try {
       if (!table_has_column(db, table, column)) {
@@ -487,9 +581,11 @@ SchemaIntegrity check_schema_integrity(Database& db) {
     r.ok = false;
     r.missing.push_back(std::string("job_messages column check failed: ") + e.what());
   }
-  if (r.schema_version < 12) {
+  // N34 D1: doctor requires the v13 schema level (parent_id/depth columns and
+  // idx_jobs_parent above) — a not-yet-migrated v12 database fails closed.
+  if (r.schema_version < 13) {
     r.ok = false;
-    r.missing.push_back("schema_version<12");
+    r.missing.push_back("schema_version<13");
   }
   return r;
 }

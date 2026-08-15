@@ -1050,7 +1050,7 @@ void test_n19() {
   qbrain::Brain selected("n19-selected");
   selected.open_at(qbrain::util::path_to_utf8(root / "selected.db"));
   const auto fresh_integrity = qbrain::storage::check_schema_integrity(selected.db());
-  QB_CHECK(fresh_integrity.ok && fresh_integrity.schema_version == 12);
+  QB_CHECK(fresh_integrity.ok && fresh_integrity.schema_version == 13);
   QB_CHECK(selected.db_path() == qbrain::util::path_to_utf8(root / "selected.db"));
 
   for (const auto& source : {"team_a", "search_src", "recent_src", "utf8_src",
@@ -1183,7 +1183,7 @@ void test_n19() {
   selected.close();
   selected.open_at(qbrain::util::path_to_utf8(root / "selected.db"));
   const auto reopened_integrity = qbrain::storage::check_schema_integrity(selected.db());
-  QB_CHECK(reopened_integrity.ok && reopened_integrity.schema_version == 12);
+  QB_CHECK(reopened_integrity.ok && reopened_integrity.schema_version == 13);
   QB_CHECK(logical_snapshot(selected) == populated_before_reopen);
 
   qbrain::Brain decoy("n19-decoy");
@@ -1220,7 +1220,7 @@ void test_n19() {
   add_link(decoy, "team_a", "DECOY_TEAM_IDENTITY", "DECOY_TEAM_TARGET",
            "decoy-team-manual");
   const auto decoy_integrity = qbrain::storage::check_schema_integrity(decoy.db());
-  QB_CHECK(decoy_integrity.ok && decoy_integrity.schema_version == 12);
+  QB_CHECK(decoy_integrity.ok && decoy_integrity.schema_version == 13);
 
   qbrain::Brain reverse_fixture("n19-reverse-search");
   reverse_fixture.open_at(qbrain::util::path_to_utf8(root / "reverse-search.db"));

@@ -85,7 +85,10 @@ $defaultTestSources = @(
   "tests\test_n17.cpp",
   "tests\test_n18.cpp",
   "tests\test_n30.cpp",
-  "tests\test_n31.cpp"
+  "tests\test_n31.cpp",
+  "tests\test_n32.cpp",
+  "tests\test_n34.cpp",
+  "tests\test_n33.cpp"
 )
 # test_main.cpp statically references the complete suite, so the canonical
 # closure is always compiled and linked (a focused invocation can never
@@ -105,7 +108,7 @@ $testList = ($tests | ForEach-Object { "`"$_`"" }) -join " "
 $testObjList = ($selected | ForEach-Object { [IO.Path]::GetFileNameWithoutExtension($_) + ".obj" }) -join " "
 $prodObjs = @(
   "paths","hash","log","string_util","time_util","database","migrate","types","brain",
-  "extract","traverse","analytics","scan","packs","lint","store","vector","rrf","hybrid","rerank","minions","dream",
+  "extract","traverse","analytics","scan","astlite","packs","lint","store","image_meta","vector","rrf","hybrid","rerank","minions","dream",
   "chunker","markdown","import","http_client","embed","chat","registry","handlers",
   "inbox_watch","live_sync","jsonrpc","server","http_server","commands","sqlite3"
 ) | ForEach-Object { "`"$ObjDir\$_.obj`"" }

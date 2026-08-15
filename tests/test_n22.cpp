@@ -1704,8 +1704,8 @@ void test_n22() {
   matrix.run("schema:fresh-v12", [&] {
     const auto selected_integrity = qbrain::storage::check_schema_integrity(brain.db());
     const auto decoy_integrity = qbrain::storage::check_schema_integrity(decoy.db());
-    QB_CHECK(selected_integrity.ok && selected_integrity.schema_version == 12);
-    QB_CHECK(decoy_integrity.ok && decoy_integrity.schema_version == 12);
+    QB_CHECK(selected_integrity.ok && selected_integrity.schema_version == 13);
+    QB_CHECK(decoy_integrity.ok && decoy_integrity.schema_version == 13);
     return true;
   });
 
@@ -1723,8 +1723,8 @@ void test_n22() {
   matrix.run("schema:populated-reopen-v12", [&] {
     const auto selected_integrity = qbrain::storage::check_schema_integrity(brain.db());
     const auto decoy_integrity = qbrain::storage::check_schema_integrity(decoy.db());
-    QB_CHECK(selected_integrity.ok && selected_integrity.schema_version == 12);
-    QB_CHECK(decoy_integrity.ok && decoy_integrity.schema_version == 12);
+    QB_CHECK(selected_integrity.ok && selected_integrity.schema_version == 13);
+    QB_CHECK(decoy_integrity.ok && decoy_integrity.schema_version == 13);
     return true;
   });
 
@@ -1744,8 +1744,8 @@ void test_n22() {
   matrix.run("schema:final-v12", [&] {
     const auto selected_integrity = qbrain::storage::check_schema_integrity(brain.db());
     const auto decoy_integrity = qbrain::storage::check_schema_integrity(decoy.db());
-    QB_CHECK(selected_integrity.ok && selected_integrity.schema_version == 12);
-    QB_CHECK(decoy_integrity.ok && decoy_integrity.schema_version == 12);
+    QB_CHECK(selected_integrity.ok && selected_integrity.schema_version == 13);
+    QB_CHECK(decoy_integrity.ok && decoy_integrity.schema_version == 13);
     return true;
   });
 

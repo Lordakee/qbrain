@@ -1,0 +1,48 @@
+{
+  "language": "typescript",
+  "mode": "structured",
+  "degraded_reason": "",
+  "symbols": {
+    "definitions": [
+      {"name": "Traps", "kind": "class", "container": "", "line": 22, "col": 7, "body_end_line": 31},
+      {"name": "render", "kind": "method", "container": "Traps", "line": 27, "col": 3, "body_end_line": 30}
+    ],
+    "references": [
+      {"name": "extname", "line": 3, "col": 10},
+      {"name": "from", "line": 3, "col": 20},
+      {"name": "s1", "line": 5, "col": 7},
+      {"name": "s2", "line": 6, "col": 7},
+      {"name": "tpl", "line": 7, "col": 7},
+      {"name": "handle", "line": 11, "col": 3},
+      {"name": "evt", "line": 11, "col": 10},
+      {"name": "Event", "line": 11, "col": 15},
+      {"name": "label", "line": 12, "col": 3},
+      {"name": "Level", "line": 15, "col": 6},
+      {"name": "Low", "line": 15, "col": 14},
+      {"name": "High", "line": 15, "col": 19},
+      {"name": "opts", "line": 17, "col": 7},
+      {"name": "verbose", "line": 18, "col": 3},
+      {"name": "cb", "line": 23, "col": 11},
+      {"name": "e", "line": 23, "col": 16},
+      {"name": "e", "line": 23, "col": 38},
+      {"name": "e", "line": 23, "col": 51},
+      {"name": "handler", "line": 24, "col": 3},
+      {"name": "selector", "line": 26, "col": 16},
+      {"name": "maybe", "line": 28, "col": 15},
+      {"name": "v", "line": 28, "col": 11},
+      {"name": "v", "line": 29, "col": 14},
+      {"name": "v", "line": 29, "col": 27}
+    ],
+    "calls": [
+      {"name": "tag", "line": 8, "col": 1},
+      {"name": "run", "line": 19, "col": 3},
+      {"name": "logger", "line": 19, "col": 11},
+      {"name": "report", "line": 23, "col": 44},
+      {"name": "makeHandler", "line": 24, "col": 13},
+      {"name": "Component", "line": 26, "col": 4},
+      {"name": "value", "line": 28, "col": 22},
+      {"name": "cond", "line": 29, "col": 9},
+      {"name": "report", "line": 29, "col": 20}
+    ]
+  }
+}

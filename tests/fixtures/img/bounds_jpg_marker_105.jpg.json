@@ -1,0 +1,21 @@
+{
+  "file": "bounds_jpg_marker_105.jpg",
+  "ext_hint": ".jpg",
+  "description": "bound: 105 APP0 markers before SOF0 - JPEG marker limit is 100",
+  "expect": {
+    "meta": {
+      "format": "unknown",
+      "width": 0,
+      "height": 0,
+      "bit_depth": 0,
+      "components": 0,
+      "ok": false,
+      "note": "marker limit exceeded"
+    },
+    "mime": {
+      "mime": "image/jpeg",
+      "content_based": true,
+      "ext_mismatch": false
+    }
+  }
+}

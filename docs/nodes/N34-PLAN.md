@@ -1,6 +1,6 @@
 # N34 Plan — 有界父子 minion 层级
 
-**Status**: approved (round-1 plan audit PASS with all 5 P1 + 5 P2 adopted as clarifications)
+**Status**: done
 **Depends on**: N31 done；docs/08 v2.0.0 §4 N34；docs/RESOLUTION-2026-08-15.md（N34 定义含可证伪验收）
 **Plan audit**: PASS (`N34-PLAN-AUDIT.md`, round 1; P1/P2 clarifications adopted)
 **Outcome audit**: pending (`N34-HARD-AUDIT.md`)

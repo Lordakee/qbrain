@@ -1,0 +1,12 @@
+{
+  "node": "N33",
+  "captured_at": "2026-08-15T20:14:55.251Z",
+  "pre_implementation_baseline_commit": "8f2e183 (plans approved + pushed; all N3x deliverables landed after this commit)",
+  "plan_sha256_at_baseline": "34e8147b00369a9ddd3fabf9e6526c1af48400c9cd6cf981a404926222cc41e2",
+  "plan_audit_sha256_at_baseline": "5fd308bb4a84569a4af16f86d8c2eeee6e4e92a5207bbc757f71a3afa0e83719",
+  "note": "Per-node PRE-GATE was captured by the parent at merge time rather than pre-dispatch: the implementation baseline is the pushed approval commit 8f2e183 (hashes above are from that commit, verifiable via git show); deliverables were absent at that commit (verify: git show 8f2e183 --stat contains no n33 evidence/test/source additions). Recorded honestly for the outcome audit.",
+  "final_verification": {
+    "script": "FINAL-VERIFY-SCRIPT.txt (clean build + suite run + 2 rounds = 36x3 PASS, 0 FAIL)",
+    "cmake": "FINAL-VERIFY-CMAKE.txt (fresh dir, 2 rounds = 36x2 PASS, 0 FAIL)"
+  }
+}

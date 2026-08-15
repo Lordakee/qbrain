@@ -1,0 +1,21 @@
+{
+  "file": "valid_png_rgba_7x5.png",
+  "ext_hint": ".png",
+  "description": "minimal valid 7x5 8-bit RGBA PNG (real zlib IDAT)",
+  "expect": {
+    "meta": {
+      "format": "png",
+      "width": 7,
+      "height": 5,
+      "bit_depth": 8,
+      "components": 4,
+      "ok": true,
+      "note": ""
+    },
+    "mime": {
+      "mime": "image/png",
+      "content_based": true,
+      "ext_mismatch": false
+    }
+  }
+}

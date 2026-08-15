@@ -1,0 +1,21 @@
+{
+  "file": "malformed_jpg_desync.jpg",
+  "ext_hint": ".jpg",
+  "description": "malformed JPEG: after APP0 the stream desyncs (no 0xFF marker byte)",
+  "expect": {
+    "meta": {
+      "format": "unknown",
+      "width": 0,
+      "height": 0,
+      "bit_depth": 0,
+      "components": 0,
+      "ok": false,
+      "note": "marker desync"
+    },
+    "mime": {
+      "mime": "image/jpeg",
+      "content_based": true,
+      "ext_mismatch": false
+    }
+  }
+}

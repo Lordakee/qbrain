@@ -1,6 +1,6 @@
 # N32 Plan — AST 代码智能（C++/TS 有界解析器）
 
-**Status**: approved (round-2 plan audit PASS; all findings adopted)
+**Status**: done
 **Depends on**: N31 done（registry 权威化）；docs/08 v2.0.0 §4 N32；docs/RESOLUTION-2026-08-15.md（N32 定义含可证伪验收）
 **Plan audit**: PASS round 2 (`N32-PLAN-AUDIT.md`)
 **Outcome audit**: pending (`N32-HARD-AUDIT.md`)

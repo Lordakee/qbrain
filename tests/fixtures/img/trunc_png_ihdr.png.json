@@ -1,0 +1,21 @@
+{
+  "file": "trunc_png_ihdr.png",
+  "ext_hint": ".png",
+  "description": "truncated PNG: IHDR declares 13 data bytes, only 5 present",
+  "expect": {
+    "meta": {
+      "format": "unknown",
+      "width": 0,
+      "height": 0,
+      "bit_depth": 0,
+      "components": 0,
+      "ok": false,
+      "note": "chunk exceeds buffer"
+    },
+    "mime": {
+      "mime": "image/png",
+      "content_based": true,
+      "ext_mismatch": false
+    }
+  }
+}

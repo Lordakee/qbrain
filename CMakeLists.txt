@@ -73,6 +73,7 @@ target_link_libraries(qbrain_graph PUBLIC qbrain_core qbrain_util)
 
 qbrain_lib(codeintel
   src/qbrain/codeintel/scan.cpp
+  src/qbrain/codeintel/astlite.cpp
 )
 target_link_libraries(qbrain_codeintel PUBLIC qbrain_core qbrain_util)
 
@@ -119,6 +120,7 @@ target_link_libraries(qbrain_service PUBLIC qbrain_core qbrain_ingest qbrain_uti
 
 qbrain_lib(files
   src/qbrain/files/store.cpp
+  src/qbrain/files/image_meta.cpp
 )
 
 qbrain_lib(ops
@@ -187,6 +189,9 @@ add_executable(qbrain_tests
   tests/test_n18.cpp
   tests/test_n30.cpp
   tests/test_n31.cpp
+  tests/test_n32.cpp
+  tests/test_n34.cpp
+  tests/test_n33.cpp
 )
 target_link_libraries(qbrain_tests PRIVATE
   qbrain_cli qbrain_mcp qbrain_ops qbrain_schema qbrain_search qbrain_jobs qbrain_cycle qbrain_graph qbrain_codeintel qbrain_ingest qbrain_ai

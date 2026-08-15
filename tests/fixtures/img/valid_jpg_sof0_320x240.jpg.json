@@ -1,0 +1,21 @@
+{
+  "file": "valid_jpg_sof0_320x240.jpg",
+  "ext_hint": ".jpg",
+  "description": "structurally complete baseline JPEG: SOI APP0 DQT SOF0 DHT SOS EOI",
+  "expect": {
+    "meta": {
+      "format": "jpeg",
+      "width": 320,
+      "height": 240,
+      "bit_depth": 8,
+      "components": 3,
+      "ok": true,
+      "note": ""
+    },
+    "mime": {
+      "mime": "image/jpeg",
+      "content_based": true,
+      "ext_mismatch": false
+    }
+  }
+}

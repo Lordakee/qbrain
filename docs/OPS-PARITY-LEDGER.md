@@ -4,7 +4,7 @@ Updated: 2026-08-15
 Qbrain implemented MCP/CLI ops: **104**
 
 **Ops inventory (generated, N31 2026-08-15)**: docs/nodes/n31-evidence/OPS-INVENTORY.json — 108 registered ops (104 upstream + 4 extensions incl. list_job_messages), op→test mapping complete (0 gaps), deterministic (regenerated after list_job_messages reconciliation; sha256 fa772160…b3268b); enforced by test n31_a_counts_mapping.
-**Current suite status (generated, N30 2026-08-15)**: 31/31 registered tests PASS, two rounds, both CMake and direct-MSVC build paths (docs/nodes/n30-evidence/FINAL-VERIFY-*.txt). Historical per-wave prose counts below are retained as history only.
+**Current suite status (generated, N32-N34 2026-08-16)**: 36/36 registered tests PASS — script path 36x3 runs, CMake path 36x2 runs, 0 FAIL (docs/nodes/n3{2,3,4}-evidence/FINAL-VERIFY-*.txt). Schema v13 (N34 migration). Historical: N30 31/31 (docs/nodes/n30-evidence/FINAL-VERIFY-*.txt). Historical per-wave prose counts below are retained as history only.
 **Audit tiers (master plan v2.0.0 §1)**: N20/N23 corrective closure PASS in N30 (fresh audits 2026-08-15); N21 superseded (retrospective Tier-2, documentation-only); N24-N28 stub audits deferred to Phase-2 closure (AMD-7 deferral records in docs/nodes/n30-evidence/NODE-RECONCILIATION-MATRIX.json).
 
 | upstream_op | status | notes |
@@ -13,23 +13,23 @@ Qbrain implemented MCP/CLI ops: **104**
 | add_tag | **implemented** | |
 | add_timeline_entry | **implemented** | N15: source-scoped thin `type=timeline` page write; fresh hard-audit PASS 2026-08-04 |
 | advisor | **implemented** | N26-N27 |
-| cancel_job | **implemented** | N12 waiting/active cancellation; MCP write default-deny |
+| cancel_job | **implemented** | N34: tree-aware cancellation | N12 waiting/active cancellation; MCP write default-deny |
 | chronicle_backfill | **implemented** | N23; fresh N23 outcome audit PASS via N30 corrective closure (2026-08-15, docs/nodes/N23-HARD-AUDIT.md) |
 | chronicle_day | **implemented** | N15: strict UTC day over active pages in one authorized canonical source; fresh PASS 2026-08-04 |
 | chronicle_last_seen | **implemented** | N23 |
 | chronicle_on_this_day | **implemented** | N23 |
 | chronicle_since | **implemented** | N15: strict inclusive UTC lower bound over active pages in one authorized canonical source; fresh PASS 2026-08-04 |
-| code_blast | **implemented** | N22: source-scoped deterministic one-hop def/ref/call/callee heuristic subset; no AST, type resolution, or transitive upstream-parity claim; fresh native evidence and Claude Code outcome PASS 2026-08-07 |
-| code_callees | **implemented** | N22: source-scoped bounded brace-body call-token heuristic; no AST, compiler index, overload/type resolution, or persisted call-edge claim; fresh native evidence and Claude Code outcome PASS 2026-08-07 |
-| code_callers | **implemented** | N16: source-scoped call-like identifier matches, strict bounds, read-only; fresh PASS 2026-08-04 |
-| code_def | **implemented** | N16: source-scoped line-oriented definition-like matches, strict bounds, read-only; fresh PASS 2026-08-04 |
-| code_flow | **implemented** | N22: source-scoped deterministic bounded breadth-first brace-body heuristic traversal; no AST, compiler index, overload/type resolution, or transitive upstream-parity claim; fresh native evidence and Claude Code outcome PASS 2026-08-07 |
-| code_refs | **implemented** | N16: source-scoped literal identifier-boundary matches, strict bounds, read-only; fresh PASS 2026-08-04 |
+| code_blast | **implemented** | N32: structured mode via astlite (C++/TS) + labeled heuristic fallback | N22: source-scoped deterministic one-hop def/ref/call/callee heuristic subset; no AST, type resolution, or transitive upstream-parity claim; fresh native evidence and Claude Code outcome PASS 2026-08-07 |
+| code_callees | **implemented** | N32 structured mode | N22: source-scoped bounded brace-body call-token heuristic; no AST, compiler index, overload/type resolution, or persisted call-edge claim; fresh native evidence and Claude Code outcome PASS 2026-08-07 |
+| code_callers | **implemented** | N32 structured mode | N16: source-scoped call-like identifier matches, strict bounds, read-only; fresh PASS 2026-08-04 |
+| code_def | **implemented** | N32 structured mode | N16: source-scoped line-oriented definition-like matches, strict bounds, read-only; fresh PASS 2026-08-04 |
+| code_flow | **implemented** | N32 structured mode | N22: source-scoped deterministic bounded breadth-first brace-body heuristic traversal; no AST, compiler index, overload/type resolution, or transitive upstream-parity claim; fresh native evidence and Claude Code outcome PASS 2026-08-07 |
+| code_refs | **implemented** | N32 structured mode | N16: source-scoped literal identifier-boundary matches, strict bounds, read-only; fresh PASS 2026-08-04 |
 | code_traversal_cache_clear | **implemented** | N22: guarded Admin compatibility no-op, remote-default-deny, returns zero because Qbrain has no persisted traversal cache; fresh native evidence and Claude Code outcome PASS 2026-08-07 |
 | delete_page | **implemented** | |
 | extract_facts | **implemented** | |
 | file_list | **implemented** | N24-N25 |
-| file_upload | **implemented** | N24-N25 |
+| file_upload | **implemented** | N33: MIME-by-content + image metadata in response | N24-N25 |
 | file_url | **implemented** | N24-N25 |
 | find_anomalies | **implemented** | N18: selected-source active-origin missing/deleted targets and `high_out_degree > 20`; fresh PASS 2026-08-04 |
 | find_contradictions | **implemented** | N18: selected-source active page-owned syntactic fact-pair heuristics only; fresh PASS 2026-08-04 |
@@ -44,11 +44,11 @@ Qbrain implemented MCP/CLI ops: **104**
 | get_chunks | **implemented** | |
 | get_health | **implemented** | |
 | get_ingest_log | **implemented** | N15: newest-first bounded ingest events from one authorized canonical source; schema v12; fresh PASS 2026-08-04 |
-| get_job | **implemented** | N12 audited minion lifecycle inspection |
+| get_job | **implemented** | N34: hierarchy fields | N12 audited minion lifecycle inspection |
 | get_job_progress | **implemented** | N14: bounded/redacted read-only job fields with structured id errors; fresh PASS 2026-08-04 |
 | get_links | **implemented** | |
 | get_page | **implemented** | |
-| get_raw_data | **implemented** | N26-N27 |
+| get_raw_data | **implemented** | N33: surfaces image metadata | N26-N27 |
 | get_recent_salience | **implemented** | N26-N27 |
 | get_recent_transcripts | **implemented** | N26-N27 |
 | get_skill | **implemented** | |
@@ -72,7 +72,7 @@ Qbrain implemented MCP/CLI ops: **104**
 | pause_job | **implemented** | N14: token-fenced `waiting`/`active` to `paused`, local-only Write; fresh PASS 2026-08-04 |
 | purge_deleted_pages | **implemented** | |
 | put_page | **implemented** | |
-| put_raw_data | **implemented** | N26-N27 |
+| put_raw_data | **implemented** | N33: image metadata persisted in meta_json | N26-N27 |
 | query | **implemented** | |
 | recall | **implemented** | N13 conservative search alias |
 | reload_schema_pack | **implemented** | N20 |
@@ -82,7 +82,7 @@ Qbrain implemented MCP/CLI ops: **104**
 | resolve_slugs | **implemented** | N13 |
 | restore_page | **implemented** | |
 | resume_job | **implemented** | N14: `paused` to `waiting` with a fresh claim fence, local-only Write; fresh PASS 2026-08-04 |
-| retry_job | **implemented** | N13 |
+| retry_job | **implemented** | N34: leaf-only hierarchy rules | N13 |
 | revert_version | **implemented** | |
 | run_doctor | **implemented** | N11 read-only doctor; MCP Read and CLI `doctor` route |
 | doctor_remediate | **implemented** | N14: explicit CLI remediation plus MCP local-only Write/default-deny; fresh PASS 2026-08-04 |
@@ -95,14 +95,14 @@ Qbrain implemented MCP/CLI ops: **104**
 | schema_review_orphans | **implemented** | N24-N25 |
 | schema_stats | **implemented** | N20 |
 | search | **implemented** | N12 audited fail-open rerank |
-| search_by_image | **implemented** | N26-N27 |
+| search_by_image | **implemented** | N33: content-level image metadata + optional provider embeddings, fail-open without credentials | N26-N27 |
 | send_job_message | **implemented** | N17: existing-job-only local Write with bounded UTF-8 sender and canonical JSON payload; fresh PASS 2026-08-04 |
 | sources_add | **implemented** | |
 | sources_list | **implemented** | |
 | sources_remove | **implemented** | N13 |
 | sources_status | **implemented** | N13 |
 | submit_agent | **implemented** | N26-N27 |
-| submit_job | **implemented** | N12 token-fenced minions; MCP write default-deny |
+| submit_job | **implemented** | N34: optional children fan-out (<=8, depth<=2) | N12 token-fenced minions; MCP write default-deny |
 | sync_brain | **implemented** | N13 live-sync |
 | takes_calibration | **implemented** | N21 (Tier-2 retrospective; scope re-verified centrally by N30 D3 deny matrix) |
 | takes_list | **implemented** | N21 |

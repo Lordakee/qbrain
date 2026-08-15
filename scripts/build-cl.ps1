@@ -58,9 +58,11 @@ $productionSources = @(
   "src\qbrain\graph\traverse.cpp",
   "src\qbrain\graph\analytics.cpp",
   "src\qbrain\codeintel\scan.cpp",
+  "src\qbrain\codeintel\astlite.cpp",
   "src\qbrain\schema\packs.cpp",
   "src\qbrain\schema\lint.cpp",
   "src\qbrain\files\store.cpp",
+  "src\qbrain\files\image_meta.cpp",
   "src\qbrain\search\vector.cpp",
   "src\qbrain\search\rrf.cpp",
   "src\qbrain\search\hybrid.cpp",
@@ -93,7 +95,7 @@ $srcList = ($sources | ForEach-Object { "`"$_`"" }) -join " "
 $sqliteC = Join-Path $sqlite "sqlite3.c"
 $prodObjNames = @(
   "paths","hash","log","string_util","time_util","database","migrate","types","brain",
-  "extract","traverse","analytics","scan","packs","lint","store","vector","rrf","hybrid","rerank","minions","dream",
+  "extract","traverse","analytics","scan","astlite","packs","lint","store","image_meta","vector","rrf","hybrid","rerank","minions","dream",
   "chunker","markdown","import","http_client","embed","chat","registry","handlers",
   "inbox_watch","live_sync","jsonrpc","server","http_server","app","commands","main"
 )

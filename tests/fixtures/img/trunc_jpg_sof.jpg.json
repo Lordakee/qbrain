@@ -1,0 +1,21 @@
+{
+  "file": "trunc_jpg_sof.jpg",
+  "ext_hint": ".jpg",
+  "description": "truncated JPEG: SOF0 declares a 17-byte segment, only 2 payload bytes",
+  "expect": {
+    "meta": {
+      "format": "unknown",
+      "width": 0,
+      "height": 0,
+      "bit_depth": 0,
+      "components": 0,
+      "ok": false,
+      "note": "marker exceeds buffer"
+    },
+    "mime": {
+      "mime": "image/jpeg",
+      "content_based": true,
+      "ext_mismatch": false
+    }
+  }
+}

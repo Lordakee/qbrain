@@ -1,0 +1,21 @@
+{
+  "file": "bounds_png_huge_chunk_len.png",
+  "ext_hint": ".png",
+  "description": "oversized bound: first chunk declares 0x03000000 bytes (48 MiB > 32 MiB)",
+  "expect": {
+    "meta": {
+      "format": "unknown",
+      "width": 0,
+      "height": 0,
+      "bit_depth": 0,
+      "components": 0,
+      "ok": false,
+      "note": "chunk exceeds buffer"
+    },
+    "mime": {
+      "mime": "image/png",
+      "content_based": true,
+      "ext_mismatch": false
+    }
+  }
+}

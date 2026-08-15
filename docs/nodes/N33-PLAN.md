@@ -1,6 +1,6 @@
 # N33 Plan — 真实多模态摄取与搜索
 
-**Status**: approved (round-2 plan audit PASS; all findings adopted)
+**Status**: done
 **Depends on**: N31 done；docs/08 v2.0.0 §4 N33；docs/RESOLUTION-2026-08-15.md（N33 定义含可证伪验收）
 **Plan audit**: PASS round 2 (`N33-PLAN-AUDIT.md`)
 **Outcome audit**: pending (`N33-HARD-AUDIT.md`)

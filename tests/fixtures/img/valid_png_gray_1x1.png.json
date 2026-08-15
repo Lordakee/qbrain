@@ -1,0 +1,21 @@
+{
+  "file": "valid_png_gray_1x1.png",
+  "ext_hint": ".png",
+  "description": "minimal valid 1x1 8-bit grayscale PNG (real zlib IDAT)",
+  "expect": {
+    "meta": {
+      "format": "png",
+      "width": 1,
+      "height": 1,
+      "bit_depth": 8,
+      "components": 1,
+      "ok": true,
+      "note": ""
+    },
+    "mime": {
+      "mime": "image/png",
+      "content_based": true,
+      "ext_mismatch": false
+    }
+  }
+}

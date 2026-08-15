@@ -1,0 +1,21 @@
+{
+  "file": "bounds_png_chunk_1005.png",
+  "ext_hint": ".png",
+  "description": "bound: 1005 empty chunks before IHDR - PNG chunk limit is 1000",
+  "expect": {
+    "meta": {
+      "format": "unknown",
+      "width": 0,
+      "height": 0,
+      "bit_depth": 0,
+      "components": 0,
+      "ok": false,
+      "note": "chunk limit exceeded"
+    },
+    "mime": {
+      "mime": "image/png",
+      "content_based": true,
+      "ext_mismatch": false
+    }
+  }
+}

@@ -1,10 +1,12 @@
 #include "qbrain/codeintel/scan.hpp"
+#include "qbrain/codeintel/astlite.hpp"
 #include "qbrain/util/string_util.hpp"
 #include <algorithm>
 #include <cctype>
 #include <cstring>
 #include <functional>
 #include <iterator>
+#include <optional>
 #include <regex>
 #include <set>
 #include <stdexcept>
@@ -274,43 +276,38 @@ enum class Mode { Def, Ref, Call };
 
 using HitVisitor = std::function<bool(Hit&&)>;
 
-void for_each_source_hit(Brain& brain, const std::string& source_id,
-                         const std::string& symbol, int page_limit, Mode mode,
-                         const HitVisitor& visitor) {
-  auto pages = brain.list_pages_for_source(source_id, page_limit);
-  const DefinitionMatcher definition_matcher(symbol);
-  for (const auto& page : pages) {
-    bool keep_scanning = true;
-    for_each_line(page.body, [&](int line_no, const std::string& line) -> bool {
-      bool hit = false;
-      const char* kind = "ref";
-      switch (mode) {
-        case Mode::Def:
-          hit = definition_matcher.matches(line);
-          kind = "def";
-          break;
-        case Mode::Call:
-          hit = looks_like_call(line, symbol);
-          kind = "call";
-          break;
-        case Mode::Ref:
-          hit = has_word_ref(line, symbol);
-          kind = "ref";
-          break;
-      }
-      if (!hit) return true;
+// N32: per-page line walker extracted from the former whole-source scan so the
+// hybrid structured/regex paths can share byte-identical regex row construction.
+void for_each_page_line_hit(const Page& page, const std::string& symbol, Mode mode,
+                            const DefinitionMatcher& definition_matcher,
+                            const HitVisitor& visitor) {
+  for_each_line(page.body, [&](int line_no, const std::string& line) -> bool {
+    bool hit = false;
+    const char* kind = "ref";
+    switch (mode) {
+      case Mode::Def:
+        hit = definition_matcher.matches(line);
+        kind = "def";
+        break;
+      case Mode::Call:
+        hit = looks_like_call(line, symbol);
+        kind = "call";
+        break;
+      case Mode::Ref:
+        hit = has_word_ref(line, symbol);
+        kind = "ref";
+        break;
+    }
+    if (!hit) return true;
 
-      Hit result;
-      result.source_id = page.source_id;
-      result.slug = page.slug;
-      result.line = line_no;
-      result.snippet = trim_snippet(line);
-      result.kind = kind;
-      keep_scanning = visitor(std::move(result));
-      return keep_scanning;
-    });
-    if (!keep_scanning) return;
-  }
+    Hit result;
+    result.source_id = page.source_id;
+    result.slug = page.slug;
+    result.line = line_no;
+    result.snippet = trim_snippet(line);
+    result.kind = kind;
+    return visitor(std::move(result));
+  });
 }
 
 std::vector<Hit> scan(Brain& brain, const std::string& symbol, int limit, int page_limit,
@@ -358,23 +355,6 @@ std::vector<Hit> scan(Brain& brain, const std::string& symbol, int limit, int pa
   return out;
 }
 
-std::vector<Hit> scan_source(Brain& brain, const std::string& source_id,
-                             const std::string& symbol, int limit, int page_limit,
-                             Mode mode) {
-  std::vector<Hit> out;
-  if (source_id.empty() || !is_valid_symbol(symbol)) return out;
-  if (limit <= 0) limit = 1;
-  if (page_limit <= 0) page_limit = 1;
-  if (limit > 200) limit = 200;
-  if (page_limit > 2000) page_limit = 2000;
-
-  for_each_source_hit(brain, source_id, symbol, page_limit, mode, [&](Hit&& hit) {
-    out.push_back(std::move(hit));
-    return static_cast<int>(out.size()) < limit;
-  });
-  return out;
-}
-
 }  // namespace
 
 bool is_valid_symbol(std::string_view symbol) {
@@ -403,21 +383,6 @@ std::vector<Hit> find_refs(Brain& brain, const std::string& symbol, int limit, i
 std::vector<Hit> find_callers(Brain& brain, const std::string& symbol, int limit,
                               int page_limit) {
   return scan(brain, symbol, limit, page_limit, Mode::Call);
-}
-
-std::vector<Hit> find_defs_in_source(Brain& brain, const std::string& source_id,
-                                     const std::string& symbol, int limit, int page_limit) {
-  return scan_source(brain, source_id, symbol, limit, page_limit, Mode::Def);
-}
-
-std::vector<Hit> find_refs_in_source(Brain& brain, const std::string& source_id,
-                                     const std::string& symbol, int limit, int page_limit) {
-  return scan_source(brain, source_id, symbol, limit, page_limit, Mode::Ref);
-}
-
-std::vector<Hit> find_callers_in_source(Brain& brain, const std::string& source_id,
-                                        const std::string& symbol, int limit, int page_limit) {
-  return scan_source(brain, source_id, symbol, limit, page_limit, Mode::Call);
 }
 
 namespace {
@@ -547,11 +512,6 @@ std::vector<PreparedPage> prepare_pages(const std::vector<Page>& pages) {
   return prepared;
 }
 
-std::vector<PreparedPage> load_n22_pages(Brain& brain, const std::string& source_id,
-                                         int page_limit) {
-  return prepare_pages(brain.list_pages_for_source(source_id, page_limit));
-}
-
 bool looks_like_independent_definition_start(const std::string& line) {
   const auto trimmed = util::trim(line);
   if (trimmed.empty() || util::starts_with(trimmed, "//") ||
@@ -669,9 +629,356 @@ void for_each_callee_occurrence(const std::vector<PreparedPage>& pages,
   }
 }
 
-std::unordered_map<std::string, std::vector<Hit>> collect_frontier_callees(
-    const std::vector<PreparedPage>& pages, const std::vector<std::string>& frontier,
-    ScanWorkBudget& budget) {
+// ---------------------------------------------------------------------------
+// N32: structured (astlite) integration.
+//
+// astlite.hpp contract (as landed): parse_content(std::string_view,
+// astlite::Language) -> astlite::SymbolTable carrying definitions (name, line,
+// body_end_line), references (name, line), calls (callee name, line; the
+// caller is NOT recorded and is derived here via innermost enclosing
+// definition span) and mode/degraded_reason. Path isolation is NOT handled
+// here: the ops layer resolves/authorizes source_id before any page body is
+// retrieved; astlite itself never touches the filesystem.
+// ---------------------------------------------------------------------------
+
+char ascii_lower(char c) {
+  return (c >= 'A' && c <= 'Z') ? static_cast<char>(c - 'A' + 'a') : c;
+}
+
+bool ascii_lower_equal(std::string_view left, std::string_view right) {
+  if (left.size() != right.size()) return false;
+  for (size_t i = 0; i < left.size(); ++i)
+    if (ascii_lower(left[i]) != ascii_lower(right[i])) return false;
+  return true;
+}
+
+// Extension gate: the page slug is the only language signal (no content
+// sniffing). .cpp/.hpp/.cc/.h -> Cpp; .ts/.tsx -> TypeScript; else nullopt.
+std::optional<astlite::Language> detect_page_language(std::string_view slug) {
+  if (slug.empty() || slug.size() > kN22MaximumSlugBytes) return std::nullopt;
+  const auto slash = slug.find_last_of("/\\");
+  const auto dot = slug.find_last_of('.');
+  if (dot == std::string_view::npos) return std::nullopt;
+  if (slash != std::string_view::npos && dot < slash) return std::nullopt;
+  const auto extension = slug.substr(dot);
+  if (extension.size() > 5) return std::nullopt;
+  if (ascii_lower_equal(extension, ".cpp") || ascii_lower_equal(extension, ".hpp") ||
+      ascii_lower_equal(extension, ".cc") || ascii_lower_equal(extension, ".h"))
+    return astlite::Language::Cpp;
+  if (ascii_lower_equal(extension, ".ts") || ascii_lower_equal(extension, ".tsx"))
+    return astlite::Language::TypeScript;
+  return std::nullopt;
+}
+
+// Aggregates per-page outcomes: "structured" iff at least one page was scanned
+// structurally and no scanned page needed the regex fallback.
+struct ModeTracker {
+  int structured_pages = 0;
+  int regex_pages = 0;
+  std::string reason;
+
+  void note_structured() { ++structured_pages; }
+  void note_regex(const std::string& degraded_reason) {
+    ++regex_pages;
+    if (reason.empty()) reason = degraded_reason;
+  }
+  ScanOutcome outcome() const {
+    ScanOutcome result;
+    result.mode =
+        (structured_pages > 0 && regex_pages == 0) ? "structured" : "heuristic";
+    result.degraded_reason = reason;
+    return result;
+  }
+};
+
+// --- astlite seam adapters (single fix point for header naming drift) ---
+
+astlite::SymbolTable parse_body(std::string_view body, astlite::Language language) {
+  return astlite::parse_content(body, language);
+}
+
+struct TableDefinition {
+  std::string name;
+  int line = 0;
+};
+
+struct TableCall {
+  std::string caller;
+  std::string callee;
+  int line = 0;
+};
+
+std::string table_degraded_reason(const astlite::SymbolTable& table) {
+  return table.degraded_reason;
+}
+
+bool table_is_structured(const astlite::SymbolTable& table) {
+  return table.mode == astlite::ParseMode::Structured && table.degraded_reason.empty();
+}
+
+std::vector<TableDefinition> table_definitions(const astlite::SymbolTable& table) {
+  std::vector<TableDefinition> out;
+  for (const auto& definition : table.definitions)
+    out.push_back(TableDefinition{definition.name, definition.line});
+  std::stable_sort(out.begin(), out.end(),
+                   [](const TableDefinition& a, const TableDefinition& b) {
+                     return a.line < b.line;
+                   });
+  return out;
+}
+
+// Call sites do not carry their caller; attribute each call to the innermost
+// definition whose [line, body_end_line] span contains it. Calls outside any
+// definition span (top-level, or spans unknown after unbalanced input) are
+// dropped from the caller/callee graph. Ties keep the earlier definition.
+std::vector<TableCall> attributed_calls(const astlite::SymbolTable& table) {
+  std::vector<TableCall> out;
+  for (const auto& call : table.calls) {
+    if (call.line < 1) continue;
+    const astlite::SymbolDef* best = nullptr;
+    long long best_span = 0;
+    for (const auto& definition : table.definitions) {
+      if (definition.line < 1 || definition.body_end_line < definition.line) continue;
+      if (call.line < definition.line || call.line > definition.body_end_line)
+        continue;
+      const long long span =
+          static_cast<long long>(definition.body_end_line) - definition.line;
+      if (!best || span < best_span) {
+        best = &definition;
+        best_span = span;
+      }
+    }
+    if (!best) continue;
+    out.push_back(TableCall{best->name, call.name, call.line});
+  }
+  std::stable_sort(out.begin(), out.end(), [](const TableCall& a, const TableCall& b) {
+    return a.line < b.line;
+  });
+  return out;
+}
+
+// A qualified query ("ns::foo") matches a table name "foo"; bare queries match
+// exactly. This mirrors the regex path, which matched the literal query text.
+bool query_matches_name(const std::string& query, const std::string& name) {
+  if (query == name) return true;
+  const auto separator = query.rfind("::");
+  return separator != std::string::npos && query.substr(separator + 2) == name;
+}
+
+struct PageAnalysis {
+  bool has_language = false;
+  bool structured = false;       // bounded parse produced a usable table
+  std::string degraded_reason;   // non-empty when the structured attempt degraded
+  astlite::SymbolTable table;    // valid only when structured
+};
+
+PageAnalysis analyze_body(const std::string& slug, const std::string& body) {
+  PageAnalysis analysis;
+  const auto language = detect_page_language(slug);
+  if (!language) return analysis;
+  analysis.has_language = true;
+  if (body.size() > astlite::kMaximumBodyBytes) {
+    analysis.degraded_reason = "size-limit";
+    return analysis;
+  }
+  auto table = parse_body(body, *language);
+  analysis.degraded_reason = table_degraded_reason(table);
+  if (table_is_structured(table)) {
+    analysis.structured = true;
+    analysis.table = std::move(table);
+  }
+  return analysis;
+}
+
+// N22-budgeted loader that also performs the structured analysis per page.
+struct AnalyzedPage {
+  std::string source_id;
+  std::string slug;
+  std::string body;
+  std::vector<std::string> lines;
+  bool structured = false;
+  std::string degraded_reason;
+  astlite::SymbolTable table;  // valid only when structured
+};
+
+std::vector<AnalyzedPage> load_analyzed_pages(Brain& brain, const std::string& source_id,
+                                              int page_limit) {
+  auto pages = brain.list_pages_for_source(source_id, page_limit);
+  auto prepared = prepare_pages(pages);  // keeps the N22 length_error budget contract
+  std::vector<AnalyzedPage> analyzed(pages.size());
+  for (size_t i = 0; i < pages.size(); ++i) {
+    analyzed[i].source_id = pages[i].source_id;
+    analyzed[i].slug = pages[i].slug;
+    analyzed[i].body = pages[i].body;
+    analyzed[i].lines = std::move(prepared[i].lines);
+    auto analysis = analyze_body(analyzed[i].slug, analyzed[i].body);
+    analyzed[i].structured = analysis.structured;
+    analyzed[i].degraded_reason = analysis.degraded_reason;
+    if (analysis.structured) analyzed[i].table = std::move(analysis.table);
+  }
+  return analyzed;
+}
+
+std::string snippet_at(const std::vector<std::string>& lines, int line) {
+  if (line < 1 || static_cast<size_t>(line) > lines.size()) return {};
+  return trim_snippet(lines[static_cast<size_t>(line) - 1]);
+}
+
+// defs/callers/refs rows from a structured table. refs are the union of every
+// table occurrence of the symbol (definition names, references, call sites),
+// deduplicated per line — the structured analogue of the regex word scan.
+void emit_structured_scan_hits(const AnalyzedPage& page, const std::string& symbol,
+                               Mode mode, int limit, std::vector<Hit>& out) {
+  std::set<int> emitted_lines;
+  const auto emit_line = [&](int line, const char* kind) {
+    if (static_cast<int>(out.size()) >= limit) return;
+    if (line < 1 || static_cast<size_t>(line) > page.lines.size()) return;
+    if (!emitted_lines.insert(line).second) return;
+    Hit hit;
+    hit.source_id = page.source_id;
+    hit.slug = page.slug;
+    hit.line = line;
+    hit.snippet = snippet_at(page.lines, line);
+    hit.kind = kind;
+    out.push_back(std::move(hit));
+  };
+  if (mode == Mode::Def) {
+    for (const auto& definition : table_definitions(page.table)) {
+      if (query_matches_name(symbol, definition.name))
+        emit_line(definition.line, "def");
+    }
+    return;
+  }
+  if (mode == Mode::Ref) {
+    std::set<int> lines;
+    for (const auto& definition : table_definitions(page.table)) {
+      if (query_matches_name(symbol, definition.name))
+        lines.insert(definition.line);
+    }
+    for (const auto& reference : page.table.references) {
+      if (query_matches_name(symbol, reference.name)) lines.insert(reference.line);
+    }
+    for (const auto& call : page.table.calls) {
+      if (query_matches_name(symbol, call.name)) lines.insert(call.line);
+    }
+    for (const int line : lines) emit_line(line, "ref");
+    return;
+  }
+  std::set<int> lines;
+  for (const auto& call : page.table.calls) {
+    if (query_matches_name(symbol, call.name)) lines.insert(call.line);
+  }
+  for (const int line : lines) emit_line(line, "call");
+}
+
+// Hybrid source scan for defs/refs/callers: structured rows for clean code-file
+// pages, byte-identical regex rows for everything else.
+std::vector<Hit> scan_source_mode(Brain& brain, const std::string& source_id,
+                                  const std::string& symbol, int limit, int page_limit,
+                                  Mode mode, ScanOutcome& outcome) {
+  std::vector<Hit> out;
+  outcome = ScanOutcome{};
+  if (source_id.empty() || !is_valid_symbol(symbol)) return out;
+  if (limit <= 0) limit = 1;
+  if (page_limit <= 0) page_limit = 1;
+  if (limit > 200) limit = 200;
+  if (page_limit > 2000) page_limit = 2000;
+
+  auto pages = brain.list_pages_for_source(source_id, page_limit);
+  ModeTracker tracker;
+  const DefinitionMatcher matcher(symbol);
+  for (const auto& page : pages) {
+    if (static_cast<int>(out.size()) >= limit) break;
+    auto analysis = analyze_body(page.slug, page.body);
+    if (analysis.structured) {
+      tracker.note_structured();
+      AnalyzedPage analyzed;
+      analyzed.source_id = page.source_id;
+      analyzed.slug = page.slug;
+      analyzed.body = page.body;
+      analyzed.lines = physical_lines(page.body);
+      analyzed.structured = true;
+      analyzed.table = std::move(analysis.table);
+      emit_structured_scan_hits(analyzed, symbol, mode, limit, out);
+    } else {
+      tracker.note_regex(analysis.degraded_reason);
+      for_each_page_line_hit(page, symbol, mode, matcher, [&](Hit&& hit) {
+        out.push_back(std::move(hit));
+        return static_cast<int>(out.size()) < limit;
+      });
+    }
+  }
+  outcome = tracker.outcome();
+  return out;
+}
+
+// Structured callees: calls attributed (innermost enclosing definition) to a
+// table definition of `symbol`.
+void emit_structured_callees(const AnalyzedPage& page, const std::string& symbol,
+                             std::set<CalleeOccurrenceKey>& emitted, int limit,
+                             std::vector<Hit>& out) {
+  std::unordered_map<std::string, std::vector<TableCall>> calls_by_caller;
+  for (const auto& call : attributed_calls(page.table))
+    calls_by_caller[call.caller].push_back(call);
+  for (const auto& definition : table_definitions(page.table)) {
+    if (!query_matches_name(symbol, definition.name)) continue;
+    const auto calls = calls_by_caller.find(definition.name);
+    if (calls == calls_by_caller.end()) continue;
+    for (const auto& call : calls->second) {
+      if (static_cast<int>(out.size()) >= limit) return;
+      if (call.line < 1 || static_cast<size_t>(call.line) > page.lines.size()) continue;
+      const std::string kind = "callee:" + call.callee;
+      CalleeOccurrenceKey key{page.source_id, page.slug, call.line, kind};
+      if (!emitted.insert(std::move(key)).second) continue;
+      Hit hit;
+      hit.source_id = page.source_id;
+      hit.slug = page.slug;
+      hit.line = call.line;
+      hit.snippet = snippet_at(page.lines, call.line);
+      hit.kind = kind;
+      out.push_back(std::move(hit));
+    }
+  }
+}
+
+std::vector<Hit> find_callees_in_source_impl(Brain& brain, const std::string& source_id,
+                                             const std::string& symbol, int limit,
+                                             int page_limit, ScanOutcome& outcome) {
+  std::vector<Hit> out;
+  outcome = ScanOutcome{};
+  if (source_id.empty() || !is_valid_symbol(symbol)) return out;
+  limit = clamp_n22_bound(limit, kN22MaximumResults);
+  page_limit = clamp_n22_bound(page_limit, kN22MaximumPages);
+
+  const auto analyzed = load_analyzed_pages(brain, source_id, page_limit);
+  ModeTracker tracker;
+  ScanWorkBudget budget;
+  const DefinitionMatcher matcher(symbol);
+  std::set<CalleeOccurrenceKey> emitted;
+  for (const auto& page : analyzed) {
+    if (static_cast<int>(out.size()) >= limit) break;
+    if (page.structured) {
+      tracker.note_structured();
+      emit_structured_callees(page, symbol, emitted, limit, out);
+    } else {
+      tracker.note_regex(page.degraded_reason);
+      PreparedPage prepared{page.source_id, page.slug, page.lines};
+      for_each_callee_occurrence({std::move(prepared)}, matcher, [&](Hit&& hit) {
+        CalleeOccurrenceKey key{hit.source_id, hit.slug, hit.line, hit.kind};
+        if (emitted.insert(std::move(key)).second) out.push_back(std::move(hit));
+        return static_cast<int>(out.size()) < limit;
+      }, budget);
+    }
+  }
+  outcome = tracker.outcome();
+  return out;
+}
+
+// Hybrid frontier collection: structured edges from tables, regex brace-body
+// traversal otherwise. Per-parent hit order stays (page, line) deterministic.
+std::unordered_map<std::string, std::vector<Hit>> collect_frontier_callees_hybrid(
+    const std::vector<AnalyzedPage>& pages, const std::vector<std::string>& frontier,
+    ModeTracker& tracker, ScanWorkBudget& budget) {
   std::vector<DefinitionMatcher> matchers;
   matchers.reserve(frontier.size());
   for (const auto& symbol : frontier) matchers.emplace_back(symbol);
@@ -684,7 +991,33 @@ std::unordered_map<std::string, std::vector<Hit>> collect_frontier_callees(
   }
 
   for (const auto& page : pages) {
-    for (size_t definition_line = 0; definition_line < page.lines.size(); ++definition_line) {
+    if (page.structured) {
+      tracker.note_structured();
+      const auto calls = attributed_calls(page.table);
+      for (const auto& parent : frontier) {
+        auto& hits = results.at(parent);
+        auto& emitted_targets = targets.at(parent);
+        for (const auto& call : calls) {
+          if (hits.size() >= static_cast<size_t>(kN22MaximumResults + 1)) break;
+          if (call.caller != parent) continue;
+          if (!emitted_targets.insert(call.callee).second) continue;
+          if (call.line < 1 || static_cast<size_t>(call.line) > page.lines.size())
+            continue;
+          Hit hit;
+          hit.source_id = page.source_id;
+          hit.slug = page.slug;
+          hit.line = call.line;
+          hit.snippet = snippet_at(page.lines, call.line);
+          hit.kind = "callee:" + call.callee;
+          hits.push_back(std::move(hit));
+        }
+      }
+      continue;
+    }
+    tracker.note_regex(page.degraded_reason);
+    PreparedPage prepared{page.source_id, page.slug, page.lines};
+    for (size_t definition_line = 0; definition_line < page.lines.size();
+         ++definition_line) {
       for (const auto& matcher : matchers) {
         budget.consume(page.lines[definition_line].size() + 1);
         auto& hits = results.at(matcher.symbol());
@@ -693,7 +1026,7 @@ std::unordered_map<std::string, std::vector<Hit>> collect_frontier_callees(
         if (!matcher.matches(page.lines[definition_line], &declaration_end)) continue;
         auto& emitted_targets = targets.at(matcher.symbol());
         for_each_definition_callee(
-            page, definition_line, declaration_end, [&](Hit&& hit) {
+            prepared, definition_line, declaration_end, [&](Hit&& hit) {
               constexpr std::string_view prefix = "callee:";
               const std::string target = hit.kind.substr(prefix.size());
               if (emitted_targets.insert(target).second) hits.push_back(std::move(hit));
@@ -705,38 +1038,18 @@ std::unordered_map<std::string, std::vector<Hit>> collect_frontier_callees(
   return results;
 }
 
-}  // namespace
-
-std::vector<Hit> find_callees_in_source(Brain& brain, const std::string& source_id,
-                                        const std::string& symbol, int limit,
-                                        int page_limit) {
+std::vector<Hit> find_flow_in_source_impl(Brain& brain, const std::string& source_id,
+                                          const std::string& symbol, int depth, int limit,
+                                          int page_limit, ScanOutcome& outcome) {
   std::vector<Hit> out;
-  if (source_id.empty() || !is_valid_symbol(symbol)) return out;
-  limit = clamp_n22_bound(limit, kN22MaximumResults);
-  page_limit = clamp_n22_bound(page_limit, kN22MaximumPages);
-
-  std::set<CalleeOccurrenceKey> emitted;
-  const auto prepared = load_n22_pages(brain, source_id, page_limit);
-  ScanWorkBudget budget;
-  const DefinitionMatcher matcher(symbol);
-  for_each_callee_occurrence(prepared, matcher, [&](Hit&& hit) {
-    CalleeOccurrenceKey key{hit.source_id, hit.slug, hit.line, hit.kind};
-    if (emitted.insert(std::move(key)).second) out.push_back(std::move(hit));
-    return static_cast<int>(out.size()) < limit;
-  }, budget);
-  return out;
-}
-
-std::vector<Hit> find_flow_in_source(Brain& brain, const std::string& source_id,
-                                     const std::string& symbol, int depth, int limit,
-                                     int page_limit) {
-  std::vector<Hit> out;
+  outcome = ScanOutcome{};
   if (source_id.empty() || !is_valid_symbol(symbol)) return out;
   depth = clamp_n22_bound(depth, kN22MaximumDepth);
   limit = clamp_n22_bound(limit, kN22MaximumResults);
   page_limit = clamp_n22_bound(page_limit, kN22MaximumPages);
 
-  const auto prepared = load_n22_pages(brain, source_id, page_limit);
+  const auto analyzed = load_analyzed_pages(brain, source_id, page_limit);
+  ModeTracker tracker;
   ScanWorkBudget budget;
   std::vector<std::string> frontier{symbol};
   std::unordered_set<std::string> seen{symbol};
@@ -744,7 +1057,7 @@ std::vector<Hit> find_flow_in_source(Brain& brain, const std::string& source_id,
        current_depth <= depth && !frontier.empty() && static_cast<int>(out.size()) < limit;
        ++current_depth) {
     std::vector<std::string> next;
-    auto callees_by_parent = collect_frontier_callees(prepared, frontier, budget);
+    auto callees_by_parent = collect_frontier_callees_hybrid(analyzed, frontier, tracker, budget);
     for (const auto& parent : frontier) {
       for (auto& hit : callees_by_parent.at(parent)) {
         constexpr std::string_view prefix = "callee:";
@@ -761,13 +1074,15 @@ std::vector<Hit> find_flow_in_source(Brain& brain, const std::string& source_id,
     }
     frontier = std::move(next);
   }
+  outcome = tracker.outcome();
   return out;
 }
 
-std::vector<Hit> find_blast_in_source(Brain& brain, const std::string& source_id,
-                                      const std::string& symbol, int limit,
-                                      int page_limit) {
+std::vector<Hit> find_blast_in_source_impl(Brain& brain, const std::string& source_id,
+                                           const std::string& symbol, int limit,
+                                           int page_limit, ScanOutcome& outcome) {
   std::vector<Hit> out;
+  outcome = ScanOutcome{};
   if (source_id.empty() || !is_valid_symbol(symbol)) return out;
   limit = clamp_n22_bound(limit, kN22MaximumResults);
   page_limit = clamp_n22_bound(page_limit, kN22MaximumPages);
@@ -780,15 +1095,110 @@ std::vector<Hit> find_blast_in_source(Brain& brain, const std::string& source_id
       if (static_cast<int>(out.size()) >= limit) break;
     }
   };
+  const auto combine = [&outcome](const ScanOutcome& part) {
+    if (outcome.degraded_reason.empty()) outcome.degraded_reason = part.degraded_reason;
+    if (part.mode != "structured") outcome.mode = "heuristic";
+  };
 
-  append_source_category(find_defs_in_source(brain, source_id, symbol, limit, page_limit));
-  if (static_cast<int>(out.size()) < limit)
-    append_source_category(find_refs_in_source(brain, source_id, symbol, limit, page_limit));
-  if (static_cast<int>(out.size()) < limit)
-    append_source_category(find_callers_in_source(brain, source_id, symbol, limit, page_limit));
-  if (static_cast<int>(out.size()) < limit)
-    append_source_category(find_callees_in_source(brain, source_id, symbol, limit, page_limit));
+  ScanOutcome part;
+  auto defs = find_defs_in_source(brain, source_id, symbol, limit, page_limit, part);
+  outcome.mode = part.mode;
+  outcome.degraded_reason = part.degraded_reason;
+  append_source_category(std::move(defs));
+  if (static_cast<int>(out.size()) < limit) {
+    append_source_category(
+        find_refs_in_source(brain, source_id, symbol, limit, page_limit, part));
+    combine(part);
+  }
+  if (static_cast<int>(out.size()) < limit) {
+    append_source_category(
+        find_callers_in_source(brain, source_id, symbol, limit, page_limit, part));
+    combine(part);
+  }
+  if (static_cast<int>(out.size()) < limit) {
+    append_source_category(
+        find_callees_in_source(brain, source_id, symbol, limit, page_limit, part));
+    combine(part);
+  }
   return out;
+}
+
+}  // namespace
+
+std::vector<Hit> find_defs_in_source(Brain& brain, const std::string& source_id,
+                                     const std::string& symbol, int limit, int page_limit) {
+  ScanOutcome outcome;
+  return scan_source_mode(brain, source_id, symbol, limit, page_limit, Mode::Def, outcome);
+}
+
+std::vector<Hit> find_refs_in_source(Brain& brain, const std::string& source_id,
+                                     const std::string& symbol, int limit, int page_limit) {
+  ScanOutcome outcome;
+  return scan_source_mode(brain, source_id, symbol, limit, page_limit, Mode::Ref, outcome);
+}
+
+std::vector<Hit> find_callers_in_source(Brain& brain, const std::string& source_id,
+                                        const std::string& symbol, int limit, int page_limit) {
+  ScanOutcome outcome;
+  return scan_source_mode(brain, source_id, symbol, limit, page_limit, Mode::Call, outcome);
+}
+
+std::vector<Hit> find_defs_in_source(Brain& brain, const std::string& source_id,
+                                     const std::string& symbol, int limit, int page_limit,
+                                     ScanOutcome& outcome) {
+  return scan_source_mode(brain, source_id, symbol, limit, page_limit, Mode::Def, outcome);
+}
+
+std::vector<Hit> find_refs_in_source(Brain& brain, const std::string& source_id,
+                                     const std::string& symbol, int limit, int page_limit,
+                                     ScanOutcome& outcome) {
+  return scan_source_mode(brain, source_id, symbol, limit, page_limit, Mode::Ref, outcome);
+}
+
+std::vector<Hit> find_callers_in_source(Brain& brain, const std::string& source_id,
+                                        const std::string& symbol, int limit, int page_limit,
+                                        ScanOutcome& outcome) {
+  return scan_source_mode(brain, source_id, symbol, limit, page_limit, Mode::Call, outcome);
+}
+
+std::vector<Hit> find_callees_in_source(Brain& brain, const std::string& source_id,
+                                        const std::string& symbol, int limit,
+                                        int page_limit) {
+  ScanOutcome outcome;
+  return find_callees_in_source(brain, source_id, symbol, limit, page_limit, outcome);
+}
+
+std::vector<Hit> find_callees_in_source(Brain& brain, const std::string& source_id,
+                                        const std::string& symbol, int limit,
+                                        int page_limit, ScanOutcome& outcome) {
+  return find_callees_in_source_impl(brain, source_id, symbol, limit, page_limit, outcome);
+}
+
+std::vector<Hit> find_flow_in_source(Brain& brain, const std::string& source_id,
+                                     const std::string& symbol, int depth, int limit,
+                                     int page_limit) {
+  ScanOutcome outcome;
+  return find_flow_in_source(brain, source_id, symbol, depth, limit, page_limit, outcome);
+}
+
+std::vector<Hit> find_flow_in_source(Brain& brain, const std::string& source_id,
+                                     const std::string& symbol, int depth, int limit,
+                                     int page_limit, ScanOutcome& outcome) {
+  return find_flow_in_source_impl(brain, source_id, symbol, depth, limit, page_limit,
+                                  outcome);
+}
+
+std::vector<Hit> find_blast_in_source(Brain& brain, const std::string& source_id,
+                                      const std::string& symbol, int limit,
+                                      int page_limit) {
+  ScanOutcome outcome;
+  return find_blast_in_source(brain, source_id, symbol, limit, page_limit, outcome);
+}
+
+std::vector<Hit> find_blast_in_source(Brain& brain, const std::string& source_id,
+                                      const std::string& symbol, int limit, int page_limit,
+                                      ScanOutcome& outcome) {
+  return find_blast_in_source_impl(brain, source_id, symbol, limit, page_limit, outcome);
 }
 
 std::vector<Hit> find_callees(Brain& brain, const std::string& symbol, int limit,

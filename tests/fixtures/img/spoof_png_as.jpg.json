@@ -1,0 +1,21 @@
+{
+  "file": "spoof_png_as.jpg",
+  "ext_hint": ".jpg",
+  "description": "spoofed extension: PNG bytes declared as .jpg - content wins",
+  "expect": {
+    "meta": {
+      "format": "png",
+      "width": 1,
+      "height": 1,
+      "bit_depth": 8,
+      "components": 1,
+      "ok": true,
+      "note": ""
+    },
+    "mime": {
+      "mime": "image/png",
+      "content_based": true,
+      "ext_mismatch": true
+    }
+  }
+}

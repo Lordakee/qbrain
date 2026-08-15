@@ -1,0 +1,21 @@
+{
+  "file": "valid_jpg_sof2_64x48.jpg",
+  "ext_hint": ".jpg",
+  "description": "progressive JPEG with APP1 skip: SOI APP1 SOF2 EOI",
+  "expect": {
+    "meta": {
+      "format": "jpeg",
+      "width": 64,
+      "height": 48,
+      "bit_depth": 8,
+      "components": 1,
+      "ok": true,
+      "note": ""
+    },
+    "mime": {
+      "mime": "image/jpeg",
+      "content_based": true,
+      "ext_mismatch": false
+    }
+  }
+}

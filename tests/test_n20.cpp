@@ -2134,8 +2134,8 @@ void exercise_populated_reopen(qbrain::Brain& selected, qbrain::Brain& decoy,
   const auto decoy_before = logical_snapshot(decoy);
   const auto selected_integrity_before = qbrain::storage::check_schema_integrity(selected.db());
   const auto decoy_integrity_before = qbrain::storage::check_schema_integrity(decoy.db());
-  QB_CHECK(selected_integrity_before.ok && selected_integrity_before.schema_version == 12);
-  QB_CHECK(decoy_integrity_before.ok && decoy_integrity_before.schema_version == 12);
+  QB_CHECK(selected_integrity_before.ok && selected_integrity_before.schema_version == 13);
+  QB_CHECK(decoy_integrity_before.ok && decoy_integrity_before.schema_version == 13);
 
   const auto list_before = require_success(call_op(selected, "list_schema_packs"));
   const auto active_before = require_success(call_op(selected, "get_active_schema_pack"));
@@ -2157,8 +2157,8 @@ void exercise_populated_reopen(qbrain::Brain& selected, qbrain::Brain& decoy,
 
   const auto selected_integrity_after = qbrain::storage::check_schema_integrity(selected.db());
   const auto decoy_integrity_after = qbrain::storage::check_schema_integrity(decoy.db());
-  QB_CHECK(selected_integrity_after.ok && selected_integrity_after.schema_version == 12);
-  QB_CHECK(decoy_integrity_after.ok && decoy_integrity_after.schema_version == 12);
+  QB_CHECK(selected_integrity_after.ok && selected_integrity_after.schema_version == 13);
+  QB_CHECK(decoy_integrity_after.ok && decoy_integrity_after.schema_version == 13);
   QB_CHECK(selected_integrity_after.schema_version == selected_integrity_before.schema_version);
   QB_CHECK(decoy_integrity_after.schema_version == decoy_integrity_before.schema_version);
   QB_CHECK(logical_snapshot(selected) == selected_before);
@@ -2212,8 +2212,8 @@ void run_test_n20_impl() {
   decoy.open_at(qbrain::util::path_to_utf8(test_root / "decoy.db"));
   const auto selected_integrity = qbrain::storage::check_schema_integrity(selected.db());
   const auto decoy_integrity = qbrain::storage::check_schema_integrity(decoy.db());
-  QB_CHECK(selected_integrity.ok && selected_integrity.schema_version == 12);
-  QB_CHECK(decoy_integrity.ok && decoy_integrity.schema_version == 12);
+  QB_CHECK(selected_integrity.ok && selected_integrity.schema_version == 13);
+  QB_CHECK(decoy_integrity.ok && decoy_integrity.schema_version == 13);
 
   SnapshotMatrix matrix(selected, decoy, isolated_localappdata);
   exercise_builtin_no_create(selected, decoy, matrix, isolated_localappdata);

@@ -1,0 +1,21 @@
+{
+  "file": "spoof_text_as.png",
+  "ext_hint": ".png",
+  "description": "spoofed extension: plain text declared as .png - text/plain + mismatch",
+  "expect": {
+    "meta": {
+      "format": "unknown",
+      "width": 0,
+      "height": 0,
+      "bit_depth": 0,
+      "components": 0,
+      "ok": false,
+      "note": "no PNG or JPEG signature"
+    },
+    "mime": {
+      "mime": "text/plain",
+      "content_based": true,
+      "ext_mismatch": true
+    }
+  }
+}

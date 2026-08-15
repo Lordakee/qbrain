@@ -902,7 +902,7 @@ void exercise_migrations(const std::filesystem::path& root) {
   const auto fresh_path = root / "migration-fresh.db";
   qbrain::Brain fresh("n17-migration-fresh");
   fresh.open_at(qbrain::util::path_to_utf8(fresh_path));
-  QB_CHECK(schema_version(fresh.db()) == 12);
+  QB_CHECK(schema_version(fresh.db()) == 13);
   QB_CHECK(qbrain::storage::check_schema_integrity(fresh.db()).ok);
   require_job_messages_shape(fresh.db());
   const auto fresh_before = logical_snapshot(fresh);
@@ -936,7 +936,7 @@ WHEN NEW.version=9 BEGIN SELECT RAISE(ABORT, 'injected v9 marker failure'); END;
     QB_CHECK(v7_payload_snapshot(database) == payload_before);
     database.exec("DROP TRIGGER n17_reject_v9;");
     qbrain::storage::apply_migrations(database);
-    QB_CHECK(schema_version(database) == 12);
+    QB_CHECK(schema_version(database) == 13);
     QB_CHECK(v7_payload_snapshot(database) == payload_before);
     QB_CHECK(qbrain::storage::check_schema_integrity(database).ok);
     const auto migrated = database_snapshot(database);
@@ -969,7 +969,7 @@ WHEN NEW.version=8 BEGIN SELECT RAISE(ABORT, 'injected v8 marker failure'); END;
     g_evidence.rollback_hash = snapshot_sha256(before);
     database.exec("DROP TRIGGER n17_reject_v8;");
     qbrain::storage::apply_migrations(database);
-    QB_CHECK(schema_version(database) == 12);
+    QB_CHECK(schema_version(database) == 13);
     require_job_messages_shape(database);
     QB_CHECK(qbrain::storage::check_schema_integrity(database).ok);
   }

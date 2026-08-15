@@ -6,6 +6,7 @@
 #include "qbrain/graph/analytics.hpp"
 #include "qbrain/schema/packs.hpp"
 #include "qbrain/schema/lint.hpp"
+#include "qbrain/files/image_meta.hpp"
 #include "qbrain/files/store.hpp"
 #include "qbrain/graph/extract.hpp"
 #include "qbrain/graph/traverse.hpp"
@@ -13,6 +14,7 @@
 #include "qbrain/ingest/import.hpp"
 #include "qbrain/jobs/minions.hpp"
 #include "qbrain/search/hybrid.hpp"
+#include "qbrain/search/vector.hpp"
 #include "qbrain/service/live_sync.hpp"
 #include "qbrain/util/string_util.hpp"
 #include "qbrain/util/time_util.hpp"
@@ -1392,12 +1394,71 @@ void register_jobs_ops() {
     auto payload = arg(ctx, "payload_json", "{}");
     auto queue = arg(ctx, "queue", "default");
     int pri = arg_int(ctx, "priority", 100);
+    // N34 D4: optional children spec spawns a bounded parent-child fan-out.
+    std::vector<jobs::ChildSpec> children;
+    std::string children_raw = arg(ctx, "children");
+    if (!children_raw.empty() && children_raw != "null") {
+      json spec;
+      try {
+        spec = json::parse(children_raw);
+      } catch (const std::exception&) {
+        r.ok = false;
+        r.json = json({{"error", {{"code", "invalid_argument"}, {"field", "children"},
+                                  {"message", "children must be a JSON array"}}}}).dump(2);
+        r.text = r.json;
+        return r;
+      }
+      if (!spec.is_array() || spec.empty() || spec.size() > 8) {
+        r.ok = false;
+        r.json = json({{"error", {{"code", "invalid_argument"}, {"field", "children"},
+                                  {"message", "children must be a JSON array of 1..8 specs"}}}}).dump(2);
+        r.text = r.json;
+        return r;
+      }
+      for (const auto& c : spec) {
+        if (!c.is_object() || !c.contains("type") || !c["type"].is_string() ||
+            c["type"].get<std::string>().empty()) {
+          r.ok = false;
+          r.json = json({{"error", {{"code", "invalid_argument"}, {"field", "children.type"},
+                                    {"message", "each child requires a non-empty string type"}}}}).dump(2);
+          r.text = r.json;
+          return r;
+        }
+        jobs::ChildSpec cs;
+        cs.type = c["type"].get<std::string>();
+        if (c.contains("payload_json") && c["payload_json"].is_string())
+          cs.payload_json = c["payload_json"].get<std::string>();
+        if (c.contains("queue") && c["queue"].is_string())
+          cs.queue = c["queue"].get<std::string>();
+        if (c.contains("priority") && c["priority"].is_number_integer())
+          cs.priority = c["priority"].get<int>();
+        children.push_back(std::move(cs));
+      }
+    }
     auto id = jobs::submit_job(*ctx.brain, type, payload, queue, pri);
+    if (!children.empty()) {
+      auto spawned = jobs::spawn_children(*ctx.brain, id, children);
+      if (spawned.status != jobs::JobOperationStatus::success) {
+        r.ok = false;
+        r.json = json({{"error", {{"code", "invalid_argument"},
+                                  {"field", spawned.reason.empty() ? "children" : spawned.reason},
+                                  {"message", "children rejected; parent left waiting without children"}}},
+                       {"id", id}}).dump(2);
+        r.text = r.json;
+        return r;
+      }
+      json out = {{"id", id}, {"type", type}, {"status", "waiting_children"},
+                  {"child_ids", spawned.child_ids}};
+      r.json = out.dump(2);
+      r.text = "job " + std::to_string(id) + " (" +
+               std::to_string(spawned.child_ids.size()) + " children)";
+      return r;
+    }
     r.json = json({{"id", id}, {"type", type}, {"status", "waiting"}}).dump(2);
     r.text = "job " + std::to_string(id);
     return r;
   }, true, "Submit a minion job (MCP requires --allow-write)",
-      R"({"type":"object","properties":{"type":{"type":"string"},"name":{"type":"string"},"payload_json":{"type":"string"},"queue":{"type":"string"},"priority":{"type":"integer"}},"required":["type"]})");
+      R"({"type":"object","properties":{"type":{"type":"string"},"name":{"type":"string"},"payload_json":{"type":"string"},"queue":{"type":"string"},"priority":{"type":"integer"},"children":{"type":"array","maxItems":8,"items":{"type":"object","properties":{"type":{"type":"string"},"payload_json":{"type":"string"},"queue":{"type":"string"},"priority":{"type":"integer"}},"required":["type"],"additionalProperties":false},"minItems":1}},"required":["type"]})");
 
   register_one(
       "list_jobs", Scope::Read, [](OpContext& ctx) {
@@ -1437,18 +1498,31 @@ void register_jobs_ops() {
       r.text = "not found";
       return r;
     }
-    r.json = json({{"id", j->id},
-                   {"type", j->type},
-                   {"status", j->status},
-                   {"payload_json", j->payload_json},
-                   {"result_json", j->result_json},
-                   {"error_text", j->error_text},
-                   {"attempts", j->attempts},
-                   {"priority", j->priority}})
-                 .dump(2);
+    // N34 D4: hierarchy view when the job participates in a parent-child tree.
+    auto h = jobs::get_job_hierarchy(*ctx.brain, id);
+    json out = {{"id", j->id},
+                {"type", j->type},
+                {"status", j->status},
+                {"payload_json", j->payload_json},
+                {"result_json", j->result_json},
+                {"error_text", j->error_text},
+                {"attempts", j->attempts},
+                {"priority", j->priority}};
+    if (h && (h->parent_id != 0 || h->child_count > 0)) {
+      out["parent_id"] = h->parent_id == 0 ? json(nullptr) : json(h->parent_id);
+      out["depth"] = h->depth;
+      out["child_count"] = h->child_count;
+      if (!h->children.empty()) {
+        json kids = json::array();
+        for (const auto& c : h->children)
+          kids.push_back({{"id", c.id}, {"status", c.status}, {"type", c.type}});
+        out["children"] = kids;
+      }
+    }
+    r.json = out.dump(2);
     r.text = r.json;
     return r;
-  }, false, "Get job by id",
+  }, false, "Get job by id (N34: includes hierarchy fields when applicable)",
       R"({"type":"object","properties":{"id":{"type":"integer"}},"required":["id"]})");
 
   register_one(
@@ -1462,12 +1536,19 @@ void register_jobs_ops() {
       r.text = "id required";
       return r;
     }
-    if (!jobs::cancel_job(*ctx.brain, id)) {
+    // N34 D4: tree-aware cancellation (parent cancels propagate to children).
+    auto res = jobs::cancel_job_tree(*ctx.brain, id);
+    if (!res.cancelled) {
       r.ok = false;
-      r.text = "cancel failed";
+      r.json = json({{"error", {{"code", res.reason.empty() ? "invalid_state" : res.reason},
+                                {"field", "id"}, {"message", "cancel failed"}}}}).dump(2);
+      r.text = r.json;
       return r;
     }
-    r.text = "cancelled";
+    r.json = json({{"cancelled", true}, {"cancelled_children", res.cancelled_children}}).dump(2);
+    r.text = res.cancelled_children > 0
+                 ? "cancelled (+" + std::to_string(res.cancelled_children) + " children)"
+                 : "cancelled";
     return r;
   }, true, "Cancel a waiting/active job (MCP requires --allow-write)",
       R"({"type":"object","properties":{"id":{"type":"integer"}},"required":["id"]})");
@@ -1563,11 +1644,16 @@ void register_jobs_control_ops() {
       r.text = "id required";
       return r;
     }
-    if (!jobs::retry_job(*ctx.brain, id)) {
+    // N34 D4: leaf-only retry; parents are rejected with a structured reason.
+    auto res = jobs::retry_job_hierarchy(*ctx.brain, id);
+    if (!res.requeued) {
       r.ok = false;
-      r.text = "retry failed";
+      r.json = json({{"error", {{"code", res.reason.empty() ? "invalid_state" : res.reason},
+                                {"field", "id"}, {"message", "retry failed"}}}}).dump(2);
+      r.text = r.json;
       return r;
     }
+    r.json = json({{"requeued", true}, {"id", id}}).dump(2);
     r.text = "retried " + std::to_string(id);
     return r;
   }, true, "Requeue failed/cancelled job to waiting",
@@ -1752,8 +1838,11 @@ void register_maintenance_ops() {
 // N31 D4: N16 code-intel ops (3) — moved verbatim from register_builtin_ops;
 // registration order preserved.
 void register_code_ops() {
-  // N16 code-intel (regex/heuristic, no tree-sitter)
-  auto hits_to_result = [](const std::vector<codeintel::Hit>& hits) {
+  // N16 code-intel; N32 adds the additive scan-mode trailer ("mode:" and
+  // optional "degraded_reason:" lines appended to the text output). The JSON
+  // row contract (source_id, slug, line, snippet, kind) is unchanged.
+  auto hits_to_result = [](const std::vector<codeintel::Hit>& hits,
+                           const codeintel::ScanOutcome& outcome) {
     OpResult r;
     json arr = json::array();
     std::ostringstream oss;
@@ -1767,7 +1856,11 @@ void register_code_ops() {
           << "] " << h.snippet << "\n";
     }
     r.json = arr.dump(2);
-    r.text = oss.str().empty() ? "(no matches)\n" : oss.str();
+    std::string text = oss.str().empty() ? "(no matches)\n" : oss.str();
+    text += "mode: " + outcome.mode + "\n";
+    if (!outcome.degraded_reason.empty())
+      text += "degraded_reason: " + outcome.degraded_reason + "\n";
+    r.text = text;
     return r;
   };
 
@@ -1803,8 +1896,10 @@ void register_code_ops() {
     int limit = 50, page_limit = 500;
     OpResult error;
     if (!parse_code_request(ctx, symbol, source, limit, page_limit, error)) return error;
-    auto hits = codeintel::find_defs_in_source(*ctx.brain, source, symbol, limit, page_limit);
-    return hits_to_result(hits);
+    codeintel::ScanOutcome outcome;
+    auto hits =
+        codeintel::find_defs_in_source(*ctx.brain, source, symbol, limit, page_limit, outcome);
+    return hits_to_result(hits, outcome);
   }, false, "Find C++/TS-like symbol definitions in page bodies",
       R"({"type":"object","additionalProperties":false,"properties":{"symbol":{"type":"string","maxLength":256},"name":{"type":"string","maxLength":256},"source_id":{"type":"string","default":"default"},"limit":{"type":"integer","minimum":0,"maximum":200,"default":50},"page_limit":{"type":"integer","minimum":0,"maximum":2000,"default":500}},"anyOf":[{"required":["symbol"]},{"required":["name"]}]})");
 
@@ -1814,8 +1909,10 @@ void register_code_ops() {
     int limit = 50, page_limit = 500;
     OpResult error;
     if (!parse_code_request(ctx, symbol, source, limit, page_limit, error)) return error;
-    auto hits = codeintel::find_refs_in_source(*ctx.brain, source, symbol, limit, page_limit);
-    return hits_to_result(hits);
+    codeintel::ScanOutcome outcome;
+    auto hits =
+        codeintel::find_refs_in_source(*ctx.brain, source, symbol, limit, page_limit, outcome);
+    return hits_to_result(hits, outcome);
   }, false, "Find word-boundary symbol references in page bodies",
       R"({"type":"object","additionalProperties":false,"properties":{"symbol":{"type":"string","maxLength":256},"name":{"type":"string","maxLength":256},"source_id":{"type":"string","default":"default"},"limit":{"type":"integer","minimum":0,"maximum":200,"default":50},"page_limit":{"type":"integer","minimum":0,"maximum":2000,"default":500}},"anyOf":[{"required":["symbol"]},{"required":["name"]}]})");
 
@@ -1825,8 +1922,10 @@ void register_code_ops() {
     int limit = 50, page_limit = 500;
     OpResult error;
     if (!parse_code_request(ctx, symbol, source, limit, page_limit, error)) return error;
-    auto hits = codeintel::find_callers_in_source(*ctx.brain, source, symbol, limit, page_limit);
-    return hits_to_result(hits);
+    codeintel::ScanOutcome outcome;
+    auto hits = codeintel::find_callers_in_source(*ctx.brain, source, symbol, limit,
+                                                  page_limit, outcome);
+    return hits_to_result(hits, outcome);
   }, false, "Find call-ish symbol( references in page bodies",
       R"({"type":"object","additionalProperties":false,"properties":{"symbol":{"type":"string","maxLength":256},"name":{"type":"string","maxLength":256},"source_id":{"type":"string","default":"default"},"limit":{"type":"integer","minimum":0,"maximum":200,"default":50},"page_limit":{"type":"integer","minimum":0,"maximum":2000,"default":500}},"anyOf":[{"required":["symbol"]},{"required":["name"]}]})");
 }
@@ -2507,7 +2606,8 @@ void register_code_traversal_ops() {
     return true;
   };
 
-  auto n22_hits_to_result = [](const std::vector<codeintel::Hit>& hits) {
+  auto n22_hits_to_result = [](const std::vector<codeintel::Hit>& hits,
+                               const codeintel::ScanOutcome& outcome) {
     OpResult r;
     json arr = json::array();
     std::ostringstream text;
@@ -2521,7 +2621,12 @@ void register_code_traversal_ops() {
            << hit.kind << "] " << hit.snippet << "\n";
     }
     r.json = arr.dump(2);
-    r.text = text.str().empty() ? "(no matches)\n" : text.str();
+    std::string out = text.str().empty() ? "(no matches)\n" : text.str();
+    // N32: additive scan-mode trailer (JSON row contract unchanged).
+    out += "mode: " + outcome.mode + "\n";
+    if (!outcome.degraded_reason.empty())
+      out += "degraded_reason: " + outcome.degraded_reason + "\n";
+    r.text = out;
     return r;
   };
 
@@ -2551,8 +2656,11 @@ void register_code_traversal_ops() {
               ctx, {"symbol", "name", "source_id", "limit", "page_limit"},
               {"symbol", "name"}, "symbol", symbol, source, limit, page_limit, error))
         return error;
+      codeintel::ScanOutcome outcome;
       return n22_hits_to_result(
-          codeintel::find_callees_in_source(*ctx.brain, source, symbol, limit, page_limit));
+          codeintel::find_callees_in_source(*ctx.brain, source, symbol, limit, page_limit,
+                                            outcome),
+          outcome);
     } catch (const std::length_error&) {
       return argument_error("resource_limit", "source_id", "source text exceeds scan budget");
     } catch (const std::exception& exception) {
@@ -2587,8 +2695,11 @@ void register_code_traversal_ops() {
         return error;
       auto source = resolve_source(ctx, true, error);
       if (!source) return error;
+      codeintel::ScanOutcome outcome;
       return n22_hits_to_result(codeintel::find_flow_in_source(
-          *ctx.brain, *source, symbol, depth, limit, page_limit));
+                                    *ctx.brain, *source, symbol, depth, limit, page_limit,
+                                    outcome),
+                                outcome);
     } catch (const std::length_error&) {
       return argument_error("resource_limit", "source_id", "source text exceeds scan budget");
     } catch (const std::exception& exception) {
@@ -2624,8 +2735,11 @@ void register_code_traversal_ops() {
       auto resolved = resolve_source(ctx, true, error);
       if (!resolved) return error;
       source = *resolved;
+      codeintel::ScanOutcome outcome;
       return n22_hits_to_result(
-          codeintel::find_blast_in_source(*ctx.brain, source, symbol, limit, page_limit));
+          codeintel::find_blast_in_source(*ctx.brain, source, symbol, limit, page_limit,
+                                          outcome),
+          outcome);
     } catch (const std::length_error&) {
       return argument_error("resource_limit", "source_id", "source text exceeds scan budget");
     } catch (const std::exception& exception) {
@@ -2806,30 +2920,153 @@ void register_chronicle_history_ops() {
       R"({"type":"object","additionalProperties":false,"properties":{"source_id":{"type":"string","minLength":1,"maxLength":64,"x-maxUtf8Bytes":64,"pattern":"^(?!(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9])$)[A-Za-z0-9_-]+$","description":"1-64 ASCII bytes; canonicalized to lowercase; Windows reserved device names rejected.","default":"default"},"since":{"type":"string","minLength":10,"maxLength":20,"pattern":"^[0-9]{4}-[0-9]{2}-[0-9]{2}([T ][0-9]{2}:[0-9]{2}:[0-9]{2}Z)?$"},"limit":{"type":"integer","minimum":0,"maximum":1000,"default":1000},"dry_run":{"type":"boolean","default":false}}})");
 }
 
+// ---- N33 D4: content-level image metadata integration ----
+// Scoped to the files / raw_data / search_by_image segment only (the code-ops
+// segment belongs to N32 and the jobs segment to N34). All integration state
+// lives in existing JSON fields (raw_data.meta_json) or op responses; there is
+// no schema change and file_index storage is untouched.
+
+constexpr int64_t kN33MaxImageBytes =
+    static_cast<int64_t>(files::kImageMetaMaxInputBytes);  // 32 MiB bound
+constexpr int kN33MaxImageCandidates = 16;  // bounded candidate scan per query
+
+struct N33FileBytes {
+  bool ok = false;
+  bool too_large = false;
+  std::string bytes;
+};
+
+N33FileBytes n33_read_file_bounded(const std::string& utf8_path, int64_t declared_size) {
+  N33FileBytes out;
+  if (declared_size > kN33MaxImageBytes) {
+    out.too_large = true;
+    return out;
+  }
+  std::ifstream f(util::utf8_to_path(utf8_path), std::ios::binary);
+  if (!f) return out;
+  f.seekg(0, std::ios::end);
+  const auto end = static_cast<int64_t>(f.tellg());
+  if (end < 0) return out;
+  if (end > kN33MaxImageBytes) {
+    out.too_large = true;
+    return out;
+  }
+  f.seekg(0, std::ios::beg);
+  out.bytes.resize(static_cast<size_t>(end));
+  if (end > 0) f.read(out.bytes.data(), end);
+  if (!f && !f.eof()) return out;
+  out.ok = true;
+  return out;
+}
+
+std::string n33_lower_ext(const std::string& name) {
+  const std::string lower = util::to_lower(name);
+  const size_t dot = lower.rfind('.');
+  if (dot == std::string::npos) return {};
+  const std::string ext = lower.substr(dot);
+  if (ext.find('/') != std::string::npos || ext.find('\\') != std::string::npos) return {};
+  return ext;
+}
+
+bool n33_ext_claims_image(const std::string& dotted_ext) {
+  return dotted_ext == ".png" || dotted_ext == ".jpg" || dotted_ext == ".jpeg" ||
+         dotted_ext == ".jpe" || dotted_ext == ".jfif" || dotted_ext == ".gif" ||
+         dotted_ext == ".bmp" || dotted_ext == ".dib" || dotted_ext == ".webp" ||
+         dotted_ext == ".svg" || dotted_ext == ".ico" || dotted_ext == ".tif" ||
+         dotted_ext == ".tiff";
+}
+
+bool n33_content_is_png_jpeg(const files::MimeResult& verdict) {
+  return verdict.content_based &&
+         (verdict.mime == "image/png" || verdict.mime == "image/jpeg");
+}
+
+// Build the additive image metadata block from content (N33-A bytes-in API).
+// Returns a null json when there is nothing image-related to record (content
+// and name both non-image): consumers treat missing fields as non-image
+// (backward compatible).
+json n33_image_block(const std::string& bytes, const std::string& name_for_ext) {
+  const std::string ext = n33_lower_ext(name_for_ext);
+  files::MimeResult verdict;
+  try {
+    verdict = files::sniff_mime(bytes, ext);
+  } catch (...) {
+    return json{};
+  }
+  const bool content_is_image =
+      verdict.content_based && verdict.mime.rfind("image/", 0) == 0;
+  if (!content_is_image && !n33_ext_claims_image(ext)) return json{};
+  json block;
+  block["mime"] = verdict.mime;
+  block["content_based"] = verdict.content_based;
+  block["declared_ext_mismatch"] = verdict.ext_mismatch;
+  if (!n33_content_is_png_jpeg(verdict)) {
+    // Either non-image content under an image name (spoof marker: content
+    // classification wins and the mismatch stays observable) or an image
+    // format the header parser does not cover.
+    block["format"] = "unknown";
+    return block;
+  }
+  files::ImageMeta meta;
+  try {
+    meta = files::parse_image_meta(bytes);
+  } catch (...) {
+  }
+  block["format"] = meta.format;
+  if (meta.width > 0) block["width"] = meta.width;
+  if (meta.height > 0) block["height"] = meta.height;
+  if (meta.bit_depth > 0) block["bit_depth"] = meta.bit_depth;
+  if (meta.components > 0) block["components"] = meta.components;
+  if (!meta.note.empty()) block["reason"] = meta.note;
+  return block;
+}
+
 // N31 D4: N24 file storage ops (3) — moved verbatim from register_builtin_ops;
 // registration order preserved.
 void register_files_ops() {
   // N24 files
   register_one(
       "file_upload", Scope::Write, [](OpContext& ctx) {
-    OpResult r;
-    auto path = arg(ctx, "path");
-    if (path.empty()) path = arg(ctx, "src");
-    if (path.empty()) {
-      r.ok = false;
-      r.text = "path required";
-      return r;
-    }
-    auto id = files::upload(*ctx.brain, path, arg(ctx, "name"));
-    if (id <= 0) {
-      r.ok = false;
-      r.text = "upload failed";
-      return r;
-    }
-    r.json = json({{"id", id}, {"url", files::file_url(*ctx.brain, id)}}).dump(2);
-    r.text = r.json;
-    return r;
-  }, false, "Upload local file into brain files dir",
+        OpResult r;
+        auto path = arg(ctx, "path");
+        if (path.empty()) path = arg(ctx, "src");
+        if (path.empty()) {
+          r.ok = false;
+          r.text = "path required";
+          return r;
+        }
+        // N33 D4: the 32MiB bound executes here, at handler entry and before
+        // the disk write. It gates only the image-metadata extraction attempt:
+        // oversized or non-image uploads proceed exactly as before.
+        json image_block;
+        {
+          std::error_code ec;
+          const auto src = util::utf8_to_path(path);
+          const auto declared = std::filesystem::file_size(src, ec);
+          if (!ec && declared <= kN33MaxImageBytes) {
+            auto data = n33_read_file_bounded(path, static_cast<int64_t>(declared));
+            if (data.ok) {
+              auto name_hint = arg(ctx, "name");
+              if (name_hint.empty())
+                name_hint = util::path_to_utf8(std::filesystem::path(src).filename());
+              image_block = n33_image_block(data.bytes, name_hint);
+            }
+          }
+        }
+        auto id = files::upload(*ctx.brain, path, arg(ctx, "name"));
+        if (id <= 0) {
+          r.ok = false;
+          r.text = "upload failed";
+          return r;
+        }
+        // N33 D4: parsed metadata appears in the RESPONSE only; it is not
+        // persisted into file_index (no schema change, no new columns).
+        json payload = {{"id", id}, {"url", files::file_url(*ctx.brain, id)}};
+        if (!image_block.is_null()) payload["image"] = image_block;
+        r.json = payload.dump(2);
+        r.text = r.json;
+        return r;
+      }, false, "Upload local file into brain files dir",
       R"({"type":"object","properties":{"path":{"type":"string"},"name":{"type":"string"}},"required":["path"]})");
 
   register_one(
@@ -3085,22 +3322,59 @@ void register_raw_ops() {
   // N27 raw / transcripts / salience / image
   register_one(
       "put_raw_data", Scope::Write, [](OpContext& ctx) {
-    OpResult r;
-    auto key = arg(ctx, "key");
-    if (key.empty()) {
-      r.ok = false;
-      r.text = "key required";
-      return r;
-    }
-    if (!ctx.brain->put_raw_data(key, arg(ctx, "content"), arg(ctx, "meta_json", "{}"))) {
-      r.ok = false;
-      r.text = "put failed";
-      return r;
-    }
-    r.text = "ok " + key;
-    r.json = json({{"key", key}}).dump(2);
-    return r;
-  }, false, "Store raw key/value text",
+        OpResult r;
+        auto key = arg(ctx, "key");
+        if (key.empty()) {
+          r.ok = false;
+          r.text = "key required";
+          return r;
+        }
+        auto content = arg(ctx, "content");
+        auto meta_raw = arg(ctx, "meta_json", "{}");
+        // N33 D4: additive image metadata into raw_data's existing JSON meta
+        // field. Extraction is attempted only within the 32MiB bound; beyond
+        // it (or for non-image content) the user's meta passes through
+        // untouched. No schema change.
+        json image_block;
+        if (static_cast<int64_t>(content.size()) <= kN33MaxImageBytes)
+          image_block = n33_image_block(content, key);
+        std::string effective_meta = meta_raw.empty() ? "{}" : meta_raw;
+        if (!image_block.is_null()) {
+          json meta = json::object();
+          bool user_meta_is_object = true;
+          if (!effective_meta.empty() && effective_meta != "{}") {
+            try {
+              auto parsed = json::parse(effective_meta);
+              if (parsed.is_object())
+                meta = std::move(parsed);
+              else
+                user_meta_is_object = false;
+            } catch (...) {
+              user_meta_is_object = false;
+            }
+          }
+          if (user_meta_is_object) {
+            meta["image"] = image_block;
+          } else {
+            // Preserve a non-object user meta_json verbatim (never destroy
+            // user data) while still recording the image block.
+            meta = json{{"user_meta_raw", effective_meta}, {"image", image_block}};
+          }
+          // replace handler: user meta may carry non-UTF-8 bytes; never throw
+          // on the metadata path (image ingestion must not fail ingestion).
+          effective_meta = meta.dump(-1, ' ', false, json::error_handler_t::replace);
+        }
+        if (!ctx.brain->put_raw_data(key, content, effective_meta)) {
+          r.ok = false;
+          r.text = "put failed";
+          return r;
+        }
+        r.text = "ok " + key;
+        json payload = {{"key", key}};
+        if (!image_block.is_null()) payload["image"] = image_block;
+        r.json = payload.dump(2);
+        return r;
+      }, false, "Store raw key/value text",
       R"({"type":"object","properties":{"key":{"type":"string"},"content":{"type":"string"},"meta_json":{"type":"string"}},"required":["key"]})");
 
   register_one(
@@ -3113,7 +3387,20 @@ void register_raw_ops() {
       r.text = "not found";
       return r;
     }
-    r.json = json({{"key", key}, {"content", v->first}, {"meta_json", v->second}}).dump(2);
+    // N33 D4: surface the stored image metadata when present. Rows without
+    // the fields (pre-N33 or non-image) are returned unchanged — missing
+    // fields mean non-image (backward compatible).
+    json payload = {{"key", key}, {"content", v->first}, {"meta_json", v->second}};
+    try {
+      auto meta = json::parse(v->second);
+      if (meta.is_object() && meta.contains("image") && meta["image"].is_object())
+        payload["image"] = meta["image"];
+    } catch (...) {
+    }
+    // N33: raw_data may now hold binary image bytes; nlohmann rejects
+    // invalid UTF-8 on dump, so the JSON view replaces such bytes (the
+    // exact content remains available in r.text).
+    r.json = payload.dump(2, ' ', false, json::error_handler_t::replace);
     r.text = v->first;
     return r;
   }, false, "Get raw data by key",
@@ -3129,8 +3416,11 @@ void register_raw_ops() {
       arr.push_back({{"slug", p.slug}, {"title", p.title}, {"updated_at", p.updated_at}});
     // also raw keys transcript/
     for (auto& kv : ctx.brain->list_raw_prefix("transcript/", limit))
-      arr.push_back({{"key", kv.first}, {"preview", kv.second.substr(0, 200)}});
-    r.json = arr.dump(2);
+      // N33: raw transcripts may include binary image bytes now; the preview
+      // must not break JSON serialization.
+      arr.push_back({{"key", kv.first},
+                     {"preview", kv.second.substr(0, 200)}});
+    r.json = arr.dump(2, ' ', false, json::error_handler_t::replace);
     r.text = r.json;
     return r;
   }, false, "Recent transcript pages/raw keys",
@@ -3161,35 +3451,113 @@ void register_raw_ops() {
 
   register_one(
       "search_by_image", Scope::Read, [](OpContext& ctx) {
-    OpResult r;
-    auto path = arg(ctx, "path");
-    auto name = arg(ctx, "name");
-    if (path.empty() && name.empty()) {
-      r.ok = false;
-      r.text = "path or name required";
-      return r;
-    }
-    // Heuristic: upload optional, match file_index by basename stem in page titles/slugs
-    std::string stem = name;
-    if (!path.empty()) {
-      namespace fs = std::filesystem;
-      stem = util::path_to_utf8(fs::path(path).stem());
-      // best-effort index
-      files::upload(*ctx.brain, path, name);
-    }
-    search::HybridOpts opts;
-    opts.limit = arg_int(ctx, "limit", 10);
-    opts.use_vector = false;
-    opts.config = &ctx.brain->config();
-    auto hits = search::hybrid_search(*ctx.brain, stem, nullptr, opts);
-    json arr = json::array();
-    for (auto& h : hits)
-      arr.push_back({{"slug", h.slug}, {"title", h.title}, {"score", h.score}});
-    r.json = json({{"query_stem", stem}, {"results", arr}, {"note", "filename heuristic, no vision model"}})
-                 .dump(2);
-    r.text = r.json;
-    return r;
-  }, false, "Image search stub via filename stem",
+        OpResult r;
+        auto path = arg(ctx, "path");
+        auto name = arg(ctx, "name");
+        if (path.empty() && name.empty()) {
+          r.ok = false;
+          r.text = "path or name required";
+          return r;
+        }
+        std::string stem = name;
+        if (!path.empty()) {
+          namespace fs = std::filesystem;
+          stem = util::path_to_utf8(fs::path(path).stem());
+          // best-effort index (existing behavior)
+          files::upload(*ctx.brain, path, name);
+        }
+        // N33: deterministic fail-open — structured unavailable, exit 0.
+        auto unavailable = [&r](const std::string& reason) {
+          r.ok = true;
+          r.exit_code = 0;
+          r.json = json{{"results", json::array()}, {"mode", "unavailable"}, {"reason", reason}}
+                        .dump(2);
+          r.text = r.json;
+          return r;
+        };
+        // Obtain query image bytes (bounded at 32MiB), by path or by the most
+        // recent file_index row matching the given name.
+        std::string query_bytes;
+        std::string query_reason;
+        {
+          std::string query_path = path;
+          if (query_path.empty()) {
+            auto st = ctx.brain->db().prepare(
+                "SELECT path FROM file_index WHERE name=? ORDER BY id DESC LIMIT 1");
+            st.bind_text(1, name);
+            if (!st.step())
+              query_reason = "query image not found";
+            else
+              query_path = st.column_text(0);
+          }
+          if (!query_path.empty() && query_reason.empty()) {
+            std::error_code ec;
+            const auto declared =
+                std::filesystem::file_size(util::utf8_to_path(query_path), ec);
+            if (ec) {
+              query_reason = "query image unavailable";
+            } else {
+              auto data = n33_read_file_bounded(query_path, static_cast<int64_t>(declared));
+              if (data.ok)
+                query_bytes = std::move(data.bytes);
+              else
+                query_reason = data.too_large ? "query image exceeds size limit"
+                                              : "query image unavailable";
+            }
+          }
+        }
+        if (query_bytes.empty()) return unavailable(query_reason);
+        const auto& cfg = ctx.brain->config();
+        auto embed = ai::embed_image(cfg, query_bytes);
+        if (embed.unavailable || !embed.ok)
+          return unavailable(embed.no_credentials ? "no provider credentials" : embed.error);
+        // Candidate side: most recent indexed files that are images by
+        // content (bounded scan); cosine over image embeddings.
+        struct N33Hit {
+          std::string name;
+          double score;
+        };
+        std::vector<N33Hit> scored;
+        {
+          auto st = ctx.brain->db().prepare(
+              "SELECT name, path, size FROM file_index ORDER BY id DESC LIMIT ?");
+          st.bind_int(1, kN33MaxImageCandidates);
+          while (st.step()) {
+            const auto cand_name = st.column_text(0);
+            const auto cand_path = st.column_text(1);
+            const int64_t declared = st.column_int(2);
+            if (declared > kN33MaxImageBytes) continue;
+            auto data = n33_read_file_bounded(cand_path, declared);
+            if (!data.ok) continue;
+            files::MimeResult verdict;
+            try {
+              verdict = files::sniff_mime(data.bytes, n33_lower_ext(cand_name));
+            } catch (...) {
+              continue;
+            }
+            if (!n33_content_is_png_jpeg(verdict)) continue;  // PNG/JPEG by content only
+            auto cand_embed = ai::embed_image(cfg, data.bytes);
+            if (!cand_embed.ok) continue;
+            scored.push_back(
+                {cand_name, search::cosine_similarity(embed.vector, cand_embed.vector)});
+          }
+        }
+        std::sort(scored.begin(), scored.end(),
+                  [](const N33Hit& a, const N33Hit& b) { return a.score > b.score; });
+        int limit = arg_int(ctx, "limit", 10);
+        if (limit < 1) limit = 1;
+        json arr = json::array();
+        int rank = 1;
+        for (auto it = scored.begin(); it != scored.end() && rank <= limit; ++it, ++rank)
+          arr.push_back({{"rank", rank}, {"name", it->name}, {"score", it->score}});
+        r.json = json{{"query_stem", stem},
+                      {"mode", embed.mock ? "mock" : "vector"},
+                      {"model", embed.model},
+                      {"query_vector", embed.vector},
+                      {"results", arr}}.dump(2);
+        r.text = r.json;
+        return r;
+      }, false, "Image search via content-level multimodal embedding; deterministic fail-open without provider credentials",
       R"({"type":"object","properties":{"path":{"type":"string"},"name":{"type":"string"},"limit":{"type":"integer"}}})");
 }
 
