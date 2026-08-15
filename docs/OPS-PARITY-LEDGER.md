@@ -3,6 +3,7 @@
 Updated: 2026-08-15
 Qbrain implemented MCP/CLI ops: **104**
 
+**Ops inventory (generated, N31 2026-08-15)**: docs/nodes/n31-evidence/OPS-INVENTORY.json — 108 registered ops (104 upstream + 4 extensions incl. list_job_messages), op→test mapping complete (0 gaps), deterministic (regenerated after list_job_messages reconciliation; sha256 fa772160…b3268b); enforced by test n31_a_counts_mapping.
 **Current suite status (generated, N30 2026-08-15)**: 31/31 registered tests PASS, two rounds, both CMake and direct-MSVC build paths (docs/nodes/n30-evidence/FINAL-VERIFY-*.txt). Historical per-wave prose counts below are retained as history only.
 **Audit tiers (master plan v2.0.0 §1)**: N20/N23 corrective closure PASS in N30 (fresh audits 2026-08-15); N21 superseded (retrospective Tier-2, documentation-only); N24-N28 stub audits deferred to Phase-2 closure (AMD-7 deferral records in docs/nodes/n30-evidence/NODE-RECONCILIATION-MATRIX.json).
 
@@ -119,6 +120,7 @@ Qbrain implemented MCP/CLI ops: **104**
 | capture | implemented |
 | list_brains | implemented |
 | run_dream | implemented (N12 five phases, purge opt-in, MCP write default-deny) |
+| list_job_messages | implemented | N17 helper (Qbrain extension; read-only job message inbox; reconciled into the ledger by N31 ops inventory — registry count 108 = upstream 104 + extensions 3 + this helper) |
 
 ## N12–N15 notes
 - N12: retrospective plan audit PASS and outcome hard audit PASS; rerank fail-open/timeout/rotation, token-fenced minions and populated-v5 migration, five-phase dream/full-table isolation/explicit purge, and MCP write default-deny verified by native MSVC 20/20 tests.

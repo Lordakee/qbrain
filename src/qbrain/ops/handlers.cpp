@@ -505,9 +505,9 @@ void register_one(const char* name, Scope scope, OpHandler h, bool local_only = 
   global_registry().add(std::move(op));
 }
 
-}  // namespace
-
-void register_builtin_ops() {
+// N31 D4: system / health ops (2) — moved verbatim from register_builtin_ops;
+// registration order preserved.
+void register_system_ops() {
   register_one(
       "get_health", Scope::Read, [](OpContext& ctx) {
     OpResult r;
@@ -539,7 +539,11 @@ void register_builtin_ops() {
     r.text = r.json;
     return r;
   }, false, "Page/chunk/link statistics", R"({"type":"object","properties":{}})");
+}
 
+// N31 D4: page CRUD core ops (3) — moved verbatim from register_builtin_ops;
+// registration order preserved.
+void register_pages_ops() {
   register_one(
       "put_page", Scope::Write, [](OpContext& ctx) {
     OpResult r;
@@ -658,7 +662,11 @@ void register_builtin_ops() {
     return r;
   }, false, "List pages",
       R"({"type":"object","properties":{"limit":{"type":"integer"},"type":{"type":"string"}}})");
+}
 
+// N31 D4: search / think ops (2) — moved verbatim from register_builtin_ops;
+// registration order preserved.
+void register_search_ops() {
   register_one(
       "search", Scope::Read, [](OpContext& ctx) {
     OpResult r;
@@ -787,7 +795,11 @@ void register_builtin_ops() {
     return r;
   }, false, "Synthesize an answer with citations and gaps",
       R"({"type":"object","properties":{"question":{"type":"string"},"limit":{"type":"integer"},"save":{"type":"boolean"},"source_id":{"type":"string"}},"required":["question"]})");
+}
 
+// N31 D4: page lifecycle: capture, link reads, delete/restore/purge, versions (7) — moved verbatim from register_builtin_ops;
+// registration order preserved.
+void register_pages_lifecycle_ops() {
   register_one(
       "capture", Scope::Write, [](OpContext& ctx) {
     OpResult r;
@@ -930,7 +942,11 @@ void register_builtin_ops() {
     return r;
   }, false, "List page versions",
       R"({"type":"object","properties":{"slug":{"type":"string"}},"required":["slug"]})");
+}
 
+// N31 D4: source registry ops (4) — moved verbatim from register_builtin_ops;
+// registration order preserved.
+void register_sources_ops() {
   register_one(
       "sources_list", Scope::Read, [](OpContext& ctx) {
     OpResult r;
@@ -1002,7 +1018,11 @@ void register_builtin_ops() {
     return r;
   }, false, "Source page/link counts",
       R"({"type":"object","properties":{"id":{"type":"string"}}})");
+}
 
+// N31 D4: facts / trajectory / skills / doctor / gbrain query alias ops (6) — moved verbatim from register_builtin_ops;
+// registration order preserved.
+void register_knowledge_ops() {
   register_one(
       "list_facts", Scope::Read, [](OpContext& ctx) {
     OpResult r;
@@ -1130,7 +1150,11 @@ void register_builtin_ops() {
     return op ? op->handler(c2) : OpResult{false, 1, "search missing", ""};
   }, false, "Alias of search (gbrain query)",
       R"({"type":"object","properties":{"query":{"type":"string"}},"required":["query"]})");
+}
 
+// N31 D4: link/tag graph and graph analytics ops (10) — moved verbatim from register_builtin_ops;
+// registration order preserved.
+void register_graph_ops() {
   register_one(
       "add_link", Scope::Write, [](OpContext& ctx) {
     OpResult r;
@@ -1278,7 +1302,11 @@ void register_builtin_ops() {
     return r;
   }, true, "Heuristic fact extraction from page links/title",
       R"({"type":"object","properties":{"slug":{"type":"string"}},"required":["slug"]})");
+}
 
+// N31 D4: brain workspace context ops (4) — moved verbatim from register_builtin_ops;
+// registration order preserved.
+void register_workspace_ops() {
   register_one(
       "list_brains", Scope::Read, [](OpContext& ctx) {
     OpResult r;
@@ -1345,7 +1373,11 @@ void register_builtin_ops() {
     return r;
   }, true, "Revert page to a version id",
       R"({"type":"object","properties":{"slug":{"type":"string"},"version_id":{"type":"integer"}},"required":["slug","version_id"]})");
+}
 
+// N31 D4: N12 job submission / monitoring ops (4) — moved verbatim from register_builtin_ops;
+// registration order preserved.
+void register_jobs_ops() {
   // N12 minions / jobs
   register_one(
       "submit_job", Scope::Write, [](OpContext& ctx) {
@@ -1439,7 +1471,11 @@ void register_builtin_ops() {
     return r;
   }, true, "Cancel a waiting/active job (MCP requires --allow-write)",
       R"({"type":"object","properties":{"id":{"type":"integer"}},"required":["id"]})");
+}
 
+// N31 D4: N12 dream cycle + N13 sync / traversal ops (3) — moved verbatim from register_builtin_ops;
+// registration order preserved.
+void register_cycle_sync_ops() {
   register_one(
       "run_dream", Scope::Write, [](OpContext& ctx) {
     OpResult r;
@@ -1511,7 +1547,11 @@ void register_builtin_ops() {
     return r;
   }, false, "BFS graph neighbors",
       R"({"type":"object","properties":{"slug":{"type":"string"},"depth":{"type":"integer"}},"required":["slug"]})");
+}
 
+// N31 D4: job control: retry / pause / resume / progress / snapshot (5) — moved verbatim from register_builtin_ops;
+// registration order preserved.
+void register_jobs_control_ops() {
   register_one(
       "retry_job", Scope::Write, [](OpContext& ctx) {
     OpResult r;
@@ -1620,7 +1660,11 @@ void register_builtin_ops() {
     }
   }, false, "Pages/chunks/links/jobs counts + schema version",
       R"({"type":"object","properties":{}})");
+}
 
+// N31 D4: remediation / fact hygiene / slug resolution / recall ops (4) — moved verbatim from register_builtin_ops;
+// registration order preserved.
+void register_maintenance_ops() {
   register_one(
       "doctor_remediate", Scope::Write, [](OpContext& ctx) {
     OpResult r;
@@ -1703,7 +1747,11 @@ void register_builtin_ops() {
     return op ? op->handler(c2) : OpResult{false, 1, "search missing", ""};
   }, false, "Recall (conservative search alias)",
       R"({"type":"object","properties":{"query":{"type":"string"},"q":{"type":"string"},"limit":{"type":"integer"}},"required":["query"]})");
+}
 
+// N31 D4: N16 code-intel ops (3) — moved verbatim from register_builtin_ops;
+// registration order preserved.
+void register_code_ops() {
   // N16 code-intel (regex/heuristic, no tree-sitter)
   auto hits_to_result = [](const std::vector<codeintel::Hit>& hits) {
     OpResult r;
@@ -1781,7 +1829,11 @@ void register_builtin_ops() {
     return hits_to_result(hits);
   }, false, "Find call-ish symbol( references in page bodies",
       R"({"type":"object","additionalProperties":false,"properties":{"symbol":{"type":"string","maxLength":256},"name":{"type":"string","maxLength":256},"source_id":{"type":"string","default":"default"},"limit":{"type":"integer","minimum":0,"maximum":200,"default":50},"page_limit":{"type":"integer","minimum":0,"maximum":2000,"default":500}},"anyOf":[{"required":["symbol"]},{"required":["name"]}]})");
+}
 
+// N31 D4: N15 link sources / ingest log / chronicle / timeline ops (6) — moved verbatim from register_builtin_ops;
+// registration order preserved.
+void register_chronicle_ops() {
   // N15: link sources, ingest log, chronicle, timeline
   register_one(
       "list_link_sources", Scope::Read, [](OpContext& ctx) {
@@ -1953,7 +2005,11 @@ void register_builtin_ops() {
     return r;
   }, true, "Create a type=timeline page (thin put_page subset)",
       R"({"type":"object","additionalProperties":false,"properties":{"title":{"type":"string"},"body":{"type":"string"},"slug":{"type":"string"},"source_id":{"type":"string","default":"default"}},"anyOf":[{"required":["title"]},{"required":["body"]}]})");
+}
 
+// N31 D4: N17 job replay and messaging ops (3) — moved verbatim from register_builtin_ops;
+// registration order preserved.
+void register_jobs_messaging_ops() {
   // N17 job replay + messages
   register_one(
       "replay_job", Scope::Write, [](OpContext& ctx) {
@@ -2051,7 +2107,11 @@ void register_builtin_ops() {
     }
   }, false, "List a job inbox newest first",
       R"({"type":"object","additionalProperties":false,"properties":{"job_id":{"type":"integer","minimum":1,"maximum":9223372036854775807},"id":{"type":"integer","minimum":1,"maximum":9223372036854775807},"limit":{"type":"integer","minimum":0,"maximum":200,"default":50}},"anyOf":[{"required":["job_id"]},{"required":["id"]}]})");
+}
 
+// N31 D4: N19 identity / volunteer context / timeline ops (4) — moved verbatim from register_builtin_ops;
+// registration order preserved.
+void register_agent_context_ops() {
   // N19 identity / context / timeline / Chronicle reads
   register_one(
       "get_brain_identity", Scope::Read, [](OpContext& ctx) {
@@ -2202,7 +2262,11 @@ void register_builtin_ops() {
     }
   }, false, "Read bounded source-scoped Chronicle page activity",
       R"({"type":"object","additionalProperties":false,"properties":{"source_id":{"type":"string","default":"default"},"since":{"type":"string"},"limit":{"type":"integer","minimum":0,"maximum":200,"default":50}}})");
+}
 
+// N31 D4: N20 schema pack + ontology ops (6) — moved verbatim from register_builtin_ops;
+// registration order preserved.
+void register_schema_ops() {
   // N20 schema packs
   register_one(
       "list_schema_packs", Scope::Read, [](OpContext& ctx) {
@@ -2334,7 +2398,11 @@ void register_builtin_ops() {
     }
   }, false, "Read dimensions declared by a validated ontology schema pack",
       R"({"type":"object","additionalProperties":false,"properties":{"id":{"type":"string","minLength":1,"maxLength":64,"pattern":"^[A-Za-z0-9_-]+$"}}})");
+}
 
+// N31 D4: N21 takes / calibration ops (5) — moved verbatim from register_builtin_ops;
+// registration order preserved.
+void register_takes_ops() {
   // N21 takes
   register_one(
       "takes_list", Scope::Read, [](OpContext& ctx) {
@@ -2403,7 +2471,11 @@ void register_builtin_ops() {
     r.text = r.json;
     return r;
   }, false, "Calibration profile stub", R"({"type":"object","properties":{}})");
+}
 
+// N31 D4: N22 code traversal ops (4) — moved verbatim from register_builtin_ops;
+// registration order preserved.
+void register_code_traversal_ops() {
   // N22 code intel extensions
   auto parse_n22_symbol = [](OpContext& ctx,
                              std::initializer_list<std::string_view> aliases,
@@ -2583,7 +2655,11 @@ void register_builtin_ops() {
       "Guarded stateless compatibility no-op; clears zero rows; no persisted "
       "traversal cache, no cache table, and no schema migration",
       R"({"type":"object","additionalProperties":false,"properties":{}})");
+}
 
+// N31 D4: N23 chronicle history ops (3) — moved verbatim from register_builtin_ops;
+// registration order preserved.
+void register_chronicle_history_ops() {
   // N23 source-scoped Chronicle page-activity/tagging subset
   register_one(
       "chronicle_on_this_day", Scope::Read, [](OpContext& ctx) {
@@ -2728,7 +2804,11 @@ void register_builtin_ops() {
       "idempotently; no timeline-event "
       "storage, extraction jobs, narrative generation, or full Chronicle parity",
       R"({"type":"object","additionalProperties":false,"properties":{"source_id":{"type":"string","minLength":1,"maxLength":64,"x-maxUtf8Bytes":64,"pattern":"^(?!(?:[Cc][Oo][Nn]|[Pp][Rr][Nn]|[Aa][Uu][Xx]|[Nn][Uu][Ll]|[Cc][Oo][Mm][1-9]|[Ll][Pp][Tt][1-9])$)[A-Za-z0-9_-]+$","description":"1-64 ASCII bytes; canonicalized to lowercase; Windows reserved device names rejected.","default":"default"},"since":{"type":"string","minLength":10,"maxLength":20,"pattern":"^[0-9]{4}-[0-9]{2}-[0-9]{2}([T ][0-9]{2}:[0-9]{2}:[0-9]{2}Z)?$"},"limit":{"type":"integer","minimum":0,"maximum":1000,"default":1000},"dry_run":{"type":"boolean","default":false}}})");
+}
 
+// N31 D4: N24 file storage ops (3) — moved verbatim from register_builtin_ops;
+// registration order preserved.
+void register_files_ops() {
   // N24 files
   register_one(
       "file_upload", Scope::Write, [](OpContext& ctx) {
@@ -2810,7 +2890,11 @@ void register_builtin_ops() {
     return r;
   }, false, "file:// URL for attachment (file URL disclosed to local callers only)",
       R"({"type":"object","properties":{"id":{"type":"integer"},"name":{"type":"string"}}})");
+}
 
+// N31 D4: N25 schema / ontology deep-read ops (6) — moved verbatim from register_builtin_ops;
+// registration order preserved.
+void register_schema_deep_ops() {
   // N25 schema/ontology deep
   register_one(
       "schema_lint", Scope::Read, [](OpContext& ctx) {
@@ -2884,7 +2968,11 @@ void register_builtin_ops() {
     return r;
   }, false, "Types used but not in pack",
       R"({"type":"object","properties":{"limit":{"type":"integer"}}})");
+}
 
+// N31 D4: N26 agent / advisor / onboard / skillopt ops (5) — moved verbatim from register_builtin_ops;
+// registration order preserved.
+void register_agent_ops() {
   // N26 agent / advisor / onboard / skillopt
   register_one(
       "submit_agent", Scope::Write, [](OpContext& ctx) {
@@ -2989,7 +3077,11 @@ void register_builtin_ops() {
     auto* op = global_registry().find("list_skills");
     return op ? op->handler(c2) : OpResult{false, 1, "list_skills missing", ""};
   }, false, "Alias list_skills", R"({"type":"object","properties":{}})");
+}
 
+// N31 D4: N27 raw data / transcripts / salience / image ops (5) — moved verbatim from register_builtin_ops;
+// registration order preserved.
+void register_raw_ops() {
   // N27 raw / transcripts / salience / image
   register_one(
       "put_raw_data", Scope::Write, [](OpContext& ctx) {
@@ -3099,7 +3191,11 @@ void register_builtin_ops() {
     return r;
   }, false, "Image search stub via filename stem",
       R"({"type":"object","properties":{"path":{"type":"string"},"name":{"type":"string"},"limit":{"type":"integer"}}})");
+}
 
+// N31 D4: N28 schema mutation op (1) — moved verbatim from register_builtin_ops;
+// registration order preserved.
+void register_schema_mutations_ops() {
   // N28 schema_apply_mutations
   register_one(
       "schema_apply_mutations", Scope::Write, [](OpContext& ctx) {
@@ -3121,6 +3217,41 @@ void register_builtin_ops() {
     return r;
   }, false, "Apply safe pack mutations (add_type/add_dimension)",
       R"({"type":"object","properties":{"mutations":{"type":"string"},"mutations_json":{"type":"string"}}})");
+}
+
+}  // namespace
+
+// N31 D4: builtin registration decomposed into per-domain units in
+// the anonymous namespace above. The call sequence preserves the
+// exact historical registration order (ops are never reordered
+// across units); equivalence evidence:
+// docs/nodes/n31-evidence/EQUIVALENCE.json.
+void register_builtin_ops() {
+  register_system_ops();
+  register_pages_ops();
+  register_search_ops();
+  register_pages_lifecycle_ops();
+  register_sources_ops();
+  register_knowledge_ops();
+  register_graph_ops();
+  register_workspace_ops();
+  register_jobs_ops();
+  register_cycle_sync_ops();
+  register_jobs_control_ops();
+  register_maintenance_ops();
+  register_code_ops();
+  register_chronicle_ops();
+  register_jobs_messaging_ops();
+  register_agent_context_ops();
+  register_schema_ops();
+  register_takes_ops();
+  register_code_traversal_ops();
+  register_chronicle_history_ops();
+  register_files_ops();
+  register_schema_deep_ops();
+  register_agent_ops();
+  register_raw_ops();
+  register_schema_mutations_ops();
 }
 
 }  // namespace qbrain::ops

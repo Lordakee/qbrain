@@ -47,7 +47,11 @@ struct Operation {
 
 class Registry {
  public:
-  void add(Operation op);
+  // N31 D6/AA4 duplicate-registration defense: returns true when the
+  // operation was added fresh; returns false and keeps the already-registered
+  // operation untouched when the name is already present (first registration
+  // wins — no silent overwrite). Callers that ignore the result are unaffected.
+  bool add(Operation op);
   const Operation* find(const std::string& name) const;
   std::vector<std::string> names() const;
   std::vector<const Operation*> list() const;

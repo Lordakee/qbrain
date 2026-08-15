@@ -1,0 +1,50 @@
+{
+  "node": "N31",
+  "deliverable": "D5 equivalence proof for the D4 register_builtin_ops decomposition (subagent B slice)",
+  "proof_method": {
+    "static_extraction": "docs/nodes/n31-evidence/b_split_extract.py `extract`: canonical JSON of every register_one CALL in source registration order — name, scope, local_only, description literal, input-schema literal (all verbatim source text), uniqueness-checked. Byte-identical canonical documents before/after prove the registration sequence (op set, names, scopes, locality, descriptions, schemas, order) is unchanged.",
+    "verbatim_move_proof": "all 108 register_one statement texts byte-identical before/after; all 21 attached wave comments + 5 function-local helper definitions byte-identical and order-preserved; lines 1-507 of handlers.cpp (includes, shared anonymous-namespace helpers, register_one definition) byte-identical",
+    "runtime_cross_check": "full suite green two rounds on both build paths after the change, including test_n30_b runtime enumeration of all 36 mutating registry ops and test_n31_a four-way count reconciliation (registry runtime == 108 == inventory rows)",
+    "no_probe_rationale": "tests/** is owned by the parallel slices (A/C) mid-flight; the plan-sanctioned compromise is static canonical extraction + existing-suite runtime enumeration instead of a new registry-export probe"
+  },
+  "before": {
+    "handlers_cpp_sha256": "7ac527f70e7dd5d9dc946249f46b0c3dbe3407e6320924672a828f758b743a38",
+    "handlers_cpp_sha256_source": "matches PRE-GATE.json scoped_files (frozen pre-implementation gate)",
+    "canonical_export": "B-REGISTRY-BEFORE.json",
+    "canonical_sha256": "cb4f198774e68deb54b21e7d2c0ffd2d3ac94b1a3a308adb7e022b51320cf417"
+  },
+  "after": {
+    "canonical_export": "B-REGISTRY-AFTER.json",
+    "canonical_sha256": "cb4f198774e68deb54b21e7d2c0ffd2d3ac94b1a3a308adb7e022b51320cf417"
+  },
+  "canonical_sha256_equal": true,
+  "op_count": 108,
+  "op_count_source_agreement": {
+    "static_extraction": 108,
+    "pre_gate_source_register_one_count": 108,
+    "runtime_registry_list_size": 108,
+    "ops_inventory_rows": 108,
+    "note": "runtime + inventory values asserted by tests/test_n31.cpp n31_a_counts_mapping (subagent A), green in the final two rounds of both build paths"
+  },
+  "scope_distribution": { "Read": 72, "Write": 34, "Admin": 2 },
+  "mutating_ops": 36,
+  "local_only_true_ops": 31,
+  "decomposition": {
+    "layout": "b-single-tu-sections",
+    "rationale": "shared anonymous-namespace helpers (arg/argument_error/n20_*/parse_job_id_alias/validate_allowed_args/...) are used across nearly every domain; separate register_<domain>.cpp translation units would force exposing them in an internal header, widening linkage surface against the zero-behavior-change bar. Per-domain functions were placed inside the existing anonymous namespace of src/qbrain/ops/handlers.cpp; register_builtin_ops() is now a slim ordered dispatcher.",
+    "units": 25,
+    "registration_order": "preserved exactly — units partition the historical 108-op sequence into contiguous runs; no op reordered across units (byte-identical canonical export proves it)"
+  },
+  "suite_runs_two_round_green_both_paths": [
+    { "path": "script (direct MSVC, scripts/build-tests-cl.ps1 -TestSources tests/test_n31.cpp)", "round": 3, "pass": 33, "fail": 0, "exit_code": 0, "summary": "B-SUMMARY-SCRIPT-ROUND3.txt" },
+    { "path": "script (direct MSVC, scripts/build-tests-cl.ps1 -TestSources tests/test_n31.cpp)", "round": 4, "pass": 33, "fail": 0, "exit_code": 0, "summary": "B-SUMMARY-SCRIPT-ROUND4.txt" },
+    { "path": "cmake (fresh dir build/cmake-n31b, Release)", "round": 2, "pass": 33, "fail": 0, "exit_code": 0, "summary": "B-SUMMARY-CMAKE-ROUND2.txt" },
+    { "path": "cmake (fresh dir build/cmake-n31b, Release)", "round": 3, "pass": 33, "fail": 0, "exit_code": 0, "summary": "B-SUMMARY-CMAKE-ROUND3.txt" }
+  ],
+  "duplicate_registration_defense": {
+    "change": "Registry::add now returns bool — true = added fresh, false = duplicate ignored (first registration wins, no silent overwrite)",
+    "files": ["include/qbrain/ops/registry.hpp", "src/qbrain/ops/registry.cpp"],
+    "caller_compatibility": "the only caller (register_one in handlers.cpp) ignores the return value; void->bool is additive; repeated register_builtin_ops() calls keep the original registrations (all registrations are deterministic, so first-wins == prior observable state)",
+    "test_evidence": "tests/test_n31.cpp n31_c_negatives compile-gates on decltype(add)==bool; passed in all green rounds ([INFO] n31-c: duplicate-registration defense active (bool add))"
+  }
+}

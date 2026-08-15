@@ -58,6 +58,8 @@ void test_n17();
 void test_n18();
 void test_n30_c_routing_storage();
 void test_n30_b_auth_redaction();
+void test_n31_c_negatives();
+void test_n31_a_counts_mapping();
 
 int main() {
   int failed = 0;
@@ -96,6 +98,8 @@ int main() {
       {"n18", test_n18},
       {"n30_c_routing_storage", test_n30_c_routing_storage},
       {"n30_b_auth_redaction", test_n30_b_auth_redaction},
+      {"n31_c_negatives", test_n31_c_negatives},
+      {"n31_a_counts_mapping", test_n31_a_counts_mapping},
   };
   for (auto& t : tests) {
     try {

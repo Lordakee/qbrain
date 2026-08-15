@@ -3,7 +3,14 @@
 
 namespace qbrain::ops {
 
-void Registry::add(Operation op) { ops_[op.name] = std::move(op); }
+// N31 D6/AA4: reject duplicate registration — the first registration of a
+// name wins and a silent re-add/overwrite is no longer possible. Existing
+// callers ignore the return value and are unaffected.
+bool Registry::add(Operation op) {
+  if (ops_.find(op.name) != ops_.end()) return false;
+  ops_[op.name] = std::move(op);
+  return true;
+}
 
 const Operation* Registry::find(const std::string& name) const {
   auto it = ops_.find(name);

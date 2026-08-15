@@ -1,0 +1,19 @@
+{
+  "captured_at": "2026-08-15T10:28:43.776Z",
+  "node": "N31",
+  "plan_sha256": "f833a4d66cc775136551b7809334ffdb7aff45abc25460f268500920f346df9e",
+  "plan_audit_sha256": "bb9be158aa6969028c8c76e6749c9f156e47f942d6414982674d3768bfdfcfad",
+  "source_register_one_count": 108,
+  "ledger_upstream_implemented_rows": 104,
+  "note": "N (runtime registry count) frozen by subagent A inventory generation and enforced by test_n31 four-way assertion; source-side count recorded here for drift detection.",
+  "scoped_files": {
+    "src/qbrain/ops/handlers.cpp": "7ac527f70e7dd5d9dc946249f46b0c3dbe3407e6320924672a828f758b743a38",
+    "src/qbrain/ops/registry.cpp": "711c6e5a23f021ab630ab8c55af9a00b13052ce64315f5b5875c2a557fcc2774",
+    "tests/test_main.cpp": "5f9632238363d84ce1c4ab7853d245318f976d263fe0ba6a0ceaa029d342a4b3",
+    "docs/OPS-PARITY-LEDGER.md": "46aa680cce951283c63bbf240da1b12c3326e411efa3baf0008cc5a12fc741ab"
+  },
+  "deliverables_absence_proof": {
+    "docs/nodes/n31-evidence/OPS-INVENTORY.json": "expected-absent",
+    "tests/test_n31.cpp": "expected-absent"
+  }
+}

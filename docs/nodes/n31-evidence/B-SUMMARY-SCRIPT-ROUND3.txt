@@ -1,0 +1,39 @@
+# N31 B script-path (direct MSVC via scripts/build-tests-cl.ps1) round 3 — private sha-verified tree copy tmp/n31b-verify; -TestSources tests/test_n31.cpp (canonical list not yet merged by parent)
+BUILD_OK
+test_n31.cpp
+TESTS_BUILD_OK
+[PASS] rrf
+[PASS] vector
+[PASS] chunker
+[PASS] extract
+[PASS] storage
+[PASS] mcp
+[PASS] rerank
+[PASS] minions
+[PASS] migration_v6
+[PASS] n12_dream
+[PASS] live_sync
+[PASS] n13
+[PASS] codeintel
+[PASS] analytics
+[PASS] n19
+[PASS] n20
+[PASS] n22
+[PASS] n23
+[PASS] n20_23
+[PASS] n24_25
+[PASS] n26_27
+[PASS] wave4
+[PASS] wave5
+[PASS] doctor
+[PASS] n14
+[PASS] n15
+[PASS] n16
+[PASS] n17
+[PASS] n18
+[PASS] n30_c_routing_storage
+[PASS] n30_b_auth_redaction
+[INFO] n31-c: negatives for jobs(replay_job, send_job_message, list_job_messages), schema(schema_stats, ontology_get, reload_schema_pack), chronicle/misc(chronicle_on_this_day, chronicle_backfill, log_ingest, add_timeline_entry)
+[INFO] n31-c: duplicate-registration defense active (bool add)
+[PASS] n31_c_negatives
+[PASS] n31_a_counts_mapping

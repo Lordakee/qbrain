@@ -1,0 +1,990 @@
+{
+  "generated_by": "scripts/gen-ops-inventory.ps1",
+  "node": "N31",
+  "frozen_registry_count": 108,
+  "counts": {
+    "registry_ops": 108,
+    "inventory_rows": 108,
+    "ledger_upstream": 104,
+    "ledger_extension": 4,
+    "extensions_or_diff": 0,
+    "ops_with_tests": 108,
+    "ops_without_tests": 0
+  },
+  "ops": [
+    {
+      "name": "add_link",
+      "scope": "write",
+      "local_only": true,
+      "description_summary": "Add a manual link",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n31.cpp", "case": "test_n31_a_counts_mapping"}]
+    },
+    {
+      "name": "add_tag",
+      "scope": "write",
+      "local_only": true,
+      "description_summary": "Add tag to page",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n31.cpp", "case": "test_n31_a_counts_mapping"}]
+    },
+    {
+      "name": "add_timeline_entry",
+      "scope": "write",
+      "local_only": true,
+      "description_summary": "Create a type=timeline page (thin put_page subset)",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n15.cpp", "case": "test_timeline_remote_and_ambient_matrix"}, {"file": "test_n31.cpp", "case": "test_n31_c_negatives"}]
+    },
+    {
+      "name": "advisor",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Advise from search (+ optional LLM)",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n31.cpp", "case": "test_n31_a_counts_mapping"}]
+    },
+    {
+      "name": "cancel_job",
+      "scope": "write",
+      "local_only": true,
+      "description_summary": "Cancel a waiting/active job (MCP requires --allow-write)",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_mcp.cpp", "case": "test_mcp"}, {"file": "test_n12_dream.cpp", "case": "test_n12_dream"}]
+    },
+    {
+      "name": "capture",
+      "scope": "write",
+      "local_only": true,
+      "description_summary": "Quick-capture text into inbox/ (CLI always; MCP needs --allow-write). gbrain capture is CLI-only — Qbrain extension.",
+      "has_input_schema": true,
+      "ledger": "extension",
+      "tests": [{"file": "test_mcp.cpp", "case": "test_mcp"}]
+    },
+    {
+      "name": "chronicle_backfill",
+      "scope": "write",
+      "local_only": true,
+      "description_summary": "Qbrain Chronicle subset: tag eligible pages in one authorized canonical source idempotently; no timeline-event storage, extraction jobs, narrative generation, or full Chronicle parity",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n23.cpp", "case": "test_n23"}, {"file": "test_n31.cpp", "case": "test_n31_c_negatives"}]
+    },
+    {
+      "name": "chronicle_day",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Pages created/updated on a UTC day",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n15.cpp", "case": "test_chronicle_matrix"}, {"file": "test_n15.cpp", "case": "test_registry_matrix"}]
+    },
+    {
+      "name": "chronicle_last_seen",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Qbrain Chronicle subset: read one entity page's source-scoped effective activity in one authorized canonical source; no timeline-event storage, extraction jobs, narrative generation, or full Chronicle parity",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n23.cpp", "case": "test_n23"}]
+    },
+    {
+      "name": "chronicle_on_this_day",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Qbrain Chronicle subset: read prior-year same-UTC-day page activity in one authorized canonical source; no timeline-event storage, extraction jobs, narrative generation, or full Chronicle parity",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n23.cpp", "case": "test_n23"}, {"file": "test_n31.cpp", "case": "test_n31_c_negatives"}]
+    },
+    {
+      "name": "chronicle_since",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Pages created/updated since ISO timestamp",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n15.cpp", "case": "test_chronicle_matrix"}, {"file": "test_n15.cpp", "case": "test_registry_matrix"}]
+    },
+    {
+      "name": "code_blast",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Stateless bounded source-text heuristic (16 KiB/page, 8 MiB and 16384 lines/corpus): bounded one-hop source-scoped def/ref/caller/callee heuristic subset using brace-body callees and exact lexical identifier matching; no AST, tree-sitter, or compiler index; no overload/type resolution; no persisted call edges/cache; not recursive/transitive upstream parity",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n22.cpp", "case": "exercise_blast_contract"}, {"file": "test_n22.cpp", "case": "exercise_resource_bound_contract"}, {"file": "test_n22.cpp", "case": "exercise_source_contract"}]
+    },
+    {
+      "name": "code_callees",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Stateless bounded source-text heuristic (16 KiB/page, 8 MiB and 16384 lines/corpus): one-hop source-scoped bounded brace-body callee scan with exact lexical identifier matching; no AST, tree-sitter, or compiler index; no overload/type resolution; no persisted call edges/cache; not recursive/transitive upstream parity",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n22.cpp", "case": "exercise_callee_contract"}, {"file": "test_n22.cpp", "case": "exercise_page_limit_contract"}, {"file": "test_n22.cpp", "case": "exercise_resource_bound_contract"}, {"file": "test_n22.cpp", "case": "exercise_source_contract"}]
+    },
+    {
+      "name": "code_callers",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Find call-ish symbol( references in page bodies",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n16.cpp", "case": "test_n16"}]
+    },
+    {
+      "name": "code_def",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Find C++/TS-like symbol definitions in page bodies",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n16.cpp", "case": "test_n16"}]
+    },
+    {
+      "name": "code_flow",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Stateless bounded source-text heuristic (16 KiB/page, 8 MiB and 16384 lines/corpus): deterministic breadth-first traversal over source-scoped brace-body callees with exact lexical identifier matching; no AST, tree-sitter, or compiler index; no overload/type resolution; no persisted call edges/cache; not recursive/transitive upstream parity; no terminal/sink classification",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n22.cpp", "case": "exercise_callee_contract"}, {"file": "test_n22.cpp", "case": "exercise_flow_contract"}, {"file": "test_n22.cpp", "case": "exercise_numeric_contract"}, {"file": "test_n22.cpp", "case": "exercise_resource_bound_contract"}, {"file": "test_n22.cpp", "case": "exercise_source_contract"}]
+    },
+    {
+      "name": "code_refs",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Find word-boundary symbol references in page bodies",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n16.cpp", "case": "test_n16"}]
+    },
+    {
+      "name": "code_traversal_cache_clear",
+      "scope": "admin",
+      "local_only": true,
+      "description_summary": "Guarded stateless compatibility no-op; clears zero rows; no persisted traversal cache, no cache table, and no schema migration",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n22.cpp", "case": "exercise_cache_contract"}]
+    },
+    {
+      "name": "delete_page",
+      "scope": "write",
+      "local_only": true,
+      "description_summary": "Soft-delete a page",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_mcp.cpp", "case": "test_mcp"}, {"file": "test_n31.cpp", "case": "test_n31_a_counts_mapping"}]
+    },
+    {
+      "name": "doctor_remediate",
+      "scope": "write",
+      "local_only": true,
+      "description_summary": "Doctor remediate: source, reclaim stalled, re-enqueue embeds",
+      "has_input_schema": false,
+      "ledger": "upstream",
+      "tests": [{"file": "test_doctor.cpp", "case": "test_doctor"}, {"file": "test_n14.cpp", "case": "exercise_remediation_matrix"}, {"file": "test_n14.cpp", "case": "test_n14"}]
+    },
+    {
+      "name": "extract_facts",
+      "scope": "write",
+      "local_only": true,
+      "description_summary": "Heuristic fact extraction from page links/title",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_wave5.cpp", "case": "test_wave5"}]
+    },
+    {
+      "name": "file_list",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "List attached files",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n24_25.cpp", "case": "test_n24_25"}, {"file": "test_n30.cpp", "case": "test_n30_b_auth_redaction"}]
+    },
+    {
+      "name": "file_upload",
+      "scope": "write",
+      "local_only": false,
+      "description_summary": "Upload local file into brain files dir",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n31.cpp", "case": "test_n31_a_counts_mapping"}]
+    },
+    {
+      "name": "file_url",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "file:// URL for attachment (file URL disclosed to local callers only)",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n30.cpp", "case": "test_n30_b_auth_redaction"}]
+    },
+    {
+      "name": "find_anomalies",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Graph anomalies: missing/deleted link targets, high out-degree",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n18.cpp", "case": "anomaly_contract_output"}, {"file": "test_n18.cpp", "case": "exercise_limit_and_source_contract"}, {"file": "test_n18.cpp", "case": "test_n18"}]
+    },
+    {
+      "name": "find_contradictions",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Heuristic fact contradictions (conflicting predicates / dual objects)",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n18.cpp", "case": "contradiction_rule_output"}, {"file": "test_n18.cpp", "case": "test_n18"}]
+    },
+    {
+      "name": "find_experts",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Pages ranked by inbound link count (expertise heuristic)",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n18.cpp", "case": "exercise_limit_and_source_contract"}, {"file": "test_n18.cpp", "case": "exercise_registry_mcp_snapshot_contract"}, {"file": "test_n18.cpp", "case": "expert_contract_output"}, {"file": "test_n18.cpp", "case": "test_n18"}]
+    },
+    {
+      "name": "find_orphans",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Pages with no inbound or outbound links",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n31.cpp", "case": "test_n31_a_counts_mapping"}]
+    },
+    {
+      "name": "find_trajectory",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Bounded facts/links trajectory for an entity slug",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_wave5.cpp", "case": "test_wave5"}]
+    },
+    {
+      "name": "forget_fact",
+      "scope": "write",
+      "local_only": true,
+      "description_summary": "Soft-deactivate facts for entity",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n13.cpp", "case": "test_n13"}]
+    },
+    {
+      "name": "get_active_schema_pack",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Read the active validated schema pack",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n20.cpp", "case": "exercise_builtin_no_create"}, {"file": "test_n20.cpp", "case": "exercise_filesystem_safety"}, {"file": "test_n20.cpp", "case": "exercise_invalid_active_state"}, {"file": "test_n20.cpp", "case": "exercise_listing_and_exact_shapes"}, {"file": "test_n20.cpp", "case": "exercise_manifest_contract"}, {"file": "test_n20.cpp", "case": "exercise_populated_reopen"}]
+    },
+    {
+      "name": "get_backlinks",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Inbound links to a slug",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_mcp.cpp", "case": "test_mcp"}]
+    },
+    {
+      "name": "get_brain_identity",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Read source-scoped identity counters for the selected brain",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n19.cpp", "case": "exercise_damaged_database"}, {"file": "test_n19.cpp", "case": "exercise_identity_contract"}]
+    },
+    {
+      "name": "get_calibration_profile",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Calibration profile stub",
+      "has_input_schema": false,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n31.cpp", "case": "test_n31_a_counts_mapping"}]
+    },
+    {
+      "name": "get_chunks",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "List chunks for a page",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n31.cpp", "case": "test_n31_a_counts_mapping"}]
+    },
+    {
+      "name": "get_health",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Brain health / doctor report",
+      "has_input_schema": false,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n30.cpp", "case": "test_n30_b_auth_redaction"}]
+    },
+    {
+      "name": "get_ingest_log",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Recent ingest log events",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n15.cpp", "case": "test_source_and_retention_matrix"}]
+    },
+    {
+      "name": "get_job",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Get job by id",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_mcp.cpp", "case": "test_mcp"}]
+    },
+    {
+      "name": "get_job_progress",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Job progress (status/attempts/lock/error)",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n14.cpp", "case": "exercise_job_and_progress_matrix"}, {"file": "test_n14.cpp", "case": "exercise_status_matrix"}, {"file": "test_n14.cpp", "case": "require_progress_contract"}, {"file": "test_n14.cpp", "case": "test_n14"}]
+    },
+    {
+      "name": "get_links",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Graph neighbors for a slug",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n31.cpp", "case": "test_n31_a_counts_mapping"}]
+    },
+    {
+      "name": "get_page",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Get a page by slug",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n31.cpp", "case": "test_n31_a_counts_mapping"}]
+    },
+    {
+      "name": "get_raw_data",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Get raw data by key",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n26_27.cpp", "case": "test_n26_27"}]
+    },
+    {
+      "name": "get_recent_salience",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Pages by inbound-link salience",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n26_27.cpp", "case": "test_n26_27"}]
+    },
+    {
+      "name": "get_recent_transcripts",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Recent transcript pages/raw keys",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n26_27.cpp", "case": "test_n26_27"}]
+    },
+    {
+      "name": "get_skill",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Read a skill SKILL.md",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_mcp.cpp", "case": "test_mcp"}]
+    },
+    {
+      "name": "get_stats",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Page/chunk/link statistics",
+      "has_input_schema": false,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n31.cpp", "case": "test_n31_a_counts_mapping"}]
+    },
+    {
+      "name": "get_status_snapshot",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Pages/chunks/links/jobs counts + schema version",
+      "has_input_schema": false,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n14.cpp", "case": "exercise_status_matrix"}, {"file": "test_n14.cpp", "case": "test_n14"}]
+    },
+    {
+      "name": "get_tags",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "List tags on a page",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n31.cpp", "case": "test_n31_a_counts_mapping"}]
+    },
+    {
+      "name": "get_timeline",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Read the bounded source-scoped thin timeline-page subset",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n19.cpp", "case": "exercise_timeline_contract"}]
+    },
+    {
+      "name": "get_versions",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "List page versions",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_mcp.cpp", "case": "test_mcp"}]
+    },
+    {
+      "name": "list_brain_skillpack",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Alias list_skills",
+      "has_input_schema": false,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n31.cpp", "case": "test_n31_a_counts_mapping"}]
+    },
+    {
+      "name": "list_brains",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "List brain ids under %LOCALAPPDATA%\\Qbrain\\brains",
+      "has_input_schema": false,
+      "ledger": "extension",
+      "tests": [{"file": "test_n31.cpp", "case": "test_n31_a_counts_mapping"}]
+    },
+    {
+      "name": "list_facts",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "List active facts for an entity slug",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_wave5.cpp", "case": "test_wave5"}]
+    },
+    {
+      "name": "list_job_messages",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "List a job inbox newest first",
+      "has_input_schema": true,
+      "ledger": "extension",
+      "tests": [{"file": "test_n17.cpp", "case": "exercise_message_lists"}, {"file": "test_n17.cpp", "case": "exercise_registry_and_mcp"}, {"file": "test_n17.cpp", "case": "exercise_strict_ids_and_replay"}, {"file": "test_n31.cpp", "case": "test_n31_c_negatives"}]
+    },
+    {
+      "name": "list_jobs",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "List jobs",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_mcp.cpp", "case": "test_mcp"}]
+    },
+    {
+      "name": "list_link_sources",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Distinct link_source values with counts",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n15.cpp", "case": "test_source_and_retention_matrix"}]
+    },
+    {
+      "name": "list_pages",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "List pages",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n31.cpp", "case": "test_n31_a_counts_mapping"}]
+    },
+    {
+      "name": "list_schema_packs",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "List validated schema pack identities",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n20.cpp", "case": "exercise_builtin_no_create"}, {"file": "test_n20.cpp", "case": "exercise_enumeration_bounds"}, {"file": "test_n20.cpp", "case": "exercise_filesystem_safety"}, {"file": "test_n20.cpp", "case": "exercise_invalid_active_state"}, {"file": "test_n20.cpp", "case": "exercise_listing_and_exact_shapes"}, {"file": "test_n20.cpp", "case": "exercise_populated_reopen"}, {"file": "test_n20_23.cpp", "case": "test_n20_23"}]
+    },
+    {
+      "name": "list_skills",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "List markdown skills",
+      "has_input_schema": false,
+      "ledger": "upstream",
+      "tests": [{"file": "test_mcp.cpp", "case": "test_mcp"}]
+    },
+    {
+      "name": "log_ingest",
+      "scope": "write",
+      "local_only": true,
+      "description_summary": "Append source-attributed ingest log event (keeps last N per source)",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n15.cpp", "case": "test_payload_and_mcp_validation_matrix"}, {"file": "test_n15.cpp", "case": "test_source_and_retention_matrix"}, {"file": "test_n15.cpp", "case": "test_timeline_remote_and_ambient_matrix"}, {"file": "test_n31.cpp", "case": "test_n31_c_negatives"}]
+    },
+    {
+      "name": "ontology_conflicts",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Types used but not in pack",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n31.cpp", "case": "test_n31_a_counts_mapping"}]
+    },
+    {
+      "name": "ontology_dimensions",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Read dimensions declared by a validated ontology schema pack",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n20.cpp", "case": "exercise_builtin_no_create"}, {"file": "test_n20.cpp", "case": "exercise_filesystem_safety"}, {"file": "test_n20.cpp", "case": "exercise_listing_and_exact_shapes"}, {"file": "test_n20.cpp", "case": "exercise_populated_reopen"}]
+    },
+    {
+      "name": "ontology_get",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Read a validated schema pack ontology declaration",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n20.cpp", "case": "exercise_builtin_no_create"}, {"file": "test_n20.cpp", "case": "exercise_filesystem_safety"}, {"file": "test_n20.cpp", "case": "exercise_listing_and_exact_shapes"}, {"file": "test_n20.cpp", "case": "exercise_manifest_contract"}, {"file": "test_n20.cpp", "case": "exercise_mcp_contract"}, {"file": "test_n20.cpp", "case": "exercise_pack_id_contract"}, {"file": "test_n20.cpp", "case": "exercise_populated_reopen"}, {"file": "test_n26_27.cpp", "case": "test_n26_27"}, {"file": "test_n31.cpp", "case": "test_n31_c_negatives"}]
+    },
+    {
+      "name": "ontology_propose",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Propose types missing from pack",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n31.cpp", "case": "test_n31_a_counts_mapping"}]
+    },
+    {
+      "name": "pause_job",
+      "scope": "write",
+      "local_only": true,
+      "description_summary": "Pause waiting/active job",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n14.cpp", "case": "exercise_job_and_progress_matrix"}, {"file": "test_n14.cpp", "case": "exercise_remediation_matrix"}, {"file": "test_n14.cpp", "case": "test_n14"}]
+    },
+    {
+      "name": "purge_deleted_pages",
+      "scope": "admin",
+      "local_only": true,
+      "description_summary": "Hard-delete soft-deleted pages older than N hours (localOnly)",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_mcp.cpp", "case": "test_mcp"}, {"file": "test_n30.cpp", "case": "test_n30_b_auth_redaction"}]
+    },
+    {
+      "name": "put_page",
+      "scope": "write",
+      "local_only": true,
+      "description_summary": "Create or update a page (localOnly unless MCP --allow-write)",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_mcp.cpp", "case": "test_mcp"}, {"file": "test_n30.cpp", "case": "test_n30_b_auth_redaction"}, {"file": "test_n31.cpp", "case": "test_n31_a_counts_mapping"}]
+    },
+    {
+      "name": "put_raw_data",
+      "scope": "write",
+      "local_only": false,
+      "description_summary": "Store raw key/value text",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n31.cpp", "case": "test_n31_a_counts_mapping"}]
+    },
+    {
+      "name": "query",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Alias of search (gbrain query)",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_wave4.cpp", "case": "test_wave4"}]
+    },
+    {
+      "name": "recall",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Recall (conservative search alias)",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n13.cpp", "case": "test_n13"}]
+    },
+    {
+      "name": "reload_schema_pack",
+      "scope": "write",
+      "local_only": true,
+      "description_summary": "Validate and select an installed schema pack",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n20.cpp", "case": "exercise_builtin_no_create"}, {"file": "test_n20.cpp", "case": "exercise_filesystem_safety"}, {"file": "test_n20.cpp", "case": "exercise_mcp_contract"}, {"file": "test_n20.cpp", "case": "exercise_populated_reopen"}, {"file": "test_n20.cpp", "case": "exercise_reload_contract"}, {"file": "test_n31.cpp", "case": "test_n31_c_negatives"}]
+    },
+    {
+      "name": "remove_link",
+      "scope": "write",
+      "local_only": true,
+      "description_summary": "Remove a link",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n31.cpp", "case": "test_n31_a_counts_mapping"}]
+    },
+    {
+      "name": "remove_tag",
+      "scope": "write",
+      "local_only": true,
+      "description_summary": "Remove tag",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n31.cpp", "case": "test_n31_a_counts_mapping"}]
+    },
+    {
+      "name": "replay_job",
+      "scope": "write",
+      "local_only": true,
+      "description_summary": "Replay a failed/completed job as a fresh waiting job",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n17.cpp", "case": "exercise_deterministic_busy"}, {"file": "test_n17.cpp", "case": "exercise_registry_and_mcp"}, {"file": "test_n17.cpp", "case": "exercise_strict_ids_and_replay"}, {"file": "test_n17.cpp", "case": "race_replays"}, {"file": "test_n17.cpp", "case": "test_n17"}, {"file": "test_n31.cpp", "case": "test_n31_c_negatives"}]
+    },
+    {
+      "name": "resolve_slugs",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Resolve slug existence",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n13.cpp", "case": "test_n13"}]
+    },
+    {
+      "name": "restore_page",
+      "scope": "write",
+      "local_only": true,
+      "description_summary": "Restore soft-deleted page",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n31.cpp", "case": "test_n31_a_counts_mapping"}]
+    },
+    {
+      "name": "resume_job",
+      "scope": "write",
+      "local_only": true,
+      "description_summary": "Resume paused job to waiting",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n14.cpp", "case": "exercise_job_and_progress_matrix"}, {"file": "test_n14.cpp", "case": "exercise_remediation_matrix"}, {"file": "test_n14.cpp", "case": "test_n14"}]
+    },
+    {
+      "name": "retry_job",
+      "scope": "write",
+      "local_only": true,
+      "description_summary": "Requeue failed/cancelled job to waiting",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n13.cpp", "case": "test_n13"}]
+    },
+    {
+      "name": "revert_version",
+      "scope": "write",
+      "local_only": true,
+      "description_summary": "Revert page to a version id",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n31.cpp", "case": "test_n31_a_counts_mapping"}]
+    },
+    {
+      "name": "run_doctor",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Doctor report (gbrain name parity)",
+      "has_input_schema": false,
+      "ledger": "upstream",
+      "tests": [{"file": "test_doctor.cpp", "case": "test_doctor"}, {"file": "test_n14.cpp", "case": "exercise_status_matrix"}, {"file": "test_n30.cpp", "case": "test_n30_c_routing_storage"}]
+    },
+    {
+      "name": "run_dream",
+      "scope": "write",
+      "local_only": true,
+      "description_summary": "Run multi-phase dream cycle",
+      "has_input_schema": true,
+      "ledger": "extension",
+      "tests": [{"file": "test_mcp.cpp", "case": "test_mcp"}, {"file": "test_n12_dream.cpp", "case": "test_n12_dream"}, {"file": "test_wave4.cpp", "case": "test_wave4"}]
+    },
+    {
+      "name": "run_onboard",
+      "scope": "write",
+      "local_only": true,
+      "description_summary": "Initialize pack/source/welcome page",
+      "has_input_schema": false,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n26_27.cpp", "case": "test_n26_27"}]
+    },
+    {
+      "name": "run_skillopt",
+      "scope": "write",
+      "local_only": true,
+      "description_summary": "SkillOpt report-only stub",
+      "has_input_schema": false,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n31.cpp", "case": "test_n31_a_counts_mapping"}]
+    },
+    {
+      "name": "schema_apply_mutations",
+      "scope": "write",
+      "local_only": false,
+      "description_summary": "Apply safe pack mutations (add_type/add_dimension)",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n26_27.cpp", "case": "test_n26_27"}]
+    },
+    {
+      "name": "schema_explain_type",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Explain a page type",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n31.cpp", "case": "test_n31_a_counts_mapping"}]
+    },
+    {
+      "name": "schema_graph",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Type graph nodes",
+      "has_input_schema": false,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n31.cpp", "case": "test_n31_a_counts_mapping"}]
+    },
+    {
+      "name": "schema_lint",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Lint pages for schema issues",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n24_25.cpp", "case": "test_n24_25"}]
+    },
+    {
+      "name": "schema_review_orphans",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Orphan pages (schema review)",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n31.cpp", "case": "test_n31_a_counts_mapping"}]
+    },
+    {
+      "name": "schema_stats",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Read bounded source-scoped schema statistics",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n20.cpp", "case": "exercise_builtin_no_create"}, {"file": "test_n20.cpp", "case": "exercise_damaged_stats"}, {"file": "test_n20.cpp", "case": "exercise_mcp_contract"}, {"file": "test_n20.cpp", "case": "exercise_populated_reopen"}, {"file": "test_n20.cpp", "case": "exercise_stats_exact_matrix"}, {"file": "test_n20_23.cpp", "case": "test_n20_23"}, {"file": "test_n31.cpp", "case": "test_n31_c_negatives"}]
+    },
+    {
+      "name": "search",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Hybrid search (FTS + vector + RRF + optional rerank)",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_mcp.cpp", "case": "test_mcp"}, {"file": "test_wave4.cpp", "case": "test_wave4"}]
+    },
+    {
+      "name": "search_by_image",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Image search stub via filename stem",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n26_27.cpp", "case": "test_n26_27"}]
+    },
+    {
+      "name": "send_job_message",
+      "scope": "write",
+      "local_only": true,
+      "description_summary": "Append a validated JSON message to a job inbox",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n17.cpp", "case": "exercise_deterministic_busy"}, {"file": "test_n17.cpp", "case": "exercise_message_boundaries"}, {"file": "test_n17.cpp", "case": "exercise_registry_and_mcp"}, {"file": "test_n17.cpp", "case": "race_messages"}, {"file": "test_n17.cpp", "case": "test_n17"}, {"file": "test_n31.cpp", "case": "test_n31_c_negatives"}]
+    },
+    {
+      "name": "sources_add",
+      "scope": "write",
+      "local_only": true,
+      "description_summary": "Ensure a source id exists (localOnly; remote always denied)",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_mcp.cpp", "case": "test_mcp"}]
+    },
+    {
+      "name": "sources_list",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "List source ids",
+      "has_input_schema": false,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n31.cpp", "case": "test_n31_a_counts_mapping"}]
+    },
+    {
+      "name": "sources_remove",
+      "scope": "write",
+      "local_only": true,
+      "description_summary": "Remove a source (blocks if pages unless force)",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n13.cpp", "case": "test_n13"}]
+    },
+    {
+      "name": "sources_status",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Source page/link counts",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n13.cpp", "case": "test_n13"}]
+    },
+    {
+      "name": "submit_agent",
+      "scope": "write",
+      "local_only": false,
+      "description_summary": "Enqueue agent job",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n26_27.cpp", "case": "test_n26_27"}, {"file": "test_n30.cpp", "case": "test_n30_b_auth_redaction"}]
+    },
+    {
+      "name": "submit_job",
+      "scope": "write",
+      "local_only": true,
+      "description_summary": "Submit a minion job (MCP requires --allow-write)",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_mcp.cpp", "case": "test_mcp"}, {"file": "test_n12_dream.cpp", "case": "test_n12_dream"}]
+    },
+    {
+      "name": "sync_brain",
+      "scope": "write",
+      "local_only": true,
+      "description_summary": "Live-sync a notes directory (mtime state)",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n13.cpp", "case": "test_n13"}]
+    },
+    {
+      "name": "takes_calibration",
+      "scope": "write",
+      "local_only": false,
+      "description_summary": "Promote facts into takes (stub calibration)",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n31.cpp", "case": "test_n31_a_counts_mapping"}]
+    },
+    {
+      "name": "takes_list",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "List takes",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n20_23.cpp", "case": "test_n20_23"}]
+    },
+    {
+      "name": "takes_scorecard",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Takes aggregate scorecard",
+      "has_input_schema": false,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n31.cpp", "case": "test_n31_a_counts_mapping"}]
+    },
+    {
+      "name": "takes_search",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Search takes by body/slug",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n31.cpp", "case": "test_n31_a_counts_mapping"}]
+    },
+    {
+      "name": "think",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Synthesize an answer with citations and gaps",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_mcp.cpp", "case": "test_mcp"}]
+    },
+    {
+      "name": "traverse_graph",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "BFS graph neighbors",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n13.cpp", "case": "test_n13"}]
+    },
+    {
+      "name": "volunteer_chronicle",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Read bounded source-scoped Chronicle page activity",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n19.cpp", "case": "test_n19"}]
+    },
+    {
+      "name": "volunteer_context",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Read bounded source-scoped conservative search or recent-page context",
+      "has_input_schema": true,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n19.cpp", "case": "exercise_mcp_contract"}, {"file": "test_n19.cpp", "case": "test_n19"}]
+    },
+    {
+      "name": "whoami",
+      "scope": "read",
+      "local_only": false,
+      "description_summary": "Caller context",
+      "has_input_schema": false,
+      "ledger": "upstream",
+      "tests": [{"file": "test_n31.cpp", "case": "test_n31_a_counts_mapping"}]
+    }
+  ],
+  "extensions_or_diff": [
+  ]
+}

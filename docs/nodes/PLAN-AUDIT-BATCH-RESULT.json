@@ -1,0 +1,27 @@
+﻿[
+    {
+        "Node":  "N1",
+        "Verdict":  "BLOCKED",
+        "File":  "D:\\Projects\\Qbrain\\docs\\nodes\\N1-PLAN-AUDIT.md"
+    },
+    {
+        "Node":  "N2.5",
+        "Verdict":  "FAIL",
+        "File":  "D:\\Projects\\Qbrain\\docs\\nodes\\N2.5-PLAN-AUDIT.md"
+    },
+    {
+        "Node":  "N2",
+        "Verdict":  "FAIL",
+        "File":  "D:\\Projects\\Qbrain\\docs\\nodes\\N2-PLAN-AUDIT.md"
+    },
+    {
+        "Node":  "N3",
+        "Verdict":  "FAIL",
+        "File":  "D:\\Projects\\Qbrain\\docs\\nodes\\N3-PLAN-AUDIT.md"
+    },
+    {
+        "Node":  "N4",
+        "Verdict":  "BLOCKED",
+        "File":  "D:\\Projects\\Qbrain\\docs\\nodes\\N4-PLAN-AUDIT.md"
+    }
+]

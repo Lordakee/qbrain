@@ -1,0 +1,109 @@
+N31 subagent B (D4 registration decomposition + D5 equivalence) verification record
+Date: 2026-08-15
+Tree state verified against: D:\Projects\Qbrain (working tree, no commits made)
+
+DELIVERABLE D4 — decomposition
+==============================
+Layout chosen: (b) per-domain functions inside the existing anonymous namespace of
+src/qbrain/ops/handlers.cpp; register_builtin_ops() reduced to an ordered dispatcher.
+Rationale: the anonymous-namespace helpers (arg, argument_error, n20_error,
+n20_pack_error, parse_bounded_uint, parse_positive_i64, parse_job_id_alias,
+validate_allowed_args, resolve_source, ...) are shared across nearly every domain,
+so separate register_<domain>.cpp files would require an internal header exposing
+them — a wider change than the zero-behavior bar demands. No new source files were
+created, so CMakeLists.txt / build-cl.ps1 production lists are unchanged.
+
+25 units (op counts, registration order = historical order, contiguous partition):
+  register_system_ops(2) register_pages_ops(3) register_search_ops(2)
+  register_pages_lifecycle_ops(7) register_sources_ops(4) register_knowledge_ops(6)
+  register_graph_ops(10) register_workspace_ops(4) register_jobs_ops(4)
+  register_cycle_sync_ops(3) register_jobs_control_ops(5) register_maintenance_ops(4)
+  register_code_ops(3) register_chronicle_ops(6) register_jobs_messaging_ops(3)
+  register_agent_context_ops(4) register_schema_ops(6) register_takes_ops(5)
+  register_code_traversal_ops(4) register_chronicle_history_ops(3)
+  register_files_ops(3) register_schema_deep_ops(6) register_agent_ops(5)
+  register_raw_ops(5) register_schema_mutations_ops(1)   [total 108]
+
+Handler lambdas moved verbatim (see EQUIVALENCE.json proof_method): 108/108
+register_one statements byte-identical before/after; 21/21 comments+function-local
+helpers byte-identical in order; lines 1-507 identical.
+Function-local helpers moved with their owning units: hits_to_result,
+parse_code_request (N16 -> register_code_ops); parse_n22_symbol, n22_hits_to_result,
+parse_n22_source_request (N22 -> register_code_traversal_ops).
+
+DELIVERABLE D6/AA4 — duplicate-registration defense (registry infrastructure)
+=============================================================================
+include/qbrain/ops/registry.hpp + src/qbrain/ops/registry.cpp:
+Registry::add(Operation) now returns bool — true = added fresh; false = duplicate
+name ignored, first registration wins (no silent overwrite). Only caller
+(register_one) ignores the return; additive change, no caller breakage.
+Validated by tests/test_n31.cpp n31_c_negatives (subagent C): "[INFO] n31-c:
+duplicate-registration defense active (bool add)" — PASS in every post-change run.
+
+BUILD-LIST ADDITIONS
+====================
+CMakeLists.txt: appended "tests/test_n31.cpp" to the qbrain_tests target sources
+(append-only; required because tests/test_main.cpp — merged by A/C — already
+references test_n31 symbols; without it no CMake link is possible).
+scripts/build-cl.ps1 / build-tests-cl.ps1: no changes needed (no new production
+sources; test_n31.cpp linked via the script's -TestSources mechanism; the parent
+merge adds the canonical list entry).
+
+VERIFICATION RUNS (post-change)
+===============================
+Path A — script (direct MSVC): scripts/build-tests-cl.ps1 -TestSources tests/test_n31.cpp
+  Executed in a private, sha-verified copy of the tree (tmp/n31b-verify) because the
+  shared build\cl\obj directory is wiped by every build-cl.ps1 invocation and the
+  parallel subagents (A/C) clobbered two shared-dir attempts (LNK1181 missing
+  paths.obj/minions.obj — logs tmp/n31b/baseline-run0.log, tmp/n31b/script-round1.log).
+  Provenance: file sha256 of src/qbrain/ops/handlers.cpp, src/qbrain/ops/registry.cpp,
+  include/qbrain/ops/registry.hpp, tests/test_main.cpp, tests/test_n31.cpp,
+  CMakeLists.txt, scripts/build-cl.ps1, scripts/build-tests-cl.ps1 verified equal to
+  the working tree immediately before the runs (OPS-INVENTORY.json + A's latest
+  test_n31.cpp synced into the copy as read-only inputs).
+  Round 3: BUILD OK + suite 33 PASS / 0 FAIL, exit 0   -> B-SUMMARY-SCRIPT-ROUND3.txt
+  Round 4: BUILD OK + suite 33 PASS / 0 FAIL, exit 0   -> B-SUMMARY-SCRIPT-ROUND4.txt
+  (Earlier script rounds 1-2 in the same copy: round 1 = 29+1 PASS with 3 transient
+   fixed-%TEMP%-dir collisions against a concurrently running foreign qbrain_tests.exe
+   (wave4/n15/n18 remove_all "file in use") + n31_a missing-inventory; round 2 = 32/1
+   with n31_a failing on subagent A's then-unfixed revert_version fixture. Both causes
+   external to this slice; resolved when the foreign suite stopped and A fixed their
+   fixture — rounds 3-4 are the clean two-round green record.)
+
+Path B — CMake fresh dir build/cmake-n31b (configure + build + run, Release):
+  cmake -S . -B build/cmake-n31b   -> configuring/generating OK
+  cmake --build build/cmake-n31b --config Release -> exit 0 (all targets incl.
+    qbrain_tests with test_n31.cpp; only benign C4996 getenv warnings from tests)
+  Round 2 run: 33 PASS / 0 FAIL, exit 0               -> B-SUMMARY-CMAKE-ROUND2.txt
+  Round 3 (incremental rebuild + run): 33 PASS / 0 FAIL, exit 0
+                                                       -> B-SUMMARY-CMAKE-ROUND3.txt
+  (Round 1 run was 32/1 — only n31_a, on subagent A's revert_version fixture bug that
+   A fixed minutes later; recorded here for completeness, superseded by rounds 2-3.)
+
+Test-count note: 33 = N30's 31 canonical tests + n31_a_counts_mapping (A) +
+n31_c_negatives (C). test_main.cpp already references both (A/C mid-flight merge),
+so the canonical 31-only link is impossible in the current tree; the suite was
+therefore built with test_n31.cpp included on both paths. Per task instructions,
+31 green would have sufficed; 33/33 green was achieved on both paths, twice.
+
+EQUIVALENCE (D5) — see EQUIVALENCE.json
+=======================================
+before canonical sha256 = after canonical sha256 =
+  cb4f198774e68deb54b21e7d2c0ffd2d3ac94b1a3a308adb7e022b51320cf417  (108 ops)
+before handlers.cpp sha256 = 7ac527f70e7dd5d9dc946249f46b0c3dbe3407e6320924672a828f758b743a38
+  (matches PRE-GATE.json scoped_files)
+
+DEVIATIONS / NOTES
+==================
+1. Baseline (pre-change) full-suite green run was not obtainable: attempt 1 failed at
+   link (LNK1181) due to a parallel subagent wiping build\cl\obj; attempt 2 failed at
+   link because A/C's test_main.cpp mid-flight merge references test_n31 symbols whose
+   implementation file is not in the canonical script list. Both failures are recorded
+   above and are external to this slice. The pre-change production build itself
+   succeeded (BUILD_OK in tmp/n31b/baseline-run0.log) and the frozen baseline export
+   (B-REGISTRY-BEFORE.json) was captured before any edit, which is the D5 artifact.
+2. docs/nodes/n31-evidence/b_split_extract.py is the reproducible extraction/split
+   tool (evidence artifact; rerunnable: `python b_split_extract.py extract
+   src/qbrain/ops/handlers.cpp out.json` prints "<sha256> <op_count>").
+3. No commits or pushes were made. Registry guard + decomposition + CMake test-list
+   addition are working-tree changes only.

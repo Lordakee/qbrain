@@ -1,0 +1,28 @@
+== N31 subagent A evidence: inventory/mapping verification (2026-08-15) ==
+
+-- Direct-MSVC suite run 1 (tmp/n31-verify2-try1.log tail) --
+[PASS] n17
+[PASS] n18
+[PASS] n30_c_routing_storage
+[PASS] n30_b_auth_redaction
+[INFO] n31-c: negatives for jobs(replay_job, send_job_message, list_job_messages), schema(schema_stats, ontology_get, reload_schema_pack), chronicle/misc(chronicle_on_this_day, chronicle_backfill, log_ingest, add_timeline_entry)
+[INFO] n31-c: duplicate-registration defense active (bool add)
+[PASS] n31_c_negatives
+[PASS] n31_a_counts_mapping
+PASS=33 FAIL=0
+
+-- Direct-MSVC suite run 2 / round 2 with fresh export (tmp/n31-round2.log) --
+[PASS] n30_b_auth_redaction
+[PASS] n31_c_negatives
+[PASS] n31_a_counts_mapping
+PASS=33 FAIL=0
+
+-- Generator: in-pipeline determinism --
+DETERMINISM_OK sha256=fcb39061a0edea7c3072a16a1d8af1672e372c071632e0e24b8afd93555bdfdb (two consecutive pipeline runs byte-identical)
+WROTE D:\Projects\Qbrain\docs\nodes\n31-evidence\OPS-INVENTORY.json (39760 bytes)
+
+-- Generator: end-to-end regenerations (byte-identical) --
+fcb39061a0edea7c3072a16a1d8af1672e372c071632e0e24b8afd93555bdfdb *docs/nodes/n31-evidence/OPS-INVENTORY.json
+
+-- Runtime registry export --
+{"ops":[{"description":"Add a manual link","input_schema_json":"{\"type\":\"object\",\"properties\":{\"from\":{\"type\":

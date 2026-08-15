@@ -84,7 +84,8 @@ $defaultTestSources = @(
   "tests\test_n16.cpp",
   "tests\test_n17.cpp",
   "tests\test_n18.cpp",
-  "tests\test_n30.cpp"
+  "tests\test_n30.cpp",
+  "tests\test_n31.cpp"
 )
 # test_main.cpp statically references the complete suite, so the canonical
 # closure is always compiled and linked (a focused invocation can never
