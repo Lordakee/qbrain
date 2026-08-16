@@ -1,0 +1,10 @@
+Qbrain smoke HTTP MCP - started 2026-08-16 12:10:03
+GET /health (Bearer token) -> HTTP 200
+{"ok":true,"service":"qbrain-http"}
+GET /health (no token) -> HTTP 401
+{"error":"unauthorized"}
+POST / tools/call get_stats (Bearer token) -> HTTP 200
+{"id":10,"jsonrpc":"2.0","result":{"content":[{"text":"{\n  \"chunks\": 1,\n  \"embedded_chunks\": 0,\n  \"links\": 1,\n  \"pages\": 1\n}","type":"text"}],"isError":false}}
+
+PASS authorized health=200/ok; unauthorized request rejected HTTP 401 unauthorized; JSON-RPC result object ok
+SMOKE-HTTP OK

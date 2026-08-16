@@ -1,0 +1,31 @@
+{
+    "name":  "qbrain-2.0.0-win-x64",
+    "version":  "2.0.0",
+    "files":  [
+                  {
+                      "path":  "qbrain-2.0.0-win-x64/docs/10-STORAGE-CONTRACT.md",
+                      "sha256":  "1b45246173ddab5a29eef93ce356cf52d7b0a10e859e4d671993d1e2462f5081",
+                      "size":  10361
+                  },
+                  {
+                      "path":  "qbrain-2.0.0-win-x64/LICENSE",
+                      "sha256":  "cc9401b1f06dcdf005c5dc822435fc564ff8e30299f5ccb7a4a0501fc6619d83",
+                      "size":  1076
+                  },
+                  {
+                      "path":  "qbrain-2.0.0-win-x64/qbrain.exe",
+                      "sha256":  "beaf5d83a1051dad550fc6b47525de89e600106c0d56cdf6248e1348d9eef049",
+                      "size":  3279360
+                  },
+                  {
+                      "path":  "qbrain-2.0.0-win-x64/qbrain_tests.exe",
+                      "sha256":  "159809f285ddaf0cdec8b2b1b8b8e616efc81918c8a6ec66c120aa0e315b18f4",
+                      "size":  6639616
+                  },
+                  {
+                      "path":  "qbrain-2.0.0-win-x64/README.md",
+                      "sha256":  "feaac8ed68da90ad4e70595e8b68fce41d80e297e2d60e300a9b5585f4649e31",
+                      "size":  1547
+                  }
+              ]
+}

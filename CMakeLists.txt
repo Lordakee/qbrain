@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.24)
-project(qbrain VERSION 0.1.0 LANGUAGES C CXX)
+# N37 D2: version single source of truth (0.1.0 -> 2.0.0 for the Phase-2
+# release). include/qbrain/version.hpp constants must stay in sync (asserted
+# by the n37_packaging unit and the N37 hard audit).
+project(qbrain VERSION 2.0.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -195,6 +198,7 @@ add_executable(qbrain_tests
   tests/test_n33.cpp
   tests/test_n35.cpp
   tests/test_n36.cpp
+  tests/test_n37.cpp
 )
 target_link_libraries(qbrain_tests PRIVATE
   qbrain_cli qbrain_mcp qbrain_ops qbrain_schema qbrain_search qbrain_jobs qbrain_cycle qbrain_graph qbrain_codeintel qbrain_ingest qbrain_ai

@@ -1,0 +1,6 @@
+Qbrain smoke REDACTION - started 2026-08-16 12:10:03
+POST / tools/call get_health (Bearer token) -> HTTP 200
+{"id":11,"jsonrpc":"2.0","result":{"content":[{"text":"Qbrain doctor: OK\n  schema: v13\n  pages=1 chunks=1 links=1 embedded=0\n  - no embeddings yet (FTS-only search works; run: qbrain embed --all)\n  - no embedding API key (set OPENAI_API_KEY or qbrain config set embedding.api_key)\n","type":"text"},{"text":"{\n  \"checks\": [\n    {\n      \"name\": \"database\",\n      \"status\": \"OK\"\n    },\n    {\n      \"name\": \"schema\",\n      \"status\": \"OK\"\n    },\n    {\n      \"name\": \"critical_tables\",\n      \"status\": \"OK\"\n    },\n    {\n      \"name\": \"optional\",\n      \"status\": \"WARN\"\n    }\n  ],\n  \"notes\": [\n    \"no embeddings yet (FTS-only search works; run: qbrain embed --all)\",\n    \"no embedding API key (set OPENAI_API_KEY or qbrain config set embedding.api_key)\"\n  ],\n  \"ok\": true,\n  \"overall\": \"OK\",\n  \"schema_version\": 13,\n  \"stats\": {\n    \"chunks\": 1,\n    \"embedded_chunks\": 0,\n    \"links\": 1,\n    \"pages\": 1\n  }\n}","type":"text"}],"isError":false}}
+
+PASS no-drive-letter: full HTTP response (headers+body) contains zero drive-letter paths (regex [A-Za-z]:\\)
+SMOKE-REDACT OK

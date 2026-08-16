@@ -1,0 +1,16 @@
+Qbrain smoke CLI - started 2026-08-16 12:10:03
+exe: C:\Users\Administrator\AppData\Local\Temp\n37a-verify\build\cl\qbrain.exe
+isolated data root: C:\Users\Administrator\AppData\Local\Temp\qbrain-n37-smoke (real %LOCALAPPDATA%\Qbrain untouched)
+> qbrain --version
+Qbrain 2.0.0 (windows-native c++)
+> qbrain init --brain n37smoke
+Initialized brain 'n37smoke' at C:\Users\Administrator\AppData\Local\Temp\qbrain-n37-smoke\Qbrain\brains\n37smoke\brain.db
+> qbrain put --slug people/smoke-alice ...
+put people/smoke-alice id=1
+> qbrain search "Alice engineering release" --no-vector
+1. people/smoke-alice  (0.0177049)
+   Smoke Alice
+   Alice runs engineering at Acme and owns the release pipeline. See [[companies/smoke-acme]].
+
+PASS retrieved slug: people/smoke-alice found via CLI search roundtrip
+SMOKE-CLI OK

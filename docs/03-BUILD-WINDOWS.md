@@ -85,3 +85,33 @@ the token's sha256 prefix (16 hex chars) — never the token itself. The legacy
 `QBRAIN_MCP_TOKEN` remains transport auth with no capability (N30 semantics).
 Explicitly deferred: TLS (loopback-only boundary), OAuth, dynamic user
 stores, token rotation, per-token brain/source restrictions (Phase-3).
+
+## 数据根（Data Root）解析（N37 D3）
+
+数据根解析实现于 `src/qbrain/util/paths.cpp`（头文件 `include/qbrain/util/paths.hpp`）：
+
+1. **根定位**：优先读取进程环境变量 `LOCALAPPDATA`（显式覆盖，供隔离测试/冒烟使用）；
+   未设置时回退 `SHGetKnownFolderPath(FOLDERID_LocalAppData)`。数据根为
+   `%LOCALAPPDATA%\Qbrain\`。
+2. **目录结构**（按实际实现）：
+
+   ```text
+   %LOCALAPPDATA%\Qbrain\
+     ├─ brains\<normalized-id>\brain.db   每个 brain 一个 SQLite 库
+     ├─ config.json                       配置
+     └─ audit\                            审计日志
+   ```
+
+   `qbrain_root()` = `<LOCALAPPDATA>\Qbrain`；`brains_root()` = `<root>\brains`；
+   `brain_dir(id)` = `brains_root() / normalize_brain_id(id)`；
+   `brain_db_path(id)` = `brain_dir(id) / "brain.db"`；
+   `config_path()` = `<root>\config.json`；`audit_dir()` = `<root>\audit`。
+3. **Brain id 规则**（`normalize_brain_id`，行为为**拒绝**而非静默清洗）：
+   - 允许字符集：`a-z`、`0-9`、`_`、`-`（`A-Z` 折叠为小写）；长度 1–64 字节。
+   - 其他任何字节（含 `.`、`/`、`\`、`:`、空格等）→ 抛出
+     `std::runtime_error("invalid brain id")`，即路径穿越（`..`）、盘符
+    （`c:`、`C:\evil`）、分隔符注入均被直接拒绝。
+   - Windows 保留设备名（`con`、`prn`、`aux`、`nul`、`com1`-`com9`、
+     `lpt1`-`lpt9`，折叠后比较）同样拒绝。
+4. 行为由 `tests/test_n37.cpp`（注册项 `n37_packaging`）断言：版本常量、
+   隔离 `LOCALAPPDATA` 覆盖下的路径结构、以及上述敌意 id 的拒绝行为。

@@ -11,6 +11,7 @@
 #include "qbrain/util/paths.hpp"
 #include "qbrain/util/string_util.hpp"
 #include "qbrain/util/log.hpp"
+#include "qbrain/version.hpp"
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -580,7 +581,8 @@ int run(int argc, char** argv) {
     return 0;
   }
   if (args[0] == "version" || args[0] == "--version") {
-    std::cout << "qbrain 0.1.0-dev (windows-native c++)\n";
+    // N37 D2: version from the single C++ source of truth (include/qbrain/version.hpp).
+    std::cout << "Qbrain " << QBRAIN_VERSION_STRING << " (windows-native c++)\n";
     return 0;
   }
 

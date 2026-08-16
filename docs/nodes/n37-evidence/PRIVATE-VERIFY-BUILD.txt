@@ -1,0 +1,52 @@
+N37-A private-tree verification build (canonical scripts)
+Date: 2026-08-16 10:41:26
+Tree: %TEMP%\n37a-verify (robocopy of D:\Projects\Qbrain, excluding .git/build/gbrain-upstream/tmp)
+Command: powershell -NoProfile -ExecutionPolicy Bypass -File scripts\build-tests-cl.ps1
+Exit: 0 (BUILD_OK + TESTS_BUILD_OK + suite exit 0)
+
+Suite result: 39 registered / 39 PASS / 0 FAIL (38 pre-existing + n37_packaging already registered in-tree by N37-B; N37-A adds no test)
+
+[PASS] rrf
+[PASS] vector
+[PASS] chunker
+[PASS] extract
+[PASS] storage
+[PASS] mcp
+[PASS] rerank
+[PASS] minions
+[PASS] migration_v6
+[PASS] n12_dream
+[PASS] live_sync
+[PASS] n13
+[PASS] codeintel
+[PASS] analytics
+[PASS] n19
+[PASS] n20
+[PASS] n22
+[PASS] n23
+[PASS] n20_23
+[PASS] n24_25
+[PASS] n26_27
+[PASS] wave4
+[PASS] wave5
+[PASS] doctor
+[PASS] n14
+[PASS] n15
+[PASS] n16
+[PASS] n17
+[PASS] n18
+[PASS] n30_c_routing_storage
+[PASS] n30_b_auth_redaction
+[PASS] n31_c_negatives
+[PASS] n31_a_counts_mapping
+[PASS] n32_scan_integration
+[PASS] n34
+[PASS] n33_multimodal
+[PASS] n35_contract_suite
+[PASS] n36_token_scope
+[PASS] n37_packaging
+
+Version wiring check:
+  > build\cl\qbrain.exe --version
+  Qbrain 2.0.0 (windows-native c++)
+  exit=0 (AA4: output contains 2.0.0)

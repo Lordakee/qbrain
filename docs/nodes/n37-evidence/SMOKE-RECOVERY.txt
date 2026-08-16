@@ -1,0 +1,124 @@
+Qbrain smoke RECOVERY - started 2026-08-16 12:10:03
+healthy brain db: C:\Users\Administrator\AppData\Local\Temp\qbrain-n37-smoke\Qbrain\brains\n37rec\brain.db
+> qbrain doctor --brain n37rec --json  (pre-corruption)
+{
+  "checks": [
+    {
+      "name": "database",
+      "status": "OK"
+    },
+    {
+      "name": "schema",
+      "status": "OK"
+    },
+    {
+      "name": "critical_tables",
+      "status": "OK"
+    },
+    {
+      "name": "optional",
+      "status": "WARN"
+    }
+  ],
+  "notes": [
+    "no embeddings yet (FTS-only search works; run: qbrain embed --all)",
+    "no embedding API key (set OPENAI_API_KEY or qbrain config set embedding.api_key)"
+  ],
+  "ok": true,
+  "overall": "OK",
+  "schema_version": 13,
+  "stats": {
+    "chunks": 1,
+    "embedded_chunks": 0,
+    "links": 0,
+    "pages": 1
+  }
+}
+corruption: python sqlite3 'DROP TABLE links'
+> qbrain doctor --brain n37rec --json  (after corruption)
+{
+  "checks": [
+    {
+      "name": "database",
+      "status": "OK"
+    },
+    {
+      "name": "schema",
+      "status": "FAIL"
+    },
+    {
+      "name": "critical_tables",
+      "status": "FAIL"
+    },
+    {
+      "name": "optional",
+      "status": "WARN"
+    }
+  ],
+  "notes": [
+    "schema DEGRADED (missing objects)",
+    "  missing table:links",
+    "  missing index:idx_links_from",
+    "  missing index:idx_links_to",
+    "repair: reopen after upgrade (migration v3) or re-init brain",
+    "stats unavailable: prepare: no such table: links",
+    "empty brain: import or capture notes",
+    "no embedding API key (set OPENAI_API_KEY or qbrain config set embedding.api_key)"
+  ],
+  "ok": false,
+  "overall": "FAIL",
+  "schema_version": 13,
+  "stats": {
+    "chunks": 0,
+    "embedded_chunks": 0,
+    "links": 0,
+    "pages": 0
+  }
+}
+recovery: restored C:\Users\Administrator\AppData\Local\Temp\qbrain-n37-smoke\Qbrain\brains\n37rec\brain.db.n37-smoke.bak over brain.db (same pattern as the migrate.cpp .pre-v13.bak rollback path)
+> qbrain doctor --brain n37rec --json  (after restore)
+{
+  "checks": [
+    {
+      "name": "database",
+      "status": "OK"
+    },
+    {
+      "name": "schema",
+      "status": "OK"
+    },
+    {
+      "name": "critical_tables",
+      "status": "OK"
+    },
+    {
+      "name": "optional",
+      "status": "WARN"
+    }
+  ],
+  "notes": [
+    "no embeddings yet (FTS-only search works; run: qbrain embed --all)",
+    "no embedding API key (set OPENAI_API_KEY or qbrain config set embedding.api_key)"
+  ],
+  "ok": true,
+  "overall": "OK",
+  "schema_version": 13,
+  "stats": {
+    "chunks": 1,
+    "embedded_chunks": 0,
+    "links": 0,
+    "pages": 1
+  }
+}
+> qbrain get recovery/probe (post-restore)
+{
+  "body": "Page that must survive corruption via the backup restore path.",
+  "id": 1,
+  "slug": "recovery/probe",
+  "title": "Recovery probe",
+  "type": "note",
+  "updated_at": "2026-08-16 04:10:06"
+}
+
+PASS doctor FAIL on corrupted db, then overall OK after backup restore; recovery/probe page survived
+SMOKE-RECOVERY OK

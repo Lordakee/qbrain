@@ -2,7 +2,7 @@
 
 **版本**: 2.0.0
 **日期**: 2026-08-15
-**状态**: **REVISED — Phase 2 active**（依据 2026-08-15 三方决议，见 `docs/RESOLUTION-2026-08-15.md`）
+**状态**: **REVISED — Phase 2 COMPLETE (2026-08-16)**（依据 2026-08-15 三方决议，见 `docs/RESOLUTION-2026-08-15.md`；N30-N37 全部完成，收官记录见 `docs/09-PROJECT-COMPLETION.md` 与 `docs/nodes/n37-evidence/GOVERNANCE-INDEX.md`）
 **目标**: 纯 Windows 11 原生 C++ 下，Qbrain 达到 gbrain **能力对等**（非位级移植），且**每一项声明都有可验证证据**。
 
 ---
@@ -63,6 +63,7 @@ N31: registry/MCP 契约闭合与注册分解
 - N32/N33/N34 是 N31 后最干净的并行缝（按模块所有权隔离）。
 - **串行化规则（AMD-3）**：凡触及存储 schema/迁移、身份、授权、registry 策略或共享热文件的变更一律串行；并行仅当 approved 计划含证明不相交的文件所有权矩阵且父代理记录该决定。
 - N30/N31 完成前不得开始任何新特性节点。
+- **收官注记（2026-08-16）**：N30-N37 all done — Phase 2 DAG 全部节点完成（各节点 plan/plan-audit/hard-audit/证据见 `docs/nodes/`；逐节点状态索引见 `docs/nodes/n37-evidence/GOVERNANCE-INDEX.md`）。
 
 ## 4. 节点定义（验收为可证伪断言；完整版见决议文档 §4）
 

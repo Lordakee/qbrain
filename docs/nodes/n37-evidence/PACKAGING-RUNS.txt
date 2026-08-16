@@ -1,0 +1,19 @@
+N37 D1 packaging double-run reproducibility check (AA2/P0-3)
+Date: 2026-08-16 12:09:37
+Tree: C:\Users\ADMINI~1\AppData\Local\Temp\n37a-verify (private copy %TEMP%\n37a-verify)
+Runs: two full invocations of scripts\package.ps1 (each does a clean cl-path build + full suite gate)
+
+run1 MANIFEST.json sha256: 60ed06f972febe0f1f95689e66776541487bb126f165a51d22baefca8a71b6c4
+run2 MANIFEST.json sha256: 60ed06f972febe0f1f95689e66776541487bb126f165a51d22baefca8a71b6c4
+MANIFEST.json content equality (byte-for-byte, i.e. field-by-field): True
+zip file-list equality (entry path + decompressed-content sha256 per entry): True
+zip whole sha256 run1: 072587d02d0fb29b5b6957841ee5167da0c9d7865cec4e37426532cdf4d37baf
+zip whole sha256 run2: 072587d02d0fb29b5b6957841ee5167da0c9d7865cec4e37426532cdf4d37baf
+zip whole sha256 equality (stronger criterion): True
+
+zip entries (run1 = run2):
+qbrain-2.0.0-win-x64/docs/10-STORAGE-CONTRACT.md  1b45246173ddab5a29eef93ce356cf52d7b0a10e859e4d671993d1e2462f5081
+qbrain-2.0.0-win-x64/LICENSE  cc9401b1f06dcdf005c5dc822435fc564ff8e30299f5ccb7a4a0501fc6619d83
+qbrain-2.0.0-win-x64/qbrain.exe  beaf5d83a1051dad550fc6b47525de89e600106c0d56cdf6248e1348d9eef049
+qbrain-2.0.0-win-x64/qbrain_tests.exe  159809f285ddaf0cdec8b2b1b8b8e616efc81918c8a6ec66c120aa0e315b18f4
+qbrain-2.0.0-win-x64/README.md  feaac8ed68da90ad4e70595e8b68fce41d80e297e2d60e300a9b5585f4649e31
