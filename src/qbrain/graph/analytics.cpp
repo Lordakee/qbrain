@@ -260,6 +260,13 @@ std::vector<Anomaly> find_anomalies(Brain& brain, const std::string& source_id, 
   const int effective_limit = clamp_limit(limit);
   if (effective_limit == 0) return out;
 
+  // n38 (census: COLLATE BINARY): per-expression COLLATE BINARY removed from
+  // the ordering/comparison arms of the analytics statements. On SQLite the
+  // default collation is BINARY and the ordering columns carry column-level
+  // COLLATE BINARY in the canonical schema (links.from_slug/to_slug,
+  // facts.entity_slug/predicate/object_text), so ordering and the CASE-arm
+  // comparisons are byte-identical; CTE/reference columns resolve to the
+  // default BINARY collation on both backends (PG side: COLLATE "C" columns).
   auto st = brain.db().prepare(R"SQL(
 WITH active_links AS (
   SELECT l.source_id, l.from_slug, l.to_slug
@@ -309,10 +316,9 @@ FROM (
   UNION ALL
   SELECT source_id, kind_rank, kind, slug, target_slug, row_count FROM high_out_degree
 ) AS candidates
-ORDER BY candidates.kind_rank ASC, candidates.slug COLLATE BINARY ASC,
-         candidates.target_slug COLLATE BINARY ASC, candidates.row_count DESC
-LIMIT ?
-)SQL");
+ORDER BY candidates.kind_rank ASC, candidates.slug ASC,
+         candidates.target_slug ASC, candidates.row_count DESC
+LIMIT ?)SQL");
   st.bind_text(1, source_id);
   st.bind_int(2, effective_limit);
   while (st.step()) {
@@ -427,26 +433,26 @@ WITH eligible AS (
          AND substr(a.predicate, 1, 5) <> 'anti_')
 ), canonical AS (
   SELECT entity, kind_rank,
-         CASE WHEN a_predicate COLLATE BINARY < b_predicate COLLATE BINARY
-                   OR (a_predicate = b_predicate AND a_object COLLATE BINARY <= b_object COLLATE BINARY)
+         CASE WHEN a_predicate < b_predicate
+                   OR (a_predicate = b_predicate AND a_object <= b_object)
               THEN a_predicate ELSE b_predicate END AS first_predicate,
-         CASE WHEN a_predicate COLLATE BINARY < b_predicate COLLATE BINARY
-                   OR (a_predicate = b_predicate AND a_object COLLATE BINARY <= b_object COLLATE BINARY)
+         CASE WHEN a_predicate < b_predicate
+                   OR (a_predicate = b_predicate AND a_object <= b_object)
               THEN a_object ELSE b_object END AS first_object,
-         CASE WHEN a_predicate COLLATE BINARY < b_predicate COLLATE BINARY
-                   OR (a_predicate = b_predicate AND a_object COLLATE BINARY <= b_object COLLATE BINARY)
+         CASE WHEN a_predicate < b_predicate
+                   OR (a_predicate = b_predicate AND a_object <= b_object)
               THEN b_predicate ELSE a_predicate END AS second_predicate,
-         CASE WHEN a_predicate COLLATE BINARY < b_predicate COLLATE BINARY
-                   OR (a_predicate = b_predicate AND a_object COLLATE BINARY <= b_object COLLATE BINARY)
+         CASE WHEN a_predicate < b_predicate
+                   OR (a_predicate = b_predicate AND a_object <= b_object)
               THEN b_object ELSE a_object END AS second_object
   FROM raw_pairs
 )
 SELECT entity, kind_rank, first_predicate, first_object, second_predicate, second_object
 FROM canonical
 GROUP BY entity, kind_rank, first_predicate, first_object, second_predicate, second_object
-ORDER BY entity COLLATE BINARY ASC, kind_rank ASC,
-         first_predicate COLLATE BINARY ASC, second_predicate COLLATE BINARY ASC,
-         first_object COLLATE BINARY ASC, second_object COLLATE BINARY ASC
+ORDER BY entity ASC, kind_rank ASC,
+         first_predicate ASC, second_predicate ASC,
+         first_object ASC, second_object ASC
 LIMIT ?2
 )SQL");
   st.bind_text(1, source_id);
@@ -487,7 +493,7 @@ JOIN pages AS target
 WHERE l.source_id = ?
 GROUP BY l.source_id, l.to_slug
 HAVING COUNT(*) > 0
-ORDER BY inbound DESC, l.to_slug COLLATE BINARY ASC
+ORDER BY inbound DESC, l.to_slug ASC
 LIMIT ?
 )SQL");
   st.bind_text(1, source_id);

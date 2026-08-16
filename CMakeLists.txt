@@ -20,6 +20,60 @@ endif()
 set(SQLITE_DIR ${CMAKE_SOURCE_DIR}/third_party/sqlite/sqlite-amalgamation-3460100)
 set(NLOHMANN_DIR ${CMAKE_SOURCE_DIR}/third_party)
 
+# ---------------------------------------------------------------------------
+# N38: libpq (PostgreSQL) discovery + QBRAIN_WITH_PG switch.
+# Order: QBRAIN_PG_ROOT cache var -> $QBRAIN_PG_ROOT env -> well-known roots
+# D:/PostgreSQL and C:/Program Files/PostgreSQL, highest numeric version
+# directory that carries include/libpq-fe.h + lib/libpq.lib wins (documented
+# highest-version rule, plan P2-1). Not found -> the option auto-degrades to
+# OFF with a status message; pg_backend.cpp still compiles (its libpq-free
+# half) and the SQLite path is never affected.
+# ---------------------------------------------------------------------------
+option(QBRAIN_WITH_PG "Build the libpq PostgreSQL storage backend (auto-disabled when libpq is not found)" ON)
+
+function(qbrain_pg_discover out_root)
+  foreach(_explicit "${QBRAIN_PG_ROOT}" "$ENV{QBRAIN_PG_ROOT}")
+    if(_explicit AND EXISTS "${_explicit}/include/libpq-fe.h" AND EXISTS "${_explicit}/lib/libpq.lib")
+      set(${out_root} "${_explicit}" PARENT_SCOPE)
+      return()
+    endif()
+  endforeach()
+  set(_best "")
+  set(_best_ver -1)
+  foreach(_base "D:/PostgreSQL" "C:/Program Files/PostgreSQL")
+    if(NOT EXISTS "${_base}")
+      continue()
+    endif()
+    file(GLOB _dirs RELATIVE "${_base}" "${_base}/*")
+    foreach(_d ${_dirs})
+      if(NOT IS_DIRECTORY "${_base}/${_d}")
+        continue()
+      endif()
+      string(REGEX MATCH "^([0-9]+)" _ver "${_d}")
+      if(NOT _ver)
+        continue()
+      endif()
+      if(NOT _ver GREATER _best_ver)
+        continue()
+      endif()
+      if(EXISTS "${_base}/${_d}/include/libpq-fe.h" AND EXISTS "${_base}/${_d}/lib/libpq.lib")
+        set(_best "${_base}/${_d}")
+        set(_best_ver "${_ver}")
+      endif()
+    endforeach()
+  endforeach()
+  set(${out_root} "${_best}" PARENT_SCOPE)
+endfunction()
+
+qbrain_pg_discover(QBRAIN_PG_DISCOVERED)
+set(QBRAIN_PG_ENABLED OFF)
+if(QBRAIN_WITH_PG AND QBRAIN_PG_DISCOVERED)
+  set(QBRAIN_PG_ENABLED ON)
+  message(STATUS "N38: libpq found at ${QBRAIN_PG_DISCOVERED} -- QBRAIN_WITH_PG ON")
+elseif(QBRAIN_WITH_PG)
+  message(STATUS "N38: libpq not found (QBRAIN_PG_ROOT / D:/PostgreSQL/<max> / C:/Program Files/PostgreSQL/<max>) -- QBRAIN_WITH_PG auto-OFF; SQLite path unaffected")
+endif()
+
 add_library(sqlite3 STATIC ${SQLITE_DIR}/sqlite3.c)
 target_include_directories(sqlite3 PUBLIC ${SQLITE_DIR})
 target_compile_definitions(sqlite3 PUBLIC
@@ -52,8 +106,25 @@ qbrain_lib(util
 qbrain_lib(storage
   src/qbrain/storage/database.cpp
   src/qbrain/storage/migrate.cpp
+  src/qbrain/storage/pg_backend.cpp
 )
 target_link_libraries(qbrain_storage PUBLIC qbrain_util)
+if(QBRAIN_PG_ENABLED)
+  # N38: libpq include dir + import lib + the QBRAIN_WITH_PG compile switch
+  # propagate to every consumer of qbrain_storage (tests, CLI, harnesses).
+  target_include_directories(qbrain_storage PUBLIC "${QBRAIN_PG_DISCOVERED}/include")
+  target_link_libraries(qbrain_storage PUBLIC "${QBRAIN_PG_DISCOVERED}/lib/libpq.lib")
+  target_compile_definitions(qbrain_storage PUBLIC QBRAIN_WITH_PG=1)
+  if(MSVC)
+    # Delay-load keeps libpq.dll off the loader path until PG is actually
+    # used: executables start (and the canonical suite stays green) on
+    # machines where the PostgreSQL bin dir is not on PATH. Consumers that
+    # set QBRAIN_PG_DSN must have the PG bin dir on PATH (or run via
+    # pg_env.bat) for the DLL's dependency closure.
+    target_link_options(qbrain_storage PUBLIC "/DELAYLOAD:libpq.dll")
+    target_link_libraries(qbrain_storage PUBLIC delayimp)
+  endif()
+endif()
 
 qbrain_lib(core
   src/qbrain/core/types.cpp
@@ -199,6 +270,7 @@ add_executable(qbrain_tests
   tests/test_n35.cpp
   tests/test_n36.cpp
   tests/test_n37.cpp
+  tests/test_n38.cpp
 )
 target_link_libraries(qbrain_tests PRIVATE
   qbrain_cli qbrain_mcp qbrain_ops qbrain_schema qbrain_search qbrain_jobs qbrain_cycle qbrain_graph qbrain_codeintel qbrain_ingest qbrain_ai

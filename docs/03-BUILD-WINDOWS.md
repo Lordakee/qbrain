@@ -86,6 +86,46 @@ the token's sha256 prefix (16 hex chars) — never the token itself. The legacy
 Explicitly deferred: TLS (loopback-only boundary), OAuth, dynamic user
 stores, token rotation, per-token brain/source restrictions (Phase-3).
 
+## PostgreSQL 后端配置（N38）
+
+SQLite 仍是**默认**存储后端；PostgreSQL 是显式 opt-in（`QBRAIN_PG_DSN`
+存在时才激活）。PG 代码路径由 CMake 选项 `QBRAIN_WITH_PG`（默认 `ON`）
+控制：构建系统按以下次序发现 libpq —— ① `QBRAIN_PG_ROOT` 环境变量指向
+的安装根；② 默认扫描 `C:\Program Files\PostgreSQL\` 下**最高版本号**
+目录。发现失败是**预期行为**：`QBRAIN_WITH_PG` 自动降级为 `OFF` 并给出
+警告，SQLite 主路径永不因 PG 缺席而失败。
+
+### DSN 格式（`QBRAIN_PG_DSN`）
+
+```text
+postgresql://<user>:<password>@<host>:<port>/<dbname>
+```
+
+示例（占位符，**勿提交真实口令**）：
+
+```text
+postgresql://qbrain_test:<PLACEHOLDER_PASSWORD>@127.0.0.1:5432/qbrain_n38_test
+```
+
+- DSN **仅**从环境变量读取，不接受命令行/配置文件传入。
+- 任何日志/错误输出中的 DSN 一律脱敏：host、dbname、user 可见，
+  password 永不出现（负测试见 `tests/test_n38.cpp` 单元组，注入
+  `SECRET123` 诱导连接失败后 grep 断言其不存在）。
+- 测试专用 DSN 环境变量为 `QBRAIN_PG_TEST_DSN`（集成组门控）。
+
+### 建库/建角色示例命令（psql，超级用户执行）
+
+```sql
+-- 占位符口令仅作示例；生产凭据不入 git
+CREATE ROLE qbrain_test LOGIN PASSWORD '<PLACEHOLDER_PASSWORD>';
+CREATE DATABASE qbrain_n38_test OWNER qbrain_test;
+GRANT ALL ON DATABASE qbrain_n38_test TO qbrain_test;
+```
+
+连接要求：PG 库 schema 版本必须**恰好等于** 13 才可用；空库由
+`Brain::open` 自动建 v13 等价 schema，旧版本库拒绝并指引升级。
+每次测试运行使用专用库/schema（测试自行 drop/recreate），勿指向生产库。
+
 ## 数据根（Data Root）解析（N37 D3）
 
 数据根解析实现于 `src/qbrain/util/paths.cpp`（头文件 `include/qbrain/util/paths.hpp`）：

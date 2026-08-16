@@ -44,6 +44,35 @@ $sqlite = Join-Path $Root "third_party\sqlite\sqlite-amalgamation-3460100"
 $inc = Join-Path $Root "include"
 $third = Join-Path $Root "third_party"
 
+# N38: libpq discovery mirroring CMakeLists.txt (QBRAIN_PG_ROOT env ->
+# D:\PostgreSQL\<max> -> C:\Program Files\PostgreSQL\<max>; highest numeric
+# version carrying include\libpq-fe.h + lib\libpq.lib wins). Absent libpq is
+# an expected state: pg_backend.cpp compiles without QBRAIN_WITH_PG (pure
+# helpers only) and the SQLite path is unaffected.
+function Find-PgRoot {
+  $candidates = New-Object System.Collections.Generic.List[string]
+  if ($env:QBRAIN_PG_ROOT) { $candidates.Add($env:QBRAIN_PG_ROOT) }
+  foreach ($base in @("D:\PostgreSQL", "C:\Program Files\PostgreSQL")) {
+    if (-not (Test-Path $base)) { continue }
+    $versioned = Get-ChildItem $base -Directory | Where-Object { $_.Name -match '^\d+' } |
+      Sort-Object { [long]($_.Name -replace '^(\d+).*$','$1') } -Descending
+    foreach ($d in $versioned) { $candidates.Add($d.FullName) }
+  }
+  foreach ($c in $candidates) {
+    if ((Test-Path (Join-Path $c "include\libpq-fe.h")) -and
+        (Test-Path (Join-Path $c "lib\libpq.lib"))) {
+      return $c
+    }
+  }
+  return $null
+}
+$PgRoot = Find-PgRoot
+if ($PgRoot) {
+  Write-Host "N38: libpq found at $PgRoot -- QBRAIN_WITH_PG ON"
+} else {
+  Write-Host "N38: libpq not found (QBRAIN_PG_ROOT / D:\PostgreSQL\<max> / C:\Program Files\PostgreSQL\<max>) -- QBRAIN_WITH_PG OFF; SQLite path unaffected"
+}
+
 $productionSources = @(
   "src\qbrain\util\paths.cpp",
   "src\qbrain\util\hash.cpp",
@@ -52,6 +81,7 @@ $productionSources = @(
   "src\qbrain\util\time_util.cpp",
   "src\qbrain\storage\database.cpp",
   "src\qbrain\storage\migrate.cpp",
+  "src\qbrain\storage\pg_backend.cpp",
   "src\qbrain\core\types.cpp",
   "src\qbrain\core\brain.cpp",
   "src\qbrain\graph\extract.cpp",
@@ -95,12 +125,23 @@ $sources = $productionSources | ForEach-Object { Join-Path $Root $_ }
 $srcList = ($sources | ForEach-Object { "`"$_`"" }) -join " "
 $sqliteC = Join-Path $sqlite "sqlite3.c"
 $prodObjNames = @(
-  "paths","hash","log","string_util","time_util","database","migrate","types","brain",
+  "paths","hash","log","string_util","time_util","database","migrate","pg_backend","types","brain",
   "extract","traverse","analytics","scan","astlite","packs","lint","store","image_meta","vector","rrf","hybrid","rerank","minions","dream",
   "chunker","markdown","import","http_client","embed","chat","registry","handlers",
   "inbox_watch","live_sync","jsonrpc","server","auth","http_server","app","commands","main"
 )
 $prodObjList = ($prodObjNames | ForEach-Object { "$_.obj" }) -join " "
+
+# N38: PG compile/link fragments (delay-load keeps libpq.dll off the loader
+# path until PG is actually used, so the exe starts without the PG bin dir
+# on PATH).
+$pgDefine = ""
+$pgLink = ""
+if ($PgRoot) {
+  $pgDefine = "/I`"$PgRoot\include`" /DQBRAIN_WITH_PG=1"
+  # Absolute lib path: the MSVC LIB path never includes the PG install.
+  $pgLink = "/DELAYLOAD:libpq.dll `"$PgRoot\lib\libpq.lib`" delayimp.lib"
+}
 
 $bat = @"
 @echo off
@@ -109,10 +150,10 @@ if errorlevel 1 exit /b 1
 cd /d "$ObjDir"
 cl /nologo /std:c++20 /EHsc /O2 /utf-8 /I"$inc" /I"$third" /I"$sqlite" /DUNICODE /D_UNICODE /DNOMINMAX /DWIN32_LEAN_AND_MEAN /DSQLITE_ENABLE_FTS5 /DSQLITE_THREADSAFE=1 /DSQLITE_OMIT_LOAD_EXTENSION /c "$sqliteC"
 if errorlevel 1 exit /b 1
-cl /nologo /std:c++20 /EHsc /O2 /utf-8 /I"$inc" /I"$third" /I"$sqlite" /DUNICODE /D_UNICODE /DNOMINMAX /DWIN32_LEAN_AND_MEAN /DSQLITE_ENABLE_FTS5 /c $srcList
+cl /nologo /std:c++20 /EHsc /O2 /utf-8 /I"$inc" /I"$third" /I"$sqlite" $pgDefine /DUNICODE /D_UNICODE /DNOMINMAX /DWIN32_LEAN_AND_MEAN /DSQLITE_ENABLE_FTS5 /c $srcList
 if errorlevel 1 exit /b 1
 rem Link exactly the object set produced by this invocation.
-link /nologo /OUT:qbrain.exe /MANIFEST:NO $prodObjList sqlite3.obj winhttp.lib bcrypt.lib shell32.lib ole32.lib advapi32.lib ws2_32.lib
+link /nologo /OUT:qbrain.exe /MANIFEST:NO $prodObjList sqlite3.obj winhttp.lib bcrypt.lib shell32.lib ole32.lib advapi32.lib ws2_32.lib $pgLink
 if errorlevel 1 exit /b 1
 copy /y qbrain.exe "$Out\qbrain.exe" >nul
 if errorlevel 1 exit /b 1

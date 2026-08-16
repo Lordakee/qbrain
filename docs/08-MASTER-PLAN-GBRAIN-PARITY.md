@@ -1,8 +1,8 @@
 # Qbrain ↔ gbrain 全功能对齐 — 整体规划（Master Plan）
 
-**版本**: 2.0.0
-**日期**: 2026-08-15
-**状态**: **REVISED — Phase 2 COMPLETE (2026-08-16)**（依据 2026-08-15 三方决议，见 `docs/RESOLUTION-2026-08-15.md`；N30-N37 全部完成，收官记录见 `docs/09-PROJECT-COMPLETION.md` 与 `docs/nodes/n37-evidence/GOVERNANCE-INDEX.md`）
+**版本**: 2.1.0
+**日期**: 2026-08-16
+**状态**: **REVISED — Phase 2 COMPLETE (2026-08-16)；Phase 3 开启（N38 PostgreSQL 后端，范围 full）**（依据 2026-08-15 三方决议，见 `docs/RESOLUTION-2026-08-15.md`；N30-N37 全部完成，收官记录见 `docs/09-PROJECT-COMPLETION.md` 与 `docs/nodes/n37-evidence/GOVERNANCE-INDEX.md`）
 **目标**: 纯 Windows 11 原生 C++ 下，Qbrain 达到 gbrain **能力对等**（非位级移植），且**每一项声明都有可验证证据**。
 
 ---
@@ -15,6 +15,7 @@
 | 1.1.0 | Adopt N0 audit P0s: embedded schema, ops ledger, write-default-deny retained, evidence §1.4, node DAG (N2.5, N4a/N4b), abort rule, N6 stretch option |
 | 1.3.0 | Wave 1 closeout: N1-N11 audits PASS; ledger 104 ops（历史状态，后经 N12-N29 波次扩展） |
 | 2.0.0 | 三方决议采纳：Phase 2（N30-N37）安全与证据优先序列；分层证据政策；串行化规则；生成式计数；完整修正案 AMD-1..AMD-11 见决议文档 |
+| 2.1.0 | Phase 3 开启：N38 PostgreSQL 存储后端（libpq，契约级+产品级，范围 full——census 零 UNRESOLVED + DSN 批准时点已提供，见 `docs/nodes/n38-evidence/SQL-CENSUS.json` 与 `DSN-PROVISIONED.json`）；实现状态以 `docs/nodes/n38-evidence/` 证据为准，不超出套件证明范围 |
 
 ---
 
@@ -64,6 +65,28 @@ N31: registry/MCP 契约闭合与注册分解
 - **串行化规则（AMD-3）**：凡触及存储 schema/迁移、身份、授权、registry 策略或共享热文件的变更一律串行；并行仅当 approved 计划含证明不相交的文件所有权矩阵且父代理记录该决定。
 - N30/N31 完成前不得开始任何新特性节点。
 - **收官注记（2026-08-16）**：N30-N37 all done — Phase 2 DAG 全部节点完成（各节点 plan/plan-audit/hard-audit/证据见 `docs/nodes/`；逐节点状态索引见 `docs/nodes/n37-evidence/GOVERNANCE-INDEX.md`）。
+
+## 3.5 Phase 3 节点 DAG（v2.1.0 开启）
+
+```
+N38: PostgreSQL 存储后端（libpq；SQLite 保持默认，PG 显式 opt-in）
+```
+
+### N38 — PostgreSQL 存储后端（范围 **full**，诚实范围标签）
+
+**Goal**: 实现 libpq PostgreSQL 后端并通过 N35 存储契约（G1-G8 PG 等价），
+使 Qbrain 可通过 `QBRAIN_PG_DSN` 以 PG 作为实际数据后端运行。
+**范围锁定依据（预承诺规则的机械结果，非裁量）**：
+- D0 SQL 方言普查（`docs/nodes/n38-evidence/SQL-CENSUS.json`）：306 条语句，
+  18 条 structural 全部被 D0.5 三接口扩展（`fts_search` / `backup_to`+
+  `backend_file_path` / busy 映射）逐条消解，**零 UNRESOLVED → full**。
+- P0-2 预承诺：DSN 已于批准时点提供（`n38-evidence/DSN-PROVISIONED.json`，
+  专用角色 qbrain_test + 独立库 qbrain_n38_test）→ 未触发 partial 锁定。
+**诚实边界**: 台账/文档的 implemented 声明仅限契约套件（G1-G8 PG 等价）+
+迁移幂等 + 并发分类可证范围 + 产品冒烟子集实际全绿的证据；bm25 vs
+ts_rank 的排名差异如实注记（见 `docs/10-STORAGE-CONTRACT.md` PG 节）。
+**验收/回退/安全**: 见 `docs/nodes/N38-PLAN.md`（approved，round-2
+plan-audit PASS）。
 
 ## 4. 节点定义（验收为可证伪断言；完整版见决议文档 §4）
 

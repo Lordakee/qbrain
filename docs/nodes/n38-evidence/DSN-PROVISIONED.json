@@ -1,0 +1,12 @@
+{
+  "provisioned_at": "2026-08-16T06:36:00.606Z",
+  "scope_lock": "full (per plan P0-2 pre-commitment: DSN present at approval/input time)",
+  "dsn": {
+    "host": "127.0.0.1",
+    "port": 5432,
+    "dbname": "qbrain_n38_test",
+    "user": "qbrain_test"
+  },
+  "password_handling": "provided out-of-band; tests read it from QBRAIN_PG_TEST_DSN env at run time; never committed",
+  "provisioning_note": "postgres superuser password was reset by the controller with explicit user authorization (同意重置) via a temporary loopback-trust window; pg_hba restored to scram-sha-256 immediately after; backup at D:PostgreSQLData\u00018pg_hba.conf.bak-n38"
+}

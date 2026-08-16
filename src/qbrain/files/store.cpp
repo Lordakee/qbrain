@@ -71,6 +71,10 @@ int64_t upload(Brain& brain, const std::string& src_path, const std::string& nam
   st.bind_text(4, mime);
   st.bind_text(5, util::utc_now());
   st.step_done();
+  // n38: last_insert_rowid() kept (census RETURNING rule deferred to the
+  // backend layer): file_index.id is INTEGER PRIMARY KEY AUTOINCREMENT, so
+  // SQLite semantics are unchanged; PG-mode correctness relies on N38-A's
+  // PgBackend last-RETURNING tracking (audit-listed site).
   return brain.db().last_insert_rowid();
 }
 

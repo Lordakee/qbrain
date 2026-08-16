@@ -1,0 +1,177 @@
+N38-A PG BACKEND HARNESS EVIDENCE (slice A: libpq backend + PG schema + build wiring)
+====================================================================================
+Date: 2026-08-16
+Owner slice: N38-A
+Harness: throwaway C++ program in the SYSTEM temp tree
+  (%TEMP%\n38a-harness\harness.cpp, never committed, never inside the repo),
+  compiled with MSVC 18 /std:c++20 against the live-repo sources
+  (src/qbrain/storage/pg_backend.cpp + include/qbrain/storage/pg_backend.hpp,
+  QBRAIN_WITH_PG=1, D:\PostgreSQL\18\include + lib\libpq.lib) and run with
+  D:\PostgreSQL\18\bin on PATH. It links PgBackend DIRECTLY (no Brain wiring)
+  against the provisioned DSN:
+    host=127.0.0.1 port=5432 dbname=qbrain_n38_test user=qbrain_test
+  (password supplied at run time from the harness constant only; it appears
+  nowhere in this file and never appears in any PASS detail line below).
+
+DSN redaction proof (P2-2 negative test, H13): both failure paths show the
+open error carrying host/port/dbname/user and NOT the wrong password
+("definitely-wrong-pass-xyz" keyword form / "SECRET123" URI form are absent;
+grep-verifiable above). backend_file_path (H1) is the same whitelisted
+descriptor. The scrubber additionally strips the exact password bytes from
+every thrown message (>= 6 chars, defense in depth).
+
+Full harness output (final run, 56/56, rc=0):
+
+== N38-A PG harness (PgBackend direct vs real DSN) ==
+[PASS] H1 open(real DSN) -- backend_file_path=host=127.0.0.1 port=5432 dbname=qbrain_n38_test user=qbrain_test
+[PASS] H1 is_open
+[PASS] H1 backend_file_path is redacted descriptor
+[PASS] H1 pg_ensure_schema fresh -> MAX(version)==13 -- v=13
+[PASS] H1 second ensure run is a no-op -- v=13
+[PASS] H1 schema_version seeded 1..13 -- rows=13
+[PASS] H1b old PG store rejected with guidance -- pg_ensure_schema: pre-existing PG schema at version 7 (< 13); PostgreSQL stores are created fresh at v13 -- drop/recreate the database or migrate via the SQLite path and re-export
+[PASS] H2 exec multi-statement; changes()==1 -- changes=1
+[PASS] H2 exec cleanup
+[PASS] H3 quoted '?' is not translated
+[PASS] H3 bind_text+bind_double round trip
+[PASS] H3 ?NNN explicit + bind_null
+[PASS] H4 reset+clear+rebind yields the NEW row -- Alpha/Beta
+[PASS] H5 rollback discards -- 2->2
+[PASS] H5 commit persists -- 2->3
+[PASS] H6 changes()==1 after 1-row UPDATE -- changes=1
+[PASS] H6 changes()==0 after 0-row UPDATE -- changes=0
+[PASS] H7 prepared INSERT sets last_insert_rowid -- id=1
+[PASS] H7 first plain insert changes==1
+[PASS] H7 ON CONFLICT DO NOTHING: changes 0, rowid unchanged -- changes=0
+[PASS] H7b multi-row INSERT -> highest id -- id=3 max=3
+[PASS] H8 config/tags INSERTs work (no RETURNING injected)
+[PASS] H8 rowid untouched by non-identity inserts
+[PASS] H9 blob byte-identical round trip -- size=9
+[PASS] H9 double round trip exact -- 0.15625
+[PASS] H10 exact-term top page == title-match page -- fts-alpha
+[PASS] H10 snippet contains the term -- ,quantum, computing uses qubits for parallel computation
+[PASS] H10 title-weight beats body-weight -- fts-gamma
+[PASS] H10 deleted/non-matching pages excluded (foreign source legitimately included unfiltered)
+[PASS] H10 source_id filter works -- 1 rows
+[PASS] H10 rank reported negated (bm25 sign convention) -- -0.182378
+[PASS] H10 no-match query returns empty
+[PASS] H11 unique violation -> rc 19 + 'constraint' marker -- rc=19 msg=step: constraint failed: ERROR:  duplicate key value violates unique constraint "sources_pkey" DETAIL:  Key (id)=(default) already exists. (SQLSTATE 23505)
+[PASS] H11 syntax error -> rc 1 -- rc=1 pg exec: ERROR:  syntax error at or near "SELEKT" LINE 1: SELEKT 1 ^ (SQLSTATE 42601)
+[PASS] H11 contended write throws (lock_timeout) -- pg exec: database is locked: ERROR:  canceling statement due to lock timeout CONTEXT:  while updating tuple (0,9) in relation "pages" (SQLSTATE 55P03)
+[PASS] H11 busy class rc==5 + 'database is locked' marker -- rc=5 (same 55P03 error as above)
+[PASS] H11 retry succeeds after lock release
+[PASS] H12 backup_to via pg_dump -- note=pg_dump size-ok=yes
+[PASS] H12 COPY fallback on pg_dump failure -- note=copy-fallback: pg_dump exited rc=16 (COPY export written)
+[PASS] H13 keyword DSN: error redacts password, keeps host/dbname -- pg open: connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "qbrain_test" dsn=host=127.0.0.1 port=5432 dbname=qbrain_n38_test user=qbrain_test
+[PASS] H13 URI DSN: error redacts password (P2-2) -- (same shape; SECRET123 absent)
+[PASS] H13 pure pg_redact_dsn keyword form -- host=127.0.0.1 port=5432 dbname=qbrain_n38_test user=qbrain_test
+[PASS] H13 pure pg_redact_dsn URI form -- host=127.0.0.1 port=5432 dbname=qbrain_n38_test user=qbrain_test
+[PASS] H13 quoted values parsed, password dropped -- host=h1 port=5432 dbname=my db user=u
+[PASS] H14 set_busy_timeout returns 0 (ms<=0 -> 1ms)
+[PASS] H17 exec('BEGIN IMMEDIATE;') translated to BEGIN TRANSACTION -- rows=1
+[PASS] H17 lowercase form + rollback accepted
+[PASS] H15 bare ? -> $1
+[PASS] H15 sequence numbering
+[PASS] H15 in-string ? untouched
+[PASS] H15 quoted identifier ? untouched
+[PASS] H15 E'...' escape string
+[PASS] H15 dollar-quoted span
+[PASS] H15 explicit ?NNN pins index
+[PASS] H15 comments untouched, zero params
+[PASS] H16 close -> not open
+
+== harness summary: 56 passed, 0 failed ==
+
+Result matrix by deliverable:
+  D1 backend interface ....... open/exec/changes/last_insert_rowid (RETURNING
+                                based, incl. ON CONFLICT DO NOTHING = 0-rows
+                                + unchanged rowid, multi-row = highest id),
+                                prepare/bind family (text/double/int/null/blob),
+                                step/step_done, reset+clear_bindings rebind
+                                (N34 two-row contract), transactions
+                                (BEGIN/ROLLBACK/COMMIT/BEGIN IMMEDIATE),
+                                set_busy_timeout, close/is_open .... ALL PASS
+  D1 $N translation .......... quoted '?', "...", [..], -- and /* */ comments,
+                                E'...' escapes, $tag$ spans, ?NNN pinning,
+                                max-so-far+1 numbering .... ALL PASS
+  D1 busy/classification ..... 55P03 (row-lock contention via second
+                                connection + lock_timeout) -> rc 5 +
+                                "database is locked" marker, retry after
+                                release succeeds; 23505 -> rc 19 +
+                                "constraint failed"; 42601 -> rc 1 .... ALL PASS
+  D1 exec BEGIN IMMEDIATE .... literal translated to BEGIN TRANSACTION
+                                (whole-string form only; census's 12 exec
+                                sites) .... PASS (H17)
+  D2 schema .................. fresh ensure -> MAX(version)==13 + 13 seed
+                                rows; second run no-op; pre-existing 0<v<13
+                                rejected with guidance .... ALL PASS
+  fts seam ................... exact-term top page identical to SQLite
+                                expectation (title hit outranks body hit),
+                                snippet contains term, deleted filtered,
+                                source_id filter, rank negated to keep bm25
+                                sign conventions, empty result for no match
+                                .... ALL PASS (bm25 vs ts_rank parity is NOT
+                                bit-for-bit by design; documented)
+  D0.5 backup_to ............. pg_dump path (note "pg_dump", valid dump) and
+                                forced COPY fallback (downgrade noted in file
+                                header + pg_backup_note_of) .... ALL PASS
+  DSN redaction (P2-2) ....... keyword + URI failure paths, pure helper,
+                                quoted values .... ALL PASS
+  blob transport ............. bytea binary bind + hex-decode readback
+                                byte-identical (9-byte probe incl. 0x00/0xFF)
+                                .... PASS
+
+Canonical gate (private tree %TEMP%\n38a-verify, NEVER the shared build\cl):
+  scripts/build-tests-cl.ps1 full rebuild with A's PG files compiled in and
+  libpq linked (delay-loaded): BUILD_OK + TESTS_BUILD_OK; every pre-existing
+  registration green (39/39 pre-N38; 40/40 with C's n38_pg_backend unit
+  group, integration group explicitly [SKIP-PG] without a DSN). The final
+  rebuild after the last pg_backend.cpp fixes (BEGIN IMMEDIATE exec
+  translation, fts param-count, dollar-quote lexer) is recorded in
+  %TEMP%\n38a-canonical-final.txt with the same 0-FAIL result.
+  Interim-attribution note: two earlier canonical runs in the private tree
+  failed analytics/n18 with "prepare: near \"/\"" -- that was a torn
+  MID-EDIT snapshot of slice B's analytics.cpp (a // comment inside the SQL
+  raw string) plus B's since-fixed Database::BackendKind qualification,
+  neither related to slice A; the fresh snapshot is clean.
+
+Build wiring state (A-owned):
+  - CMakeLists.txt: QBRAIN_WITH_PG option (default ON) + qbrain_pg_discover()
+    (QBRAIN_PG_ROOT cache -> $QBRAIN_PG_ROOT -> D:/PostgreSQL/<max> ->
+    C:/Program Files/PostgreSQL/<max>, highest numeric version carrying
+    include/libpq-fe.h + lib/libpq.lib). Found: include dir + ABSOLUTE
+    libpq.lib path + QBRAIN_WITH_PG=1 compile definition propagate PUBLIC
+    from qbrain_storage; MSVC adds /DELAYLOAD:libpq.dll + delayimp so the
+    canonical suite starts without the PG bin dir on PATH. Not found: option
+    auto-OFF with a status message; pg_backend.cpp still compiles (libpq-free
+    half); SQLite path unaffected.
+  - scripts/build-cl.ps1 / build-tests-cl.ps1: Find-PgRoot mirroring the
+    same order; pg_backend.cpp always in the production source list; when
+    found: /I<PgRoot>\include /DQBRAIN_WITH_PG=1, link fragment
+    "/DELAYLOAD:libpq.dll \"<PgRoot>\lib\libpq.lib\" delayimp.lib" (absolute
+    path -- the earlier LNK1181 was a bare libpq.lib with no /LIBPATH; the
+    absolute path is the equivalent, more explicit fix), and the test-run
+    bat prepends <PgRoot>\bin to PATH to cover libpq.dll's dependency
+    closure for PG-active runs.
+
+Coordination items found by this slice (for the parent):
+  1. n32 "synchronous command execution functions are not allowed in
+     pipeline mode" (B's PG-mode probe attribution: A backend call
+     sequence) is NOT a PgBackend defect: pg_backend.cpp contains zero
+     PQenterPipelineMode/PQsendQuery/PQsetnonblocking calls. Root cause:
+     tests/test_n32.cpp:170 PageReadObserver(brain.db().handle()) -- in PG
+     mode Database::handle() (database.cpp, frozen for A) performs a
+     static_cast<SqliteBackend*> on a PgBackend and returns the PGconn* as
+     an sqlite3*; sqlite3_set_authorizer then writes into the PGconn struct
+     and corrupts libpq state (the "pipeline mode" error is the corrupted
+     readback). Suggested one-line parent fix: guard handle() on
+     backend_kind() == sqlite (return nullptr otherwise); C then guards the
+     observer on handle() != nullptr.
+  2. B's "fts_search throws" CLI observation was A's real bug -- the
+     no-source_id path bound 3 params against a 2-parameter statement
+     (08P01). Fixed and covered by H10 (both filter paths); B's smoke
+     should be re-run after pulling the current pg_backend.cpp.
+  3. C's test_n38.cpp G1 expects "1:alpha;2:gamma;" -- PG identity
+     sequences are not transactional; the rolled-back beta permanently
+     consumes id 2 (B's probe: expected value "1:alpha;3:gamma;"). C-side
+     expectation update.

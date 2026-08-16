@@ -16,6 +16,13 @@
 
 using json = nlohmann::json;
 
+#if defined(QBRAIN_WITH_PG)
+// N38-A seam (libpq backend slice): the PG backend factory and the canonical
+// PG schema bootstrap live in storage/pg_backend.*; this include is compiled
+// only when the PG backend is linked in (QBRAIN_WITH_PG).
+#include "qbrain/storage/pg_backend.hpp"
+#endif
+
 namespace qbrain {
 
 namespace {
@@ -120,6 +127,34 @@ void Brain::open() {
 
 void Brain::open_at(const std::string& db_path) {
   db_path_.clear();
+  // ---- N38 PG wiring (plan D2): explicit opt-in backend selection --------
+  // When QBRAIN_PG_DSN is non-empty, the PG backend replaces SQLite for this
+  // Brain (open_pg). Every later Brain call flows through the same
+  // storage::Database facade; no Brain method branches on the backend except
+  // through the dialect-guarded sites marked `n38:` per the SQL census.
+  //
+  // Wiring seam — dialect-clean verification (N38 census, brain.cpp slice):
+  //   put_page / get_page / list_pages* / soft_delete / restore_page /
+  //   create_version / list_versions / revert_version / ensure_source /
+  //   remove_source / source_status / add_fact / list_facts / forget_fact /
+  //   add_tag / remove_tag / get_tags / remove_link / find_orphans /
+  //   replace_chunks / get_chunks / list_chunks_missing_embedding /
+  //   update_chunk_embedding / add_link / replace_extracted_links /
+  //   get_links_* / log_ingest / get_ingest_log / chronicle_* (substr/CAST
+  //   bodies are portable per census) / put_take / takes_* / put_raw_data /
+  //   get_raw_data / list_raw_prefix / stats / enqueue_embed_page /
+  //   drain_embed_jobs / save_config_value: portable SQL only (census
+  //   brain.cpp = 95 statements, 84 portable). The former translatables were
+  //   rewritten here (INSERT OR IGNORE x3, purge_deleted datetime, COLLATE
+  //   BINARY list_link_sources) or are guarded downstream (migrate.cpp
+  //   introspection); structural BEGIN IMMEDIATE x4 maps to PG busy
+  //   semantics inside the backend (N38-A D1).
+  //   NOT dialect-clean in PG mode: FTS paths route through the
+  //   IStorageBackend::fts_search seam (SQLite FTS5 / PG tsvector+GIN).
+  if (const char* pg_dsn_env = std::getenv("QBRAIN_PG_DSN"); pg_dsn_env && *pg_dsn_env) {
+    open_pg(pg_dsn_env);  // n38: PG opt-in (fail-loud in a no-PG build)
+    return;
+  }
   db_.open(db_path);
   // Always migrate from embedded canonical schema (no CWD-dependent fallback DDL).
   // Optional QBRAIN_SCHEMA path overrides only the v1 SQL text if the file exists.
@@ -131,6 +166,46 @@ void Brain::open_at(const std::string& db_path) {
   storage::apply_migrations(db_, override_path);
   load_config();
   db_path_ = db_path;
+}
+
+void Brain::open_pg(const std::string& dsn) {
+#if defined(QBRAIN_WITH_PG)
+  // N38 PG open path (plan D2), shared by the QBRAIN_PG_DSN branch of
+  // open_at() and the explicit-DSN test/harness seam n38_open_pg_brain():
+  // A's make_pg_backend constructs+opens the connection, pg_ensure_schema
+  // applies the canonical v13-equivalent PG DDL idempotently (rejecting a
+  // pre-existing 0 < version < 13 store with guidance), the facade is armed
+  // through the generic adopt_backend seam, and the version gate below
+  // enforces exactly v13 (an older PG database is refused, never silently
+  // upgraded -- plan D2).
+  db_path_.clear();
+  auto backend = storage::make_pg_backend(dsn);
+  storage::pg_ensure_schema(storage::pg_conn_of(*backend));
+  db_.adopt_backend(std::move(backend));
+  int64_t ver = 0;
+  {
+    auto st = db_.prepare("SELECT COALESCE(MAX(version),0) FROM schema_version");
+    if (st.step()) ver = st.column_int(0);
+  }
+  if (ver != 13) {
+    throw std::runtime_error(
+        "QBRAIN_PG_DSN database is at schema_version " + std::to_string(ver) +
+        ", not the required 13; refusing to open (drop/recreate the PG database or "
+        "restore it to v13 before using it as a Qbrain backend)");
+  }
+  load_config();
+  // Storage identity for reporting paths (sanitized host/dbname descriptor
+  // per the D0.5 backend_file_path contract; never the DSN itself).
+  db_path_ = db_.backend_file_path();
+#else
+  // Fail loud, never silently fall back to SQLite when PG was requested:
+  // an opt-in backend must not degrade into the default one (plan goal).
+  (void)dsn;
+  throw std::runtime_error(
+      "PostgreSQL backend requested (QBRAIN_PG_DSN / Brain::open_pg) but this "
+      "build was compiled without it (QBRAIN_WITH_PG off); unset QBRAIN_PG_DSN "
+      "or rebuild with PG support");
+#endif
 }
 
 void Brain::close() {
@@ -474,12 +549,11 @@ bool Brain::restore_page(const std::string& slug, const std::string& source_id) 
 }
 
 int Brain::purge_deleted(int older_than_hours) {
-  // SQLite datetime: deleted_at older than now - hours
+  // n38: datetime('now', ?) -> C++-computed UTC cutoff bound as a parameter
+  // (dialect-free SQL; stored/compared TEXT format unchanged).
   auto st = db_.prepare(
-      "DELETE FROM pages WHERE deleted_at IS NOT NULL AND "
-      "deleted_at < datetime('now', ?)");
-  std::string mod = "-" + std::to_string(older_than_hours) + " hours";
-  st.bind_text(1, mod);
+      "DELETE FROM pages WHERE deleted_at IS NOT NULL AND deleted_at < ?");
+  st.bind_text(1, util::utc_now_offset(static_cast<long long>(older_than_hours) * -3600));
   st.step_done();
   return db_.changes();
 }
@@ -537,7 +611,8 @@ bool Brain::revert_version(const std::string& slug, int64_t version_id,
 bool Brain::ensure_source(const std::string& source_id) {
   auto canon = canonical_source_id(source_id);
   if (!canon) return false;
-  auto st = db_.prepare("INSERT OR IGNORE INTO sources(id, name) VALUES(?,?)");
+  auto st = db_.prepare(
+      "INSERT INTO sources(id, name) VALUES(?,?) ON CONFLICT DO NOTHING");  // n38: INSERT OR IGNORE -> ON CONFLICT DO NOTHING
   st.bind_text(1, *canon);
   st.bind_text(2, *canon);
   st.step_done();
@@ -676,7 +751,8 @@ int Brain::forget_fact(const std::string& entity_slug, const std::string& predic
 void Brain::add_tag(const std::string& slug, const std::string& tag, const std::string& source_id) {
   auto page = get_page(slug, source_id);
   if (!page) throw std::runtime_error("page not found");
-  auto st = db_.prepare("INSERT OR IGNORE INTO tags(page_id, tag) VALUES(?,?)");
+  auto st = db_.prepare(
+      "INSERT INTO tags(page_id, tag) VALUES(?,?) ON CONFLICT DO NOTHING");  // n38: INSERT OR IGNORE -> ON CONFLICT DO NOTHING
   st.bind_int(1, page->id);
   st.bind_text(2, tag);
   st.step_done();
@@ -923,7 +999,7 @@ std::vector<Brain::LinkSourceCount> Brain::list_link_sources(const std::string& 
   auto st = db_.prepare(
       "SELECT COALESCE(link_source,''), COUNT(*) FROM links "
       "WHERE source_id=? GROUP BY link_source "
-      "ORDER BY COUNT(*) DESC, link_source COLLATE BINARY ASC");
+      "ORDER BY COUNT(*) DESC, link_source ASC");  // n38: per-expression COLLATE BINARY -> column-level (links.link_source, schema v1); SQLite default collation is BINARY, ordering identical
   st.bind_text(1, *canon);
   while (st.step()) {
     LinkSourceCount c;
@@ -954,7 +1030,8 @@ int64_t Brain::log_ingest(const std::string& event_type, const std::string& path
 
   db_.exec("BEGIN IMMEDIATE;");
   try {
-    auto source = db_.prepare("INSERT OR IGNORE INTO sources(id,name) VALUES(?,?)");
+    auto source = db_.prepare(
+        "INSERT INTO sources(id,name) VALUES(?,?) ON CONFLICT DO NOTHING");  // n38: INSERT OR IGNORE -> ON CONFLICT DO NOTHING
     source.bind_text(1, *canon);
     source.bind_text(2, *canon);
     source.step_done();
@@ -968,6 +1045,10 @@ int64_t Brain::log_ingest(const std::string& event_type, const std::string& path
     st.bind_text(4, detail);
     st.bind_text(5, util::utc_now());
     st.step_done();
+    // n38: last_insert_rowid() kept (census RETURNING rule deferred to the
+    // backend layer): ingest_log.id is INTEGER PRIMARY KEY AUTOINCREMENT, so
+    // SQLite semantics are unchanged; PG-mode correctness relies on N38-A's
+    // PgBackend last-RETURNING tracking (audit-listed site).
     int64_t id = db_.last_insert_rowid();
 
     auto prune = db_.prepare(
@@ -1179,11 +1260,14 @@ std::vector<Brain::ChronicleOnThisDayHit> Brain::chronicle_on_this_day(
   auto st = db_.prepare(
       "WITH matches AS ("
       " SELECT id, source_id, slug, title, type, created_at, updated_at,"
+      // n38: CAST(... AS TEXT) is identity on SQLite's TEXT timestamps and
+      // normalizes PG timestamptz to 'YYYY-MM-DD ...' so the fixed-position
+      // substr extraction of MM-DD / YYYY holds on both backends.
       " CASE"
-      "  WHEN substr(updated_at,6,5)=? AND CAST(substr(updated_at,1,4) AS INTEGER)<?"
-      "   AND NOT (substr(created_at,6,5)=? AND CAST(substr(created_at,1,4) AS INTEGER)<?"
+      "  WHEN substr(CAST(updated_at AS TEXT),6,5)=? AND CAST(substr(CAST(updated_at AS TEXT),1,4) AS INTEGER)<?"
+      "   AND NOT (substr(CAST(created_at AS TEXT),6,5)=? AND CAST(substr(CAST(created_at AS TEXT),1,4) AS INTEGER)<?"
       "            AND created_at>updated_at) THEN updated_at"
-      "  WHEN substr(created_at,6,5)=? AND CAST(substr(created_at,1,4) AS INTEGER)<?"
+      "  WHEN substr(CAST(created_at AS TEXT),6,5)=? AND CAST(substr(CAST(created_at AS TEXT),1,4) AS INTEGER)<?"
       "   THEN created_at ELSE NULL END AS matched_at"
       " FROM pages WHERE source_id=? AND deleted_at IS NULL"
       ")"
@@ -1369,6 +1453,10 @@ int64_t Brain::put_take(const std::string& entity_slug, const std::string& body,
   st.bind_double(4, score);
   st.bind_text(5, util::utc_now());
   st.step_done();
+  // n38: last_insert_rowid() kept (census RETURNING rule deferred to the
+  // backend layer): takes.id is INTEGER PRIMARY KEY AUTOINCREMENT, so SQLite
+  // semantics are unchanged; PG-mode correctness relies on N38-A's PgBackend
+  // last-RETURNING tracking (audit-listed site).
   return db_.last_insert_rowid();
 }
 
@@ -1646,3 +1734,26 @@ Brain::RemediateReport Brain::remediate(std::optional<bool> embedding_available_
 }
 
 }  // namespace qbrain
+
+// ---- N38 PG-mode open seams (tests/test_n38.cpp A/B landing seams) --------
+// Declared by the n38 suite and defined here (slice B): the only non-test
+// entry points that construct the storage facade on the PG backend. In a
+// build without the PG backend they fail loudly instead of degrading to the
+// SQLite default (an opt-in backend must never silently fall back).
+void n38_open_pg(qbrain::storage::Database& db, const std::string& dsn) {
+#if defined(QBRAIN_WITH_PG)
+  auto backend = qbrain::storage::make_pg_backend(dsn);
+  qbrain::storage::pg_ensure_schema(qbrain::storage::pg_conn_of(*backend));
+  db.adopt_backend(std::move(backend));
+#else
+  (void)db;
+  (void)dsn;
+  throw std::runtime_error(
+      "n38_open_pg: this build was compiled without the PostgreSQL backend "
+      "(QBRAIN_WITH_PG off)");
+#endif
+}
+
+void n38_open_pg_brain(qbrain::Brain& brain, const std::string& dsn) {
+  brain.open_pg(dsn);
+}

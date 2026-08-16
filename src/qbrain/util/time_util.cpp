@@ -32,6 +32,25 @@ std::string utc_date() {
   return oss.str();
 }
 
+// N38-B: shared helper for the census datetime('now', ...) -> bound-parameter
+// rewrites. Byte-identical output shape to SQLite datetime('now') (UTC,
+// whole seconds), so stored TEXT values and lexicographic comparisons keep
+// their exact pre-N38 semantics on the SQLite path (plan P2-3).
+std::string utc_now_offset(long long delta_seconds) {
+  using namespace std::chrono;
+  const auto shifted = system_clock::now() + seconds{delta_seconds};
+  auto t = system_clock::to_time_t(shifted);
+  std::tm tm{};
+#ifdef _WIN32
+  gmtime_s(&tm, &t);
+#else
+  gmtime_r(&t, &tm);
+#endif
+  std::ostringstream oss;
+  oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+  return oss.str();
+}
+
 std::string utc_seven_day_boundary(
     std::optional<std::chrono::system_clock::time_point> fixed_now) {
   using namespace std::chrono;

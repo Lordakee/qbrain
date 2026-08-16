@@ -8,51 +8,26 @@
 
 namespace qbrain::search {
 
-static std::string fts_quote(const std::string& q) {
-  // Join tokens with spaces; lowercase to neutralize FTS5 reserved words (AND/OR/NOT).
-  auto parts = util::split(q, ' ');
-  std::string out;
-  for (auto& p : parts) {
-    p = util::trim(p);
-    if (p.empty()) continue;
-    p = util::replace_all(p, "\"", "");
-    p = util::to_lower(p);
-    if (p.empty()) continue;
-    if (!out.empty()) out += " ";
-    out += "\"" + p + "\"";
-  }
-  return out.empty() ? "\"\"" : out;
-}
-
 std::vector<SearchHit> fts_search(Brain& brain, const std::string& query, int limit,
                                   const std::string& source_id) {
   std::vector<SearchHit> out;
-  auto mq = fts_quote(query);
-  std::string sql = R"SQL(
-SELECT p.id, p.slug, p.title, p.type, snippet(pages_fts, 2, '', '', '…', 16),
-       bm25(pages_fts) AS rank
-FROM pages_fts
-JOIN pages p ON p.id = pages_fts.rowid
-WHERE pages_fts MATCH ? AND p.deleted_at IS NULL
-)SQL";
-  if (!source_id.empty()) sql += " AND p.source_id = ?";
-  sql += " ORDER BY rank ASC, p.slug COLLATE BINARY ASC LIMIT ?";
+  // N38 D0.5 (P0-3): the FTS5 MATCH statement now lives behind the storage
+  // backend seam (IStorageBackend::fts_search / SqliteBackend::fts_search --
+  // same SQL text, same bind order, same backend-side query quoting moved
+  // verbatim). Rank-counter/score conversion stays here; the LIKE fallback
+  // path below is unchanged.
   try {
-    auto st = brain.db().prepare(sql);
-    int idx = 1;
-    st.bind_text(idx++, mq);
-    if (!source_id.empty()) st.bind_text(idx++, source_id);
-    st.bind_int(idx, limit);
+    auto rows = brain.db().fts_search(query, limit, source_id);
     int rank = 1;
-    while (st.step()) {
+    for (auto& r : rows) {
       SearchHit h;
-      h.page_id = st.column_int(0);
-      h.slug = st.column_text(1);
-      h.title = st.column_text(2);
-      h.type = st.column_text(3);
-      h.snippet = st.column_text(4);
+      h.page_id = r.page_id;
+      h.slug = std::move(r.slug);
+      h.title = std::move(r.title);
+      h.type = std::move(r.type);
+      h.snippet = std::move(r.snippet);
       h.fts_rank = static_cast<double>(rank);
-      h.score = -st.column_double(5);
+      h.score = -r.rank;
       out.push_back(std::move(h));
       ++rank;
     }
@@ -62,7 +37,10 @@ WHERE pages_fts MATCH ? AND p.deleted_at IS NULL
         "WHERE deleted_at IS NULL AND (title LIKE ? ESCAPE '\\' OR body LIKE ? ESCAPE '\\' "
         "OR slug LIKE ? ESCAPE '\\')";
     if (!source_id.empty()) sql2 += " AND source_id = ?";
-    sql2 += " ORDER BY updated_at DESC, slug COLLATE BINARY ASC LIMIT ?";
+    // n38: expression-level COLLATE removed for cross-backend SQL; the slug
+    // column carries BINARY collation at DDL level (SQLite) / "C" (PG schema),
+    // which is byte-identical to the previous expression form on SQLite.
+    sql2 += " ORDER BY updated_at DESC, slug ASC LIMIT ?";
     auto st2 = brain.db().prepare(sql2);
     // Escape LIKE wildcards so user input is literal.
     std::string esc = query;

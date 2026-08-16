@@ -14,6 +14,12 @@ class Brain {
 
   void open();
   void open_at(const std::string& db_path);
+  // N38 PG wiring: open this brain on the PostgreSQL store named by dsn
+  // (make_pg_backend + pg_ensure_schema + the v13 version gate). The env
+  // entry point is open()/open_at() with QBRAIN_PG_DSN set; this explicit
+  // variant serves the n38 test/harness seam. Fails loudly when the build
+  // has no PG backend (QBRAIN_WITH_PG off).
+  void open_pg(const std::string& dsn);
   void close();
   bool is_open() const;
 

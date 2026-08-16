@@ -1,0 +1,54 @@
+=== N38-C VERIFY — DSN run (integration group G1-G8 + product smoke green) ===
+Date: 2026-08-16
+Tree: same private verify tree as C-VERIFY-NODSN.txt (current merged A+B+parent fixes; database.obj rebuilt after parent's handle() null-guard)
+Build: scripts\build-tests-cl.ps1 -SkipProductionBuild (test objs rebuilt against the fresh production objs of the NO-DSN run)
+Env: QBRAIN_PG_TEST_DSN=postgresql://qbrain_test:<REDACTED>@127.0.0.1:5432/qbrain_n38_test (password out-of-band per DSN-PROVISIONED.json; never committed)
+Scope note: only the n38 integration group opens PG (explicit Brain::open_pg / Database::adopt_backend with the literal DSN); the other 39 tests run their unmodified SQLite path. Whole-suite PG mode is separate probe evidence (B-PGMODE-PROBE.txt), not this gate.
+Integration coverage asserted green: G1 txn atomicity (PG sequence semantics, dump "1:alpha;3:gamma;" documented), G2 advisory-lock busy classified+retryable, G3 prepared rebind (insert+select), G4 fts exact-term top-page + (source_id,slug) index-backed lookup, G5 embedding blob sha256 round-trip, G6 backup_to (pg_dump path per [N38-G6]), G7 empty-schema bring-up MAX(version)==13 + second-open no-op + stale-version reject, G8 constraint/syntax/busy pairwise distinguishable; SMOKE put/get byte-identical, search finds term, graph neighbors, submit/claim/complete job cycle.
+Result: 40 PASS / 0 FAIL; exit 0; no [SKIP-PG]
+Password scan: real DSN password occurrences in the full run log = 0 (verified before writing this file; password itself never written here)
+
+--- run tail: build gate + all registered test outcomes (INFO noise elided) ---
+TESTS_BUILD_OK
+[PASS] rrf
+[PASS] vector
+[PASS] chunker
+[PASS] extract
+[PASS] storage
+[PASS] mcp
+[PASS] rerank
+[PASS] minions
+[PASS] migration_v6
+[PASS] n12_dream
+[PASS] live_sync
+[PASS] n13
+[PASS] codeintel
+[PASS] analytics
+[PASS] n19
+[PASS] n20
+[PASS] n22
+[PASS] n23
+[PASS] n20_23
+[PASS] n24_25
+[PASS] n26_27
+[PASS] wave4
+[PASS] wave5
+[PASS] doctor
+[PASS] n14
+[PASS] n15
+[PASS] n16
+[PASS] n17
+[PASS] n18
+[PASS] n30_c_routing_storage
+[PASS] n30_b_auth_redaction
+[PASS] n31_c_negatives
+[PASS] n31_a_counts_mapping
+[PASS] n32_scan_integration
+[PASS] n34
+[PASS] n33_multimodal
+[PASS] n35_contract_suite
+[PASS] n36_token_scope
+[PASS] n37_packaging
+[N38-G6] backup path: pg_dump
+[N38-INTEGRATION] G1-G8 PG equivalents + product smoke green
+[PASS] n38_pg_backend

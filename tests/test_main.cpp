@@ -66,6 +66,7 @@ void test_n33_multimodal();
 void test_n35_contract_suite();
 void test_n36_token_scope();
 void test_n37_packaging();
+void test_n38_pg_backend();
 
 int main() {
   int failed = 0;
@@ -112,6 +113,7 @@ int main() {
       {"n35_contract_suite", test_n35_contract_suite},
       {"n36_token_scope", test_n36_token_scope},
       {"n37_packaging", test_n37_packaging},
+      {"n38_pg_backend", test_n38_pg_backend},
   };
   for (auto& t : tests) {
     try {

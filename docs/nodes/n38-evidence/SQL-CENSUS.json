@@ -1,0 +1,243 @@
+{
+  "node": "N38",
+  "artifact": "D0 SQL dialect census (plan deliverable 1, taxonomy pre-committed by audit disposition P0-3)",
+  "generated": "2026-08-15",
+  "method": {
+    "enumeration": "Every SQL statement literal executed through storage::Database (db.exec / db.prepare / run_in_txn / scalar helpers) across the pre-committed source list, counted per source-literal statement site (a multi-statement exec string counts each contained statement; statement texts reused at multiple call sites count each literal site). schema_sql.hpp kCanonicalSchemaSql is executed by migrate.cpp apply_migrations and is counted once at its own file (referenced, not double-counted under migrate.cpp). Transaction-control statements (BEGIN/COMMIT/ROLLBACK/SAVEPOINT/RELEASE) are counted because they are executed via db.exec. Statements inside trigger BODIES are part of their CREATE TRIGGER statement and not counted separately.",
+    "classification_rule": "portable = executable by PostgreSQL unchanged (parameter style handled globally, see global_notes). translatable = mechanical rewrite with a per-construct rewrite_rule (INSERT OR IGNORE, datetime(), last_insert_rowid(), json/sqlite functions, PRAGMA, sqlite_master, AUTOINCREMENT, COLLATE BINARY, temp. schema, typeof, BLOB DDL type). structural = requires abstraction; per P0-3 every structural item MUST cite one of the three D0.5 resolution points (fts_search / backup_to+backend_file_path / busy-mapping-in-D1); anything that cannot is UNRESOLVED.",
+    "verification_greps": "exec(/prepare( site counts per file cross-checked; construct frequency sweep cross-checked (INSERT OR IGNORE=21 literals of which 20 executable + 1 in a comment; datetime(=22 executable; last_insert_rowid()=7 call sites outside storage shims; AUTOINCREMENT=12; COLLATE=17 in SQL strings; PRAGMA=9 in SQL strings; sqlite_master=4)"
+  },
+  "totals": {
+    "files_enumerated": 27,
+    "files_with_sql": 12,
+    "files_zero_sql": 15,
+    "statement_count": 306,
+    "portable": 207,
+    "translatable_statements": 81,
+    "structural_statements": 18,
+    "unresolved_count": 0
+  },
+  "files": [
+    {
+      "file": "include/qbrain/storage/schema_sql.hpp",
+      "statement_count": 22,
+      "by_category": {
+        "portable": 9,
+        "translatable": [
+          { "construct": "PRAGMA foreign_keys=ON", "occurrences": 1, "rewrite_rule": "backend op / drop in PG open path" },
+          { "construct": "DEFAULT (datetime('now'))", "occurrences": 7, "rewrite_rule": "DEFAULT now() (timestamptz in D2 PG DDL)" },
+          { "construct": "INTEGER PRIMARY KEY AUTOINCREMENT", "occurrences": 4, "rewrite_rule": "BIGINT GENERATED ALWAYS AS IDENTITY" },
+          { "construct": "INSERT OR IGNORE", "occurrences": 2, "rewrite_rule": "INSERT ... ON CONFLICT DO NOTHING" },
+          { "construct": "BLOB column type (content_chunks.embedding)", "occurrences": 1, "rewrite_rule": "bytea" }
+        ],
+        "structural": [
+          { "item": "CREATE VIRTUAL TABLE pages_fts USING fts5(external content, content_rowid, unicode61)", "resolution_point": "fts_search" },
+          { "item": "CREATE TRIGGER pages_ai (FTS external-content insert sync)", "resolution_point": "fts_search" },
+          { "item": "CREATE TRIGGER pages_ad (FTS external-content delete sync)", "resolution_point": "fts_search" },
+          { "item": "CREATE TRIGGER pages_au (FTS external-content update sync)", "resolution_point": "fts_search" }
+        ]
+      }
+    },
+    {
+      "file": "src/qbrain/storage/migrate.cpp",
+      "statement_count": 77,
+      "note": "includes the 3 run_in_txn literals (BEGIN/COMMIT/ROLLBACK) reused by 10 migration blocks, the apply_v6 and v13 transaction literals, and check_schema_integrity; the v1 schema import itself is the 22 statements of schema_sql.hpp (not double-counted); backup_db_file_before_migration no longer holds SQL after D0.5 (delegates to backup_to)",
+      "by_category": {
+        "portable": 44,
+        "translatable": [
+          { "construct": "INSERT OR IGNORE INTO schema_version/sources", "occurrences": 14, "rewrite_rule": "ON CONFLICT DO NOTHING" },
+          { "construct": "DEFAULT (datetime('now')) in migration DDL", "occurrences": 9, "rewrite_rule": "DEFAULT now()" },
+          { "construct": "AUTOINCREMENT in migration DDL", "occurrences": 8, "rewrite_rule": "BIGINT GENERATED ALWAYS AS IDENTITY" },
+          { "construct": "PRAGMA table_info(<t>)", "occurrences": 3, "rewrite_rule": "backend op / information_schema.columns" },
+          { "construct": "PRAGMA index_xinfo(<i>)", "occurrences": 1, "rewrite_rule": "backend op / pg_index catalog" },
+          { "construct": "SELECT ... FROM sqlite_master (table/view/index existence + DDL text)", "occurrences": 4, "rewrite_rule": "pg_catalog.pg_class / information_schema rewrite" }
+        ],
+        "structural": [
+          { "item": "exec(\"BEGIN IMMEDIATE;\") (v12 rebuild, v13 hierarchy)", "occurrences": 2, "resolution_point": "busy-mapping-in-D1" }
+        ]
+      }
+    },
+    {
+      "file": "src/qbrain/storage/database.cpp",
+      "statement_count": 9,
+      "note": "added by D0.5: holds the moved FTS MATCH statement (fts_search) and the backup checkpoint PRAGMA (backup_to); open() PRAGMAs and transaction execs were already here since N35",
+      "by_category": {
+        "portable": 3,
+        "translatable": [
+          { "construct": "PRAGMA foreign_keys/journal_mode/synchronous in open()", "occurrences": 3, "rewrite_rule": "backend op (PG open path drops/adapts connection PRAGMAs)" }
+        ],
+        "structural": [
+          { "item": "exec(\"BEGIN IMMEDIATE;\") in begin_immediate_transaction()", "resolution_point": "busy-mapping-in-D1" },
+          { "item": "PRAGMA journal_mode=DELETE on backup destination inside backup_to()", "resolution_point": "backup_to+backend_file_path" },
+          { "item": "FTS5 MATCH statement (snippet/bm25/pages_fts MATCH, ORDER BY rank) inside fts_search()", "resolution_point": "fts_search" }
+        ]
+      }
+    },
+    {
+      "file": "src/qbrain/core/brain.cpp",
+      "statement_count": 95,
+      "note": "77 prepared + 18 exec (transaction control); ON CONFLICT ... DO UPDATE / excluded already used by put_page, add_link, save_config_value, put_raw_data (PG-native)",
+      "by_category": {
+        "portable": 84,
+        "translatable": [
+          { "construct": "INSERT OR IGNORE INTO sources/tags", "occurrences": 3, "rewrite_rule": "ON CONFLICT DO NOTHING" },
+          { "construct": "datetime('now', ?) in purge_deleted", "occurrences": 1, "rewrite_rule": "now() - ?::interval (modifier text '-N hours' -> interval)" },
+          { "construct": "last_insert_rowid() after INSERT (log_ingest, put_take)", "occurrences": 2, "rewrite_rule": "INSERT ... RETURNING id" },
+          { "construct": "COLLATE BINARY in ORDER BY (list_link_sources)", "occurrences": 1, "rewrite_rule": "COLLATE \"C\" (byte-order equivalent; rowid/order semantics must stay byte-identical per P2-3)" }
+        ],
+        "structural": [
+          { "item": "exec(\"BEGIN IMMEDIATE\") (remove_source, log_ingest, chronicle_backfill, remediate)", "occurrences": 4, "resolution_point": "busy-mapping-in-D1" }
+        ]
+      }
+    },
+    {
+      "file": "src/qbrain/ops/handlers.cpp",
+      "statement_count": 4,
+      "by_category": {
+        "portable": 4,
+        "translatable": [],
+        "structural": []
+      }
+    },
+    {
+      "file": "src/qbrain/jobs/minions.cpp",
+      "statement_count": 57,
+      "note": "25 exec (SAVEPOINT/RELEASE/ROLLBACK TO + transaction control) + 32 prepared; savepoint names are plain identifiers (PG-compatible)",
+      "by_category": {
+        "portable": 46,
+        "translatable": [
+          { "construct": "lock_until=datetime('now', ?) (claim_job), lock_until < datetime('now') (reclaim_stalled)", "occurrences": 2, "rewrite_rule": "now() + ?::interval / now() comparison" },
+          { "construct": "last_insert_rowid() (submit_job, replay_job_checked, send_job_message_checked, spawn_children loop)", "occurrences": 4, "rewrite_rule": "INSERT ... RETURNING id" },
+          { "construct": "CREATE TABLE ... DEFAULT (datetime('now')) (job_aggregation_fence)", "occurrences": 1, "rewrite_rule": "DEFAULT now()" },
+          { "construct": "INSERT OR IGNORE INTO job_aggregation_fence", "occurrences": 1, "rewrite_rule": "ON CONFLICT DO NOTHING" }
+        ],
+        "structural": [
+          { "item": "exec(\"BEGIN IMMEDIATE;\") (spawn_children, aggregate_if_ready, cancel_job_tree)", "occurrences": 3, "resolution_point": "busy-mapping-in-D1" }
+        ]
+      }
+    },
+    {
+      "file": "src/qbrain/files/store.cpp",
+      "statement_count": 4,
+      "by_category": {
+        "portable": 3,
+        "translatable": [
+          { "construct": "last_insert_rowid() after INSERT INTO file_index", "occurrences": 1, "rewrite_rule": "INSERT ... RETURNING id" }
+        ],
+        "structural": []
+      }
+    },
+    {
+      "file": "src/qbrain/search/hybrid.cpp",
+      "statement_count": 2,
+      "note": "post-D0.5: the FTS5 MATCH statement moved to IStorageBackend::fts_search (counted under database.cpp); remaining direct SQL = vector_search scan (plain SELECT with blob read) + the LIKE fallback",
+      "by_category": {
+        "portable": 1,
+        "translatable": [
+          { "construct": "ORDER BY ... slug COLLATE BINARY ASC (LIKE fallback)", "occurrences": 1, "rewrite_rule": "COLLATE \"C\"" }
+        ],
+        "structural": []
+      }
+    },
+    {
+      "file": "src/qbrain/graph/analytics.cpp",
+      "statement_count": 3,
+      "note": "find_anomalies / find_contradictions / find_experts: CTE + CASE + EXISTS bodies are portable; the statements are translatable only due to COLLATE BINARY",
+      "by_category": {
+        "portable": 0,
+        "translatable": [
+          { "construct": "COLLATE BINARY in ORDER BY and in CASE comparison arms", "occurrences": 14, "rewrite_rule": "COLLATE \"C\"" }
+        ],
+        "structural": []
+      }
+    },
+    {
+      "file": "src/qbrain/cycle/dream.cpp",
+      "statement_count": 21,
+      "note": "10 exec + 11 prepared literals (9 scalar COUNT literals run through scalar_count)",
+      "by_category": {
+        "portable": 3,
+        "translatable": [
+          { "construct": "temp.<table> schema qualification (DELETE/DROP/INSERT/scalar reads)", "occurrences": 15, "rewrite_rule": "pg_temp.<table> (CREATE TEMP TABLE itself is portable)" },
+          { "construct": "deleted_at < datetime('now', '-' || ? || ' hours')", "occurrences": 2, "rewrite_rule": "now() - (?::text || ' hours')::interval style rewrite" }
+        ],
+        "structural": [
+          { "item": "exec(\"BEGIN IMMEDIATE;\") (purge phase)", "resolution_point": "busy-mapping-in-D1" }
+        ]
+      }
+    },
+    {
+      "file": "src/qbrain/schema/packs.cpp",
+      "statement_count": 8,
+      "by_category": {
+        "portable": 6,
+        "translatable": [
+          { "construct": "typeof(type) guard + COLLATE BINARY in read_schema_stats", "occurrences": 1, "rewrite_rule": "pg_typeof(x)::text (yields 'text' as today) / COLLATE \"C\"" }
+        ],
+        "structural": [
+          { "item": "exec(\"BEGIN IMMEDIATE;\") (reload_pack)", "resolution_point": "busy-mapping-in-D1" }
+        ]
+      }
+    },
+    {
+      "file": "src/qbrain/schema/lint.cpp",
+      "statement_count": 4,
+      "by_category": {
+        "portable": 4,
+        "translatable": [],
+        "structural": []
+      }
+    },
+    { "file": "src/qbrain/search/vector.cpp", "statement_count": 0, "note": "no direct SQL; operates on rows returned by search-layer callers" },
+    { "file": "src/qbrain/search/rrf.cpp", "statement_count": 0, "note": "pure in-memory fusion" },
+    { "file": "src/qbrain/search/rerank.cpp", "statement_count": 0, "note": "no storage access" },
+    { "file": "src/qbrain/graph/extract.cpp", "statement_count": 0, "note": "routes through Brain::get_links_* / add_link" },
+    { "file": "src/qbrain/graph/traverse.cpp", "statement_count": 0, "note": "routes through Brain link readers" },
+    { "file": "src/qbrain/ingest/chunker.cpp", "statement_count": 0, "note": "text processing only" },
+    { "file": "src/qbrain/ingest/import.cpp", "statement_count": 0, "note": "routes through Brain::put_page/replace_extracted_links" },
+    { "file": "src/qbrain/ingest/markdown.cpp", "statement_count": 0, "note": "markdown parsing only" },
+    { "file": "src/qbrain/service/inbox_watch.cpp", "statement_count": 0, "note": "filesystem watch; storage via Brain API" },
+    { "file": "src/qbrain/service/live_sync.cpp", "statement_count": 0, "note": "storage via Brain API" },
+    { "file": "src/qbrain/codeintel/scan.cpp", "statement_count": 0, "note": "no direct SQL (snippet(/substr( hits are C++ helpers on std::string)" },
+    { "file": "src/qbrain/codeintel/astlite.cpp", "statement_count": 0, "note": "in-memory AST" },
+    { "file": "src/qbrain/files/image_meta.cpp", "statement_count": 0, "note": "image header sniffing only" },
+    { "file": "src/qbrain/core/types.cpp", "statement_count": 0, "note": "no storage access" },
+    { "file": "src/qbrain/ops/registry.cpp", "statement_count": 0, "note": "op registry only" }
+  ],
+  "global_notes": [
+    "Parameter style: all statements bind positionally ('?' / '?1'); the IStatement bind-by-index contract is the abstraction point (PG backend rewrites markers to $N at prepare). Recorded once globally, not per statement, per P0-3 taxonomy.",
+    "Blob transport: embedding blobs are packed/unpacked in the app layer (search::pack_f32/unpack_f32); only the column type (BLOB -> bytea) is a DDL concern.",
+    "Text timestamps: created_at/updated_at/lock_until are TEXT UTC strings written by util::utc_now() from the app layer; PG D2 uses timestamptz and the comparison/arithmetic rewrites above must keep byte-identical ordering semantics (P2-3).",
+    "changes()/last_insert_rowid(): changes() maps to PG row-count (backend interface already returns int); last_insert_rowid() occurrences are enumerated above as RETURNING rewrites.",
+    "sqlite_sequence / AUTOINCREMENT: no production statement reads sqlite_sequence (comments only); identity mapping is DDL-level (D2)."
+  ],
+  "structural_resolution_summary": {
+    "fts_search": {
+      "statements": 5,
+      "items": [
+        "schema_sql.hpp: CREATE VIRTUAL TABLE pages_fts (fts5 external content) + 3 sync triggers",
+        "database.cpp: FTS5 MATCH/snippet/bm25 SELECT inside SqliteBackend::fts_search (production call path: search/hybrid.cpp routes through the seam since D0.5)"
+      ]
+    },
+    "backup_to+backend_file_path": {
+      "statements": 1,
+      "items": [
+        "database.cpp: PRAGMA journal_mode=DELETE checkpoint inside backup_to (formerly migrate.cpp sqlite3_backup_* + sqlite3_db_filename call sites, refactored to the interface by D0.5)"
+      ]
+    },
+    "busy-mapping-in-D1": {
+      "statements": 12,
+      "items": [
+        "BEGIN IMMEDIATE literals: brain.cpp x4, minions.cpp x3, dream.cpp x1, packs.cpp x1, migrate.cpp x2, database.cpp begin_immediate_transaction x1",
+        "Lock/busy classification (SQLITE_BUSY retry loops, busy timeout) maps to PG lock_timeout/serialization_failure per plan D1"
+      ]
+    }
+  },
+  "split_determination": {
+    "rule": "P0-3 (pre-committed, mechanical): every structural item must be resolved by one of the three D0.5 extension points; any item that cannot be -> UNRESOLVED -> scope partial; all resolved -> scope full.",
+    "scope": "full",
+    "unresolved_count": 0,
+    "rationale": "All 18 structural statements (5 FTS, 1 backup, 12 busy/lock) cite a resolution point: fts_search (D0.5), backup_to+backend_file_path (D0.5), busy-mapping-in-D1. Zero UNRESOLVED items; the census rule therefore yields full.",
+    "separate_pre_commitment": "Plan P0-2 (DSN absent at approval -> locked partial) is an independent lock evaluated by the parent agent at the implementation gate from the approval-time DSN record; it is not a census input and no DSN was provided to this gate subagent."
+  }
+}

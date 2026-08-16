@@ -13,11 +13,24 @@
 
 namespace qbrain::storage {
 
+// N38-B (SQL census, guarded-branch rewrites): backend discriminator for the
+// dialect-guarded call sites (PRAGMA/sqlite_master/typeof introspection in
+// migrate.cpp, packs.cpp). sqlite is the default and historical backend;
+// postgres is reported once the N38 PG backend is installed through the
+// storage facade. Kept here (not backend.hpp) so the discriminator is part
+// of the Database vocabulary every caller already includes.
+enum class BackendKind { sqlite, postgres };
+
 // N35 D1: Database keeps its exact pre-N35 public API; the native storage
 // state now lives behind the IStorageBackend contract (backend.hpp), to which
 // every method delegates one-for-one. The SQLite adapter (SqliteBackend,
 // src/qbrain/storage/database.cpp) is a line-by-line extraction of the former
 // method bodies -- zero logic change.
+//
+// N38 D0.5 (plan P0-1): backend_file_path / backup_to / fts_search forward
+// to the new IStorageBackend capabilities, and handle() is no longer part of
+// the contract -- it remains here as a documented sqlite test hook
+// (authorizer/serialize/update_hook); production code must not call it.
 class Database {
  public:
   Database() = default;
@@ -30,11 +43,31 @@ class Database {
   void open(const std::string& path);
   void close();
   bool is_open() const { return backend_ && backend_->is_open(); }
-  sqlite3* handle() const { return backend_ ? backend_->handle() : nullptr; }
+
+  // sqlite test hook (N38 D0.5): raw connection of the default SQLite
+  // backend only; NOT part of the IStorageBackend contract. Tests use it for
+  // authorizer/serialize/update_hook seams.
+  sqlite3* handle() const;
 
   void exec(std::string_view sql);
   int64_t last_insert_rowid() const;
   int changes() const;
+
+  // N38-B: which concrete backend this facade holds. sqlite also answers for
+  // a moved-from (null) Database -- the default-path answer.
+  BackendKind backend_kind() const;
+
+  // N38-B wiring seam (Brain::open_pg / n38 harness): arm this facade with
+  // an externally constructed, already-open backend (PG mode), closing any
+  // backend it held first. Generic by design -- no PG types cross this
+  // boundary, so database.cpp stays libpq-free.
+  void adopt_backend(std::unique_ptr<IStorageBackend> backend);
+
+  // N38 D0.5 forwarding shims (see backend.hpp for semantics).
+  std::string backend_file_path() const;
+  bool backup_to(const std::string& dest);
+  std::vector<FtsRow> fts_search(const std::string& query, int limit,
+                                 const std::string& source_id);
 
   class Statement {
    public:

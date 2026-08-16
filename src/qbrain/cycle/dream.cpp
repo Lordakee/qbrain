@@ -50,10 +50,11 @@ int64_t scalar_count(Brain& brain, std::string_view sql) {
 }
 
 int64_t eligible_page_count(Brain& brain, int retention_hours) {
+  // n38: datetime('now', '-' || ? || ' hours') -> C++-computed UTC cutoff
+  // bound as a parameter (dialect-free SQL; comparison semantics unchanged).
   auto st = brain.db().prepare(
-      "SELECT COUNT(*) FROM pages WHERE deleted_at IS NOT NULL AND "
-      "deleted_at < datetime('now', '-' || ? || ' hours')");
-  st.bind_int(1, retention_hours);
+      "SELECT COUNT(*) FROM pages WHERE deleted_at IS NOT NULL AND deleted_at < ?");
+  st.bind_text(1, util::utc_now_offset(static_cast<long long>(retention_hours) * -3600));
   return st.step() ? st.column_int(0) : 0;
 }
 
@@ -164,64 +165,71 @@ PhaseResult run_purge(Brain& brain, bool dry, int retention_hours) {
     try {
       db.exec("BEGIN IMMEDIATE;");
       in_transaction = true;
+      // n38: every reference below drops the SQLite-only "temp." schema
+      // qualifier: both SQLite (temp before main) and PostgreSQL (pg_temp
+      // first in the implicit search path) resolve the unqualified name to
+      // this session's qbrain_dream_purge_targets, and no persistent table
+      // of that name exists, so behavior is identical.
       db.exec("CREATE TEMP TABLE IF NOT EXISTS qbrain_dream_purge_targets ("
               "id INTEGER PRIMARY KEY, source_id TEXT NOT NULL, slug TEXT NOT NULL);");
-      db.exec("DELETE FROM temp.qbrain_dream_purge_targets;");
+      db.exec("DELETE FROM qbrain_dream_purge_targets;");  // n38: temp. -> unqualified
       {
+        // n38: datetime('now', '-' || ? || ' hours') -> C++-computed UTC
+        // cutoff bound as a parameter (dialect-free SQL).
         auto targets = db.prepare(
-            "INSERT INTO temp.qbrain_dream_purge_targets(id, source_id, slug) "
+            "INSERT INTO qbrain_dream_purge_targets(id, source_id, slug) "
             "SELECT id, source_id, slug FROM pages "
-            "WHERE deleted_at IS NOT NULL AND "
-            "deleted_at < datetime('now', '-' || ? || ' hours')");
-        targets.bind_int(1, retention_hours);
+            "WHERE deleted_at IS NOT NULL AND deleted_at < ?");
+        targets.bind_text(1, util::utc_now_offset(
+                                  static_cast<long long>(retention_hours) * -3600));
         targets.step_done();
       }
 
       const int64_t pages = scalar_count(
-          brain, "SELECT COUNT(*) FROM temp.qbrain_dream_purge_targets");
+          brain, "SELECT COUNT(*) FROM qbrain_dream_purge_targets");
       const int64_t chunks = scalar_count(
           brain, "SELECT COUNT(*) FROM content_chunks WHERE page_id IN "
-                 "(SELECT id FROM temp.qbrain_dream_purge_targets)");
+                 "(SELECT id FROM qbrain_dream_purge_targets)");
       const int64_t tags = scalar_count(
           brain, "SELECT COUNT(*) FROM tags WHERE page_id IN "
-                 "(SELECT id FROM temp.qbrain_dream_purge_targets)");
+                 "(SELECT id FROM qbrain_dream_purge_targets)");
       const int64_t versions = scalar_count(
           brain, "SELECT COUNT(*) FROM page_versions WHERE page_id IN "
-                 "(SELECT id FROM temp.qbrain_dream_purge_targets)");
+                 "(SELECT id FROM qbrain_dream_purge_targets)");
       const int64_t facts = scalar_count(
           brain, "SELECT COUNT(*) FROM facts WHERE page_id IN "
-                 "(SELECT id FROM temp.qbrain_dream_purge_targets)");
+                 "(SELECT id FROM qbrain_dream_purge_targets)");
       const int64_t links = scalar_count(
           brain, "SELECT COUNT(*) FROM links l WHERE EXISTS ("
-                 "SELECT 1 FROM temp.qbrain_dream_purge_targets t "
+                 "SELECT 1 FROM qbrain_dream_purge_targets t "
                  "WHERE t.source_id=l.source_id AND "
                  "(t.slug=l.from_slug OR t.slug=l.to_slug))");
 
       db.exec("DELETE FROM facts WHERE page_id IN "
-              "(SELECT id FROM temp.qbrain_dream_purge_targets);");
+              "(SELECT id FROM qbrain_dream_purge_targets);");
       const int64_t facts_deleted = db.changes();
       db.exec("DELETE FROM links WHERE EXISTS ("
-              "SELECT 1 FROM temp.qbrain_dream_purge_targets t "
+              "SELECT 1 FROM qbrain_dream_purge_targets t "
               "WHERE t.source_id=links.source_id AND "
               "(t.slug=links.from_slug OR t.slug=links.to_slug));");
       const int64_t links_deleted = db.changes();
       db.exec("DELETE FROM pages WHERE id IN "
-              "(SELECT id FROM temp.qbrain_dream_purge_targets);");
+              "(SELECT id FROM qbrain_dream_purge_targets);");
       const int64_t pages_deleted = db.changes();
 
       const int64_t remaining_children =
           scalar_count(brain, "SELECT COUNT(*) FROM content_chunks WHERE page_id IN "
-                              "(SELECT id FROM temp.qbrain_dream_purge_targets)") +
+                              "(SELECT id FROM qbrain_dream_purge_targets)") +
           scalar_count(brain, "SELECT COUNT(*) FROM tags WHERE page_id IN "
-                              "(SELECT id FROM temp.qbrain_dream_purge_targets)") +
+                              "(SELECT id FROM qbrain_dream_purge_targets)") +
           scalar_count(brain, "SELECT COUNT(*) FROM page_versions WHERE page_id IN "
-                              "(SELECT id FROM temp.qbrain_dream_purge_targets)");
+                              "(SELECT id FROM qbrain_dream_purge_targets)");
       if (pages_deleted != pages || facts_deleted != facts || links_deleted != links ||
           remaining_children != 0) {
         throw std::runtime_error("purge row-count mismatch");
       }
 
-      db.exec("DROP TABLE temp.qbrain_dream_purge_targets;");
+      db.exec("DROP TABLE qbrain_dream_purge_targets;");  // n38: temp. -> unqualified
       db.exec("COMMIT;");
       in_transaction = false;
 
@@ -240,7 +248,7 @@ PhaseResult run_purge(Brain& brain, bool dry, int retention_hours) {
         }
       }
       try {
-        db.exec("DROP TABLE IF EXISTS temp.qbrain_dream_purge_targets;");
+        db.exec("DROP TABLE IF EXISTS qbrain_dream_purge_targets;");  // n38: temp. -> unqualified
       } catch (...) {
       }
       pr.status = "fail";

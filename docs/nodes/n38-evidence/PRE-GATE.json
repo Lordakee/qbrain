@@ -1,0 +1,19 @@
+{
+  "node": "N38",
+  "captured_at": "2026-08-16T06:23:49.585Z",
+  "baseline": "9d4a54c (project complete; all N38 deliverables absent — verify git show 9d4a54c --stat)",
+  "plan_sha256": "af41219d9548566506bb56d1dafd391b7e723c4af56f80edb60ff927a671a909",
+  "plan_audit_sha256": "9ad89b07bbbfa0352cc0d2e2f624f0ea3b0615e379f7c4d98db5da083056b350",
+  "scoped_files": {
+    "include/qbrain/storage/backend.hpp": "ef8b7639b713bf1658f35ff46f19c2b4b39617de43a028cbff8c61a7e3d2d30d",
+    "src/qbrain/storage/database.cpp": "131397f83ff0631e1b5cf29054661102564ef94e2880f1adb104da312f4370c9",
+    "src/qbrain/storage/migrate.cpp": "fd587ecf3eb35f2f83d5134e500dcb21249805ca64121993b33eea443c3d380d",
+    "src/qbrain/search/hybrid.cpp": "2a74917efc8e6ceffd8800ab2548fd4ce3c1065671d53dc174bc4bd190b74508",
+    "CMakeLists.txt": "4cec115cf769f085d6df1e9369f2d8da74c41480a082fb19fd2505e42a24f42c"
+  },
+  "deliverables_absence_proof": {
+    "src/qbrain/storage/pg_backend.cpp": "expected-absent",
+    "docs/nodes/n38-evidence/SQL-CENSUS.json": "expected-absent",
+    "tests/test_n38.cpp": "expected-absent"
+  }
+}

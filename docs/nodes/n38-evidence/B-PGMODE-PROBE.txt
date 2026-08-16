@@ -1,0 +1,175 @@
+N38-B PG-MODE PROBE — SQL dialect bilingualization + Brain PG wiring
+=====================================================================
+Date: 2026-08-15/16 (session evidence)
+Tree: private verification copy at %TEMP%\n38b-verify (canonical
+scripts/build-tests-cl.ps1 path, MSVC 2022 x64, QBRAIN_WITH_PG=ON via
+D:\PostgreSQL\18, delay-loaded libpq; LIB env extended with the PG lib dir
+because scripts/build-cl.ps1 omits /LIBPATH for libpq.lib — see findings).
+PG target: host=127.0.0.1 port=5432 dbname=qbrain_n38_test user=qbrain_test
+(password supplied via env at run time only; never written to this file).
+No test files were modified by slice B (tests/ changes in the tree are
+slice C's n38 registration; CMakeLists.txt test entry likewise).
+
+---------------------------------------------------------------------
+1) CANONICAL GATE (SQLite default path, no DSN) — AA1
+---------------------------------------------------------------------
+Run: %TEMP%\n38b-verify-run5.log  (full rebuild via build-tests-cl.ps1)
+Result: BUILD_OK + TESTS_BUILD_OK; 40 [PASS], 0 [FAIL]:
+  39 pre-existing tests ALL PASS with ZERO test modifications
+  (equivalence proof for every n38 rewrite), plus n38_pg_backend PASS with
+  the integration group explicitly "[SKIP-PG] no QBRAIN_PG_TEST_DSN".
+Interim honesty note: runs 1-3 of this verification caught two real
+regressions introduced and fixed inside slice B before this final run —
+(a) a C++ comment accidentally placed inside an analytics.cpp SQL raw
+string (broke `analytics` + `n18` with `near "/": syntax error`), and
+(b) a `Database::BackendKind` qualification error in database.cpp. Both
+were fixed; run5 is the clean canonical result.
+
+Tail:
+[PASS] n36_token_scope
+[n37] packaging assertions all passed
+[PASS] n37_packaging
+[SKIP-PG] no QBRAIN_PG_TEST_DSN — integration group not run (unit group above still asserted)
+[PASS] n38_pg_backend
+
+---------------------------------------------------------------------
+2) n38 INTEGRATION GROUP (QBRAIN_PG_TEST_DSN set, suite otherwise SQLite)
+---------------------------------------------------------------------
+Run: %TEMP%\n38b-pg-integration.log
+Result: 39 PASS, 1 FAIL — n38_pg_backend integration group RAN on PG and
+failed in G1 at test_n38.cpp:411:
+  CHECK failed: n38_dump(a, "n38_txn") == "1:alpha;2:gamma;"
+Post-failure psql inspection of the leftover table:
+  n38_txn = {1:alpha, 3:gamma}
+i.e. INSERT alpha committed; BEGIN/INSERT beta/ROLLBACK rolled beta back;
+BEGIN/INSERT gamma/COMMIT committed — transaction semantics CORRECT. The
+failure is the hard-coded expected string "2:gamma": PG sequences are not
+transactional, so rolled-back beta permanently consumed id 2 and gamma got
+id 3. This is a test-expectation gap in slice C's test (sequence-gap
+assumption), not a backend or wiring defect. G1 never completing blocked
+G2..G8 and the in-test product smoke from running in this evidence run.
+
+---------------------------------------------------------------------
+3) PG-MODE PROBE (QBRAIN_PG_DSN set for the WHOLE suite — every Brain
+   opens PG through slice B's Brain::open/open_at wiring; one shared PG
+   database, so cross-test row pollution is expected)
+---------------------------------------------------------------------
+Run: %TEMP%\n38b-pgmode-probe2.log  (after the COALESCE(lock_until,'')
+CAST hardening; the first probe run additionally showed
+`invalid input syntax for type timestamp with time zone: ""` in
+minions/n14/n34 — fixed in slice B, see §5)
+
+GREEN in PG mode (13):
+  rrf, vector, chunker, extract, rerank, live_sync, codeintel, analytics,
+  n24_25, wave5, doctor, n36_token_scope, n37_packaging, n38_pg_backend(unit)
+
+  Slice-B-relevant greens and what they prove:
+  - doctor: check_schema_integrity fully green on PG — the guarded
+    information_schema/pg_indexes/pg_catalog branches in migrate.cpp work
+    (schema_version 13, critical tables/indexes/columns/identity shape OK).
+  - analytics: all three analytics statements run on PG after the
+    per-expression COLLATE BINARY removal.
+  - n24_25: file store on PG — upload/list/file_url incl. the
+    last_insert_rowid() call site backed by A's RETURNING tracking.
+  - live_sync, wave5: Brain write/read paths (put/get/list) on PG.
+
+RED in PG mode (27) with attribution (first error each):
+  test-side SQLite-isms / fixtures / shared-DB assumptions (expected per
+  task brief "many tests use SQLite-specific fixtures"):
+    minions        — test's own `UPDATE jobs SET lock_until=datetime('now','-5 seconds')` (test_minions.cpp:153/288)
+    n12_dream      — test's own `deleted_at=datetime('now', ?)` (test_n12_dream.cpp:201)
+    migration_v6   — legacy SQLite v5 fixture DB never exists in PG mode
+    n13            — shared-DB row-count assumption (pages from earlier tests)
+    n14            — "snapshot schema discovery failed" (test helper scans sqlite-side state)
+    n15, n17       — test drives PRAGMA ... directly
+    n16, n18, n20, n22, n23 — "snapshot schema discovery failed" (test-side)
+    n34            — test queries sqlite_master directly
+    n19            — asserts brain.db_path() == SQLite file path (PG mode reports the sanitized host/dbname descriptor by design)
+    n30_c, n30_b, n31_c, mcp — MCP roundtrips whose control write ops fail on the backend gaps below
+  A-slice backend gaps (NOT slice B):
+    storage, n26_27 — `exec("BEGIN IMMEDIATE")` literals are not translated
+                      by PgBackend::exec (only the interface method maps them);
+                      census structural item busy-mapping-in-D1
+    n32             — libpq "synchronous command execution functions are not
+                      allowed in pipeline mode" (PgBackend call-sequence issue)
+  frozen-file residual (search/hybrid.cpp is FROZEN for slice B):
+    wave4, n31_a, n35 — `... slug COLLATE BINARY ASC ...` (hybrid.cpp:40,
+                      census translatable "COLLATE BINARY -> COLLATE \"C\"",
+                      awaiting owner-side one-line fix)
+  cross-slice schema/SQL interplay (not on B's census worklist):
+    n20_23         — `substr(updated_at,6,5)` chronicle SQL: portable for TEXT
+                      columns, but A's D2 schema made timestamps timestamptz;
+                      substr(timestamptz,...) does not exist
+    n33_multimodal — image bytes (0x89 PNG header) reaching the server through
+                      a text-typed bind ("invalid byte sequence for UTF8")
+
+---------------------------------------------------------------------
+4) PRODUCT CLI SMOKE ON PG (env wiring end-to-end, fresh PG schema)
+---------------------------------------------------------------------
+Commands run with QBRAIN_PG_DSN in env (password omitted here):
+  qbrain put --slug n38b/pg-smoke --title "N38B PG smoke" --file <md> --type note
+    -> "put n38b/pg-smoke id=1"                                   [GREEN]
+  qbrain get n38b/pg-smoke
+    -> body/title round-trip byte-identical                       [GREEN]
+  qbrain doctor
+    -> "overall": "OK", "schema": "OK", schema_version 13,
+       stats pages=1 chunks=1 (via Brain::health -> check_schema_integrity
+       PG branches)                                               [GREEN]
+  psql row check (plan AA4 "psql visible rows"):
+    1|default|n38b/pg-smoke|note|N38B PG smoke ; MAX(schema_version)=13
+  qbrain search "xylophonequantum" --no-vector
+    -> rc=2, error `syntax error at or near "BINARY"`             [RED —
+       hybrid.cpp:40 LIKE-fallback (frozen file); note the FTS seam must have
+       thrown first, because hybrid falls back to LIKE only on fts_search
+       failure — two stacked non-B issues: A's PgBackend::fts_search throw
+       (root cause not reached by this probe; masked by the fallback error)
+       + the frozen COLLATE BINARY]
+  qbrain graph n38b/pg-smoke
+    -> same hybrid.cpp COLLATE BINARY statement (error surfaced, rc=0)
+                                                                  [RED — same]
+job cycle (submit/claim/complete) on PG: exercised by the n38 integration
+test's smoke section, which this evidence run could not reach past G1
+(§2). Direct CLI job submission is not reachable without embedding
+credentials. Slice-B-side prerequisites for the job cycle ARE green in PG
+mode (submit/claim/complete/reclaim SQL incl. the bound-parameter lock
+rewrites; the earlier timestamptz COALESCE blocker was found by this probe
+and fixed — §5).
+
+---------------------------------------------------------------------
+5) SLICE-B FIXES TRIGGERED BY THE PROBE (beyond the census worklist)
+---------------------------------------------------------------------
+- minions.cpp kSelectCols + progress select: COALESCE(lock_until,'') ->
+  COALESCE(CAST(lock_until AS TEXT),'') (identity on SQLite; required on
+  PG where lock_until is timestamptz and a bare '' cannot cast). The
+  census had classified these statements portable under the TEXT-column
+  assumption; A's timestamptz DDL falsified that. Recorded here as a
+  census erratum.
+- schema/001_init.sql was STALE vs the committed schema_sql.hpp (jobs
+  table missing lock_token/error_text columns). Synced before
+  regeneration so the canonical v1 DDL stays byte-identical to the
+  committed header apart from the sanctioned n38 changes.
+- scripts/gen-schema-header.ps1 under Windows PowerShell 5.1 emits a BOM
+  and mangles the em dash; regenerated with pwsh (PowerShell 7) instead.
+- scripts/build-cl.ps1 / build-tests-cl.ps1 link libpq.lib without
+  /LIBPATH:"<PgRoot>\lib" (LNK1181). Worked around in the private tree
+  via LIB=<PgRoot>\lib; repo fix belongs to A's build wiring.
+
+---------------------------------------------------------------------
+6) COORDINATION ITEMS FOR PARENT / A / C (from this probe)
+---------------------------------------------------------------------
+A:  - exec("BEGIN IMMEDIATE") translation (or document exec-path BEGIN
+      IMMEDIATE as SQLite-only) — blocks storage/n26_27 and cascades into
+      MCP write-op tests in PG mode.
+    - PgBackend::fts_search throws on the CLI smoke path (root cause
+      masked by the hybrid fallback); pipeline-mode error in n32.
+A/PARENT: hybrid.cpp:40 (frozen) `slug COLLATE BINARY ASC` — apply the
+      census rewrite to COLLATE "C" (one line) to unblock PG search/graph.
+A/PLAN: chronicle substr(<ts>,...) vs timestamptz columns (n20_23) —
+      either keep timestamp columns TEXT on PG (census global-note
+      byte-identity reading) or cast at the chronicle call sites (B can do
+      the latter on request; not on the census worklist).
+C:    - test_n38.cpp:411 expects "2:gamma" — PG sequences are not
+      transactional; expect "1:alpha;3:gamma;" (or assert contents
+      order-insensitively w.r.t. gaps).
+B (done): backend_kind()/adopt_backend seam, Brain::open_pg, n38_open_pg*
+      seams, all census rewrites per the report, COALESCE CAST hardening.

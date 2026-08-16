@@ -32,6 +32,18 @@ static void run_in_txn(Database& db, const std::string& sql) {
 }
 
 static bool jobs_has_column(Database& db, const std::string& column_name) {
+  // n38 (census: PRAGMA table_info x3 -> guarded branch): the PG branch reads
+  // information_schema.columns; the SQLite branch keeps PRAGMA table_info
+  // byte-identically (check_schema_integrity and the migration guards below
+  // depend on its exact result shape).
+  if (db.backend_kind() == BackendKind::postgres) {
+    auto st = db.prepare(
+        "SELECT 1 FROM information_schema.columns "
+        "WHERE table_schema='public' AND table_name='jobs' AND column_name=? "
+        "LIMIT 1");
+    st.bind_text(1, column_name);
+    return st.step();
+  }
   auto st = db.prepare("PRAGMA table_info(jobs)");
   while (st.step()) {
     if (st.column_text(1) == column_name) return true;
@@ -41,6 +53,18 @@ static bool jobs_has_column(Database& db, const std::string& column_name) {
 
 static bool table_has_column(Database& db, const std::string& table,
                               const std::string& column_name) {
+  // n38 (census: PRAGMA table_info -> guarded branch): same split as
+  // jobs_has_column; the SQLite branch keeps the historical interpolation
+  // (table names are internal constants).
+  if (db.backend_kind() == BackendKind::postgres) {
+    auto st = db.prepare(
+        "SELECT 1 FROM information_schema.columns "
+        "WHERE table_schema='public' AND table_name=? AND column_name=? "
+        "LIMIT 1");
+    st.bind_text(1, table);
+    st.bind_text(2, column_name);
+    return st.step();
+  }
   auto st = db.prepare("PRAGMA table_info(" + table + ")");
   while (st.step()) {
     if (st.column_text(1) == column_name) return true;
@@ -56,6 +80,24 @@ static std::string ascii_upper(std::string value) {
 }
 
 static bool sqlite_table_exists(Database& db, const std::string& name) {
+  // n38 (census: sqlite_master x4 -> guarded branch): table/view existence.
+  // PG branch reads information_schema.tables; the special FTS name
+  // pages_fts maps to its PG resolution point (pages_ftv generated tsvector
+  // column + idx_pages_ftv GIN index, N38-A DDL) because PG has no FTS5
+  // virtual table.
+  if (db.backend_kind() == BackendKind::postgres) {
+    if (name == "pages_fts") {
+      auto fts = db.prepare(
+          "SELECT 1 FROM pg_indexes "
+          "WHERE schemaname='public' AND indexname='idx_pages_ftv' LIMIT 1");
+      return fts.step();
+    }
+    auto st = db.prepare(
+        "SELECT 1 FROM information_schema.tables "
+        "WHERE table_schema='public' AND table_name=? LIMIT 1");
+    st.bind_text(1, name);
+    return st.step();
+  }
   auto st = db.prepare(
       "SELECT 1 FROM sqlite_master WHERE type IN ('table','view') AND name=? LIMIT 1");
   st.bind_text(1, name);
@@ -70,7 +112,7 @@ static void apply_v6_minion_migration(Database& db) {
     if (!jobs_has_column(db, "error_text"))
       db.exec("ALTER TABLE jobs ADD COLUMN error_text TEXT DEFAULT NULL;");
     db.exec("CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status, type);");
-    db.exec("INSERT OR IGNORE INTO schema_version(version) VALUES (6);");
+    db.exec("INSERT INTO schema_version(version) VALUES (6) ON CONFLICT DO NOTHING;");  // n38: INSERT OR IGNORE -> ON CONFLICT DO NOTHING
     db.exec("COMMIT;");
   } catch (...) {
     try {
@@ -82,47 +124,37 @@ static void apply_v6_minion_migration(Database& db) {
 }
 
 // N34 D1: pre-migration file backup. For an already-populated database whose
-// version is about to advance, copy the database file (via the SQLite online
-// backup API, which includes committed WAL content) next to the original as
-// "<db>.pre-v13.bak" so the node rollback path is "restore the backup file"
-// (column leftovers after restore are harmless: ADD COLUMN only). In-memory
-// and anonymous temporary databases have no file to back up and are skipped.
-// Backup failure is fatal: the migration contract requires a rollback artifact
-// to exist before any DDL runs.
+// version is about to advance, copy the database file (via the backend-native
+// backup capability, which includes committed WAL content) next to the
+// original as "<db>.pre-v13.bak" so the node rollback path is "restore the
+// backup file" (column leftovers after restore are harmless: ADD COLUMN
+// only). In-memory and anonymous temporary databases have no file to back up
+// and are skipped. Backup failure is fatal: the migration contract requires a
+// rollback artifact to exist before any DDL runs.
+// N38 D0.5 (P0-1): file location and backup now go through the
+// IStorageBackend interface (backend_file_path / backup_to) instead of the
+// removed handle() escape hatch; behavior is byte-identical (the backend
+// methods hold the verbatim former bodies, including the fatal error texts
+// and the :memory: skip via the empty file path).
 static void backup_db_file_before_migration(Database& db, const char* suffix) {
-  const char* main_file = sqlite3_db_filename(db.handle(), "main");
-  if (!main_file || !*main_file) return;  // :memory: / temp store
-  const std::string dest = std::string(main_file) + "." + suffix + ".bak";
-  sqlite3* to = nullptr;
-  if (sqlite3_open(dest.c_str(), &to) != SQLITE_OK) {
-    if (to) sqlite3_close(to);
-    throw std::runtime_error("pre-migration backup open failed: " + dest);
-  }
-  bool ok = true;
-  sqlite3_backup* bak = sqlite3_backup_init(to, "main", db.handle(), "main");
-  if (bak) {
-    const int rc = sqlite3_backup_step(bak, -1);
-    sqlite3_backup_finish(bak);
-    ok = rc == SQLITE_DONE && sqlite3_errcode(to) == SQLITE_OK;
-  } else {
-    ok = false;
-  }
-  // The backup image inherits the source WAL mode; checkpoint it back to a
-  // rollback journal so the .bak is one self-contained file (no -wal/-shm
-  // sidecars to lose) and the rollback path is a plain file restore.
-  if (ok) {
-    char* err = nullptr;
-    const int rc = sqlite3_exec(to, "PRAGMA journal_mode=DELETE;", nullptr, nullptr, &err);
-    if (err) sqlite3_free(err);
-    ok = rc == SQLITE_OK;
-  }
-  const int close_rc = sqlite3_close(to);
-  if (!ok || close_rc != SQLITE_OK) {
-    throw std::runtime_error("pre-migration backup failed: " + dest);
-  }
+  const std::string main_file = db.backend_file_path();
+  if (main_file.empty()) return;  // :memory: / temp store
+  db.backup_to(main_file + "." + suffix + ".bak");
 }
 
 void apply_migrations(Database& db, const std::string& schema_sql_path) {
+  // n38 DEVIATION NOTE (census translatables "AUTOINCREMENT in migration DDL
+  // x8" and "DEFAULT (datetime('now')) in migration DDL x9"): both keywords
+  // are KEPT in the SQLite migration DDL. check_schema_integrity and
+  // tests/test_n17.cpp assert the literal DDL text (job_messages created_at
+  // default contains datetime('now'); job_messages DDL contains
+  // AUTOINCREMENT), so removing either falsifies the AA1 gate (39/39 zero
+  // test modifications). The rewrite lands at the PG layer instead: PG
+  // databases are born at v13 via pg_ensure_schema (BIGINT GENERATED ALWAYS
+  // AS IDENTITY, timestamptz DEFAULT now() -- N38-A kPgSchemaSql) and never
+  // execute apply_migrations (Brain::open_at routes PG opens to
+  // Brain::open_pg). SQLite rowid/AUTOINCREMENT no-reuse semantics are
+  // thereby preserved byte-identically.
   db.exec(R"SQL(
     CREATE TABLE IF NOT EXISTS schema_version (
       version INTEGER NOT NULL PRIMARY KEY,
@@ -155,7 +187,7 @@ void apply_migrations(Database& db, const std::string& schema_sql_path) {
       sql = kCanonicalSchemaSql;
     }
     run_in_txn(db, sql);
-    db.exec("INSERT OR IGNORE INTO schema_version(version) VALUES (1);");
+    db.exec("INSERT INTO schema_version(version) VALUES (1) ON CONFLICT DO NOTHING;");  // n38: INSERT OR IGNORE -> ON CONFLICT DO NOTHING
     ver = 1;
   }
 
@@ -166,7 +198,7 @@ CREATE INDEX IF NOT EXISTS idx_chunks_missing_emb
   ON content_chunks(page_id) WHERE embedding IS NULL;
 CREATE INDEX IF NOT EXISTS idx_pages_source_slug
   ON pages(source_id, slug);
-INSERT OR IGNORE INTO schema_version(version) VALUES (2);
+INSERT INTO schema_version(version) VALUES (2) ON CONFLICT DO NOTHING;  -- n38: INSERT OR IGNORE -> ON CONFLICT DO NOTHING
 )SQL");
     ver = 2;
   }
@@ -182,7 +214,7 @@ CREATE INDEX IF NOT EXISTS idx_chunks_page ON content_chunks(page_id);
 CREATE INDEX IF NOT EXISTS idx_links_from ON links(source_id, from_slug);
 CREATE INDEX IF NOT EXISTS idx_links_to ON links(source_id, to_slug);
 CREATE INDEX IF NOT EXISTS idx_jobs_claim ON jobs(queue, status, priority, created_at);
-INSERT OR IGNORE INTO schema_version(version) VALUES (3);
+INSERT INTO schema_version(version) VALUES (3) ON CONFLICT DO NOTHING;  -- n38: INSERT OR IGNORE -> ON CONFLICT DO NOTHING
 )SQL");
     ver = 3;
   }
@@ -193,7 +225,7 @@ INSERT OR IGNORE INTO schema_version(version) VALUES (3);
 ALTER TABLE pages ADD COLUMN source_kind TEXT;
 ALTER TABLE pages ADD COLUMN ingested_via TEXT;
 ALTER TABLE pages ADD COLUMN ingested_at TEXT;
-INSERT OR IGNORE INTO schema_version(version) VALUES (4);
+INSERT INTO schema_version(version) VALUES (4) ON CONFLICT DO NOTHING;  -- n38: INSERT OR IGNORE -> ON CONFLICT DO NOTHING
 )SQL");
     ver = 4;
   }
@@ -223,7 +255,7 @@ CREATE TABLE IF NOT EXISTS facts (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_facts_entity ON facts(entity_slug);
-INSERT OR IGNORE INTO schema_version(version) VALUES (5);
+INSERT INTO schema_version(version) VALUES (5) ON CONFLICT DO NOTHING;  -- n38: INSERT OR IGNORE -> ON CONFLICT DO NOTHING
 )SQL");
     ver = 5;
   }
@@ -245,7 +277,7 @@ CREATE TABLE IF NOT EXISTS ingest_log (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_ingest_log_created ON ingest_log(created_at DESC);
-INSERT OR IGNORE INTO schema_version(version) VALUES (7);
+INSERT INTO schema_version(version) VALUES (7) ON CONFLICT DO NOTHING;  -- n38: INSERT OR IGNORE -> ON CONFLICT DO NOTHING
 )SQL");
     ver = 7;
   }
@@ -261,7 +293,7 @@ CREATE TABLE IF NOT EXISTS job_messages (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_job_messages_job ON job_messages(job_id, id);
-INSERT OR IGNORE INTO schema_version(version) VALUES (8);
+INSERT INTO schema_version(version) VALUES (8) ON CONFLICT DO NOTHING;  -- n38: INSERT OR IGNORE -> ON CONFLICT DO NOTHING
 )SQL");
     ver = 8;
   }
@@ -280,7 +312,7 @@ CREATE TABLE IF NOT EXISTS takes (
 );
 CREATE INDEX IF NOT EXISTS idx_takes_entity ON takes(entity_slug, active);
 CREATE INDEX IF NOT EXISTS idx_takes_body ON takes(body);
-INSERT OR IGNORE INTO schema_version(version) VALUES (9);
+INSERT INTO schema_version(version) VALUES (9) ON CONFLICT DO NOTHING;  -- n38: INSERT OR IGNORE -> ON CONFLICT DO NOTHING
 )SQL");
     ver = 9;
   }
@@ -297,7 +329,7 @@ CREATE TABLE IF NOT EXISTS file_index (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_file_index_name ON file_index(name);
-INSERT OR IGNORE INTO schema_version(version) VALUES (10);
+INSERT INTO schema_version(version) VALUES (10) ON CONFLICT DO NOTHING;  -- n38: INSERT OR IGNORE -> ON CONFLICT DO NOTHING
 )SQL");
     ver = 10;
   }
@@ -313,7 +345,7 @@ CREATE TABLE IF NOT EXISTS raw_data (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_raw_data_key ON raw_data(key);
-INSERT OR IGNORE INTO schema_version(version) VALUES (11);
+INSERT INTO schema_version(version) VALUES (11) ON CONFLICT DO NOTHING;  -- n38: INSERT OR IGNORE -> ON CONFLICT DO NOTHING
 )SQL");
     ver = 11;
   }
@@ -328,7 +360,7 @@ INSERT OR IGNORE INTO schema_version(version) VALUES (11);
           "id TEXT PRIMARY KEY,"
           "name TEXT NOT NULL DEFAULT ''"
           ");"
-          "INSERT OR IGNORE INTO sources(id,name) VALUES('default','default');"
+          "INSERT INTO sources(id,name) VALUES('default','default') ON CONFLICT DO NOTHING;"  // n38: INSERT OR IGNORE -> ON CONFLICT DO NOTHING
           "DROP TABLE IF EXISTS ingest_log_v12;"
           "CREATE TABLE ingest_log_v12 ("
           "id INTEGER PRIMARY KEY AUTOINCREMENT,"
@@ -345,7 +377,7 @@ INSERT OR IGNORE INTO schema_version(version) VALUES (11);
           "ALTER TABLE ingest_log_v12 RENAME TO ingest_log;"
           "CREATE INDEX idx_ingest_log_source_created "
           "ON ingest_log(source_id,created_at DESC,id DESC);"
-          "INSERT OR IGNORE INTO schema_version(version) VALUES (12);");
+          "INSERT INTO schema_version(version) VALUES (12) ON CONFLICT DO NOTHING;");  // n38: INSERT OR IGNORE -> ON CONFLICT DO NOTHING
       db.exec("COMMIT;");
     } catch (...) {
       try {
@@ -382,7 +414,7 @@ INSERT OR IGNORE INTO schema_version(version) VALUES (11);
       if (!jobs_has_column(db, "depth"))
         db.exec("ALTER TABLE jobs ADD COLUMN depth INTEGER NOT NULL DEFAULT 0;");
       db.exec("CREATE INDEX IF NOT EXISTS idx_jobs_parent ON jobs(parent_id);");
-      db.exec("INSERT OR IGNORE INTO schema_version(version) VALUES (13);");
+      db.exec("INSERT INTO schema_version(version) VALUES (13) ON CONFLICT DO NOTHING;");  // n38: INSERT OR IGNORE -> ON CONFLICT DO NOTHING
       db.exec("COMMIT;");
     } catch (...) {
       try {
@@ -407,8 +439,26 @@ SchemaIntegrity check_schema_integrity(Database& db) {
     }
   }
 
+  // n38 (census: sqlite_master x4 -> guarded branch): table/view and index
+  // existence checks. The PG branch reads information_schema/pg_indexes;
+  // pages_fts maps to its PG resolution point (idx_pages_ftv GIN index over
+  // the pages_ftv tsvector column) exactly as in sqlite_table_exists.
+  const bool pg_mode = db.backend_kind() == BackendKind::postgres;
   auto has_table = [&](const char* name) {
     try {
+      if (pg_mode) {
+        if (std::string(name) == "pages_fts") {
+          auto fts = db.prepare(
+              "SELECT 1 FROM pg_indexes "
+              "WHERE schemaname='public' AND indexname='idx_pages_ftv' LIMIT 1");
+          return fts.step();
+        }
+        auto st = db.prepare(
+            "SELECT 1 FROM information_schema.tables "
+            "WHERE table_schema='public' AND table_name=? LIMIT 1");
+        st.bind_text(1, name);
+        return st.step();
+      }
       auto st = db.prepare(
           "SELECT 1 FROM sqlite_master WHERE type IN ('table','view') AND name=? LIMIT 1");
       st.bind_text(1, name);
@@ -421,6 +471,13 @@ SchemaIntegrity check_schema_integrity(Database& db) {
   };
   auto has_index = [&](const char* name) {
     try {
+      if (pg_mode) {
+        auto st = db.prepare(
+            "SELECT 1 FROM pg_indexes "
+            "WHERE schemaname='public' AND indexname=? LIMIT 1");
+        st.bind_text(1, name);
+        return st.step();
+      }
       auto st = db.prepare(
           "SELECT 1 FROM sqlite_master WHERE type='index' AND name=? LIMIT 1");
       st.bind_text(1, name);
@@ -507,6 +564,79 @@ SchemaIntegrity check_schema_integrity(Database& db) {
                           e.what());
     }
   }
+  // n38 (census: PRAGMA table_info/index_xinfo + sqlite_master DDL-text
+  // checks -> guarded branches): the PG branch asserts the same intent
+  // against the catalog — column order / nullability / defaults, identity id
+  // (AUTOINCREMENT's PG equivalent per the N38-A canonical DDL), and the
+  // index key-column order — while the SQLite branch below stays
+  // byte-identical (tests assert its exact assertions).
+  if (pg_mode) {
+    try {
+      struct PgColumnShape {
+        const char* name;
+        bool must_be_not_null;
+        const char* default_contains;  // "" = no default requirement
+      };
+      const PgColumnShape expected[] = {
+          {"id", false, ""},
+          {"job_id", true, ""},
+          {"sender", true, "'system'"},
+          {"payload_json", true, "'{}'"},
+          {"created_at", true, "now()"},
+      };
+      size_t index = 0;
+      bool id_identity = false;
+      auto columns = db.prepare(
+          "SELECT column_name, is_nullable, COALESCE(column_default,''), "
+          "is_identity FROM information_schema.columns "
+          "WHERE table_schema='public' AND table_name='job_messages' "
+          "ORDER BY ordinal_position");
+      while (columns.step()) {
+        const std::string name = columns.column_text(0);
+        const bool nullable = columns.column_text(1) == "YES";
+        const std::string default_value = columns.column_text(2);
+        if (name == "id" && columns.column_text(3) == "YES") id_identity = true;
+        if (index >= std::size(expected)) {
+          r.ok = false;
+          r.missing.push_back("table:job_messages unexpected column shape");
+          ++index;
+          continue;
+        }
+        const auto& want = expected[index];
+        const bool default_ok =
+            want.default_contains[0] == '\0' ||
+            default_value.find(want.default_contains) != std::string::npos;
+        if (name != want.name || (want.must_be_not_null && nullable) || !default_ok) {
+          r.ok = false;
+          r.missing.push_back(std::string("column:job_messages.") + want.name +
+                              " shape");
+        }
+        ++index;
+      }
+      if (index != std::size(expected)) {
+        r.ok = false;
+        r.missing.push_back("table:job_messages column count/shape");
+      }
+      if (!id_identity) {
+        r.ok = false;
+        r.missing.push_back("table:job_messages IDENTITY shape");
+      }
+      // Index key columns in order (the PRAGMA index_xinfo equivalent): the
+      // definition must list the key columns (job_id, id); PG btree indexes
+      // are ascending unless the definition says otherwise.
+      auto index_def = db.prepare(
+          "SELECT indexdef FROM pg_indexes "
+          "WHERE schemaname='public' AND indexname='idx_job_messages_job'");
+      if (!index_def.step() ||
+          index_def.column_text(0).find("job_id, id") == std::string::npos) {
+        r.ok = false;
+        r.missing.push_back("index:idx_job_messages_job column shape");
+      }
+    } catch (const std::exception& e) {
+      r.ok = false;
+      r.missing.push_back(std::string("job_messages column check failed: ") + e.what());
+    }
+  } else {
   try {
     struct ColumnShape {
       const char* name;
@@ -581,6 +711,7 @@ SchemaIntegrity check_schema_integrity(Database& db) {
     r.ok = false;
     r.missing.push_back(std::string("job_messages column check failed: ") + e.what());
   }
+  }  // n38: end of the SQLite branch of the job_messages deep-shape check
   // N34 D1: doctor requires the v13 schema level (parent_id/depth columns and
   // idx_jobs_parent above) — a not-yet-migrated v12 database fails closed.
   if (r.schema_version < 13) {

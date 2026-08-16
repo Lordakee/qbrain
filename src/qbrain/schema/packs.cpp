@@ -959,10 +959,22 @@ SchemaStatsResult read_schema_stats(Brain& brain, const std::string& source_id, 
     result.total_active_pages = total.column_int(0);
     if (result.total_active_pages < 0) database_error();
 
-    auto groups = brain.db().prepare(
-        "SELECT type, COUNT(*) AS page_count, typeof(type) FROM pages "
-        "WHERE source_id=? AND deleted_at IS NULL "
-        "GROUP BY type ORDER BY page_count DESC, type COLLATE BINARY ASC LIMIT ?");
+    // n38 (census: typeof guard + COLLATE BINARY): typeof() is SQLite-only;
+    // the PG branch uses pg_typeof()::text, which yields the static type name
+    // 'text' for a text column (PG columns cannot hold foreign storage
+    // classes, so the corruption guard is equivalent). The per-expression
+    // COLLATE BINARY moved to column level (pages.type, schema v1); SQLite's
+    // default collation is BINARY, so the SQLite branch keeps identical
+    // ordering, and the PG branch pins COLLATE "C" (byte order) explicitly.
+    const bool pg_mode =
+        brain.db().backend_kind() == storage::BackendKind::postgres;
+    auto groups = brain.db().prepare(pg_mode
+        ? "SELECT type, COUNT(*) AS page_count, pg_typeof(type)::text FROM pages "
+          "WHERE source_id=? AND deleted_at IS NULL "
+          "GROUP BY type ORDER BY page_count DESC, type COLLATE \"C\" ASC LIMIT ?"
+        : "SELECT type, COUNT(*) AS page_count, typeof(type) FROM pages "
+          "WHERE source_id=? AND deleted_at IS NULL "
+          "GROUP BY type ORDER BY page_count DESC, type ASC LIMIT ?");
     groups.bind_text(1, *canonical_source);
     groups.bind_int(2, static_cast<int64_t>(limit) + 1);
     while (groups.step()) {

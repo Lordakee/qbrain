@@ -179,8 +179,12 @@ Job row_to_job(storage::Database::Statement& st) {
 
 const char* kSelectCols =
     "id, queue, type, status, payload_json, COALESCE(result_json,''), priority, attempts, "
-    "created_at, updated_at, COALESCE(lock_until,''), COALESCE(lock_token,''), "
-    "COALESCE(error_text,'')";
+    "created_at, updated_at, COALESCE(CAST(lock_until AS TEXT),''), COALESCE(lock_token,''), "
+    "COALESCE(error_text,'')";  // n38: CAST(lock_until AS TEXT) -- identity on SQLite
+                                // (TEXT column); on PG (timestamptz) it renders the
+    // UTC session text so COALESCE with '' stays valid (bare '' cannot cast to
+    // timestamptz -- census classified this statement portable under the TEXT
+    // assumption; the timestamptz D2 schema falsified it, hence this hardening).
 
 bool handle_embed(Brain& brain, Job& job, std::string& result_json, std::string& err) {
   int64_t page_id = 0;
@@ -244,6 +248,10 @@ int64_t submit_job(Brain& brain, const std::string& type, const std::string& pay
   st.bind_text(3, payload_json.empty() ? "{}" : payload_json);
   st.bind_int(4, priority);
   st.step_done();
+  // n38: last_insert_rowid() kept (census RETURNING rule deferred to the
+  // backend layer): jobs.id is INTEGER PRIMARY KEY AUTOINCREMENT, so SQLite
+  // semantics are unchanged; PG-mode correctness relies on N38-A's PgBackend
+  // last-RETURNING tracking (audit-listed site).
   return brain.db().last_insert_rowid();
 }
 
@@ -270,12 +278,15 @@ std::optional<Job> claim_job(Brain& brain, const std::string& lock_token, int lo
   if (!st.step()) return std::nullopt;
   int64_t id = st.column_int(0);
 
-  std::string mod = "+" + std::to_string(std::max(1, lock_ms / 1000)) + " seconds";
+  // n38: datetime('now', ?) -> C++-computed UTC lock expiry bound as a
+  // parameter (dialect-free SQL; stored TEXT format unchanged).
+  const std::string lock_until =
+      util::utc_now_offset(static_cast<long long>(std::max(1, lock_ms / 1000)));
   auto u = brain.db().prepare(
-      "UPDATE jobs SET status='active', lock_token=?, lock_until=datetime('now', ?), "
+      "UPDATE jobs SET status='active', lock_token=?, lock_until=?, "
       "attempts=attempts+1, updated_at=?, error_text=NULL WHERE id=? AND status='waiting'");
   u.bind_text(1, lock_token);
-  u.bind_text(2, mod);
+  u.bind_text(2, lock_until);
   u.bind_text(3, util::utc_now());
   u.bind_int(4, id);
   u.step_done();
@@ -377,6 +388,10 @@ ReplayJobResult replay_job_checked(Brain& brain, int64_t job_id) {
       return result;
     }
 
+    // n38: last_insert_rowid() kept (census RETURNING rule deferred to the
+    // backend layer): jobs.id is INTEGER PRIMARY KEY AUTOINCREMENT, so SQLite
+    // semantics are unchanged; PG-mode correctness relies on N38-A's PgBackend
+    // last-RETURNING tracking (audit-listed site).
     result.new_id = database.last_insert_rowid();
     database.exec("RELEASE qbrain_replay_job;");
     savepoint_active = false;
@@ -447,6 +462,10 @@ SendJobMessageResult send_job_message_checked(Brain& brain, int64_t job_id,
       return result;
     }
 
+    // n38: last_insert_rowid() kept (census RETURNING rule deferred to the
+    // backend layer): job_messages.id is INTEGER PRIMARY KEY AUTOINCREMENT,
+    // so SQLite semantics are unchanged; PG-mode correctness relies on
+    // N38-A's PgBackend last-RETURNING tracking (audit-listed site).
     result.message_id = database.last_insert_rowid();
     database.exec("RELEASE qbrain_send_job_message;");
     savepoint_active = false;
@@ -532,12 +551,15 @@ bool resume_job(Brain& brain, int64_t job_id) {
 }
 
 int reclaim_stalled(Brain& brain, const std::string& queue) {
+  // n38: datetime('now') -> C++-computed UTC now bound as a parameter
+  // (dialect-free SQL; comparison semantics unchanged).
   auto st = brain.db().prepare(
       "UPDATE jobs SET status='waiting', lock_token=NULL, lock_until=NULL, "
       "attempts=attempts+1, updated_at=? "
-      "WHERE queue=? AND status='active' AND lock_until IS NOT NULL AND lock_until < datetime('now')");
+      "WHERE queue=? AND status='active' AND lock_until IS NOT NULL AND lock_until < ?");
   st.bind_text(1, util::utc_now());
   st.bind_text(2, queue);
+  st.bind_text(3, util::utc_now());  // n38: bound 'now' replaces datetime('now')
   st.step_done();
   return brain.db().changes();
 }
@@ -570,8 +592,8 @@ std::optional<JobProgress> get_job_progress(Brain& brain, int64_t job_id) {
   // progress contract. In particular, never load payload/result/lock_token
   // merely to construct a progress response.
   auto st = brain.db().prepare(
-      "SELECT id, type, status, attempts, COALESCE(lock_until,''), "
-      "COALESCE(error_text,'') FROM jobs WHERE id=?");
+      "SELECT id, type, status, attempts, COALESCE(CAST(lock_until AS TEXT),''), "
+      "COALESCE(error_text,'') FROM jobs WHERE id=?");  // n38: CAST -> TEXT (see kSelectCols)
   st.bind_int(1, job_id);
   if (!st.step()) return std::nullopt;
 
@@ -791,6 +813,10 @@ SpawnChildrenResult spawn_children(Brain& brain, int64_t parent_id,
       insert.bind_int(5, parent_id);
       insert.bind_int(6, child_depth);
       insert.step_done();
+      // n38: last_insert_rowid() kept (census RETURNING rule deferred to the
+      // backend layer): jobs.id is INTEGER PRIMARY KEY AUTOINCREMENT, so
+      // SQLite semantics are unchanged; PG-mode correctness relies on N38-A's
+      // PgBackend last-RETURNING tracking (audit-listed site).
       r.child_ids.push_back(database.last_insert_rowid());
     }
     database.exec("COMMIT;");
@@ -1041,9 +1067,9 @@ RetryTreeResult retry_job_hierarchy(Brain& brain, int64_t job_id) {
 // and 3). The N12 single-job claim/complete token fence above is intentionally
 // untouched: siblings MAY be claimed by different workers in parallel.
 //
-// N34-A's child-completion path calls this guard inside the completing
-// transaction. The guard is an idempotent fence row keyed on the parent id
-// (INSERT OR IGNORE semantics): when the last two children complete
+  // N34-A's child-completion path calls this guard inside the completing
+  // transaction. The guard is an idempotent fence row keyed on the parent id
+  // (ON CONFLICT DO NOTHING semantics): when the last two children complete
 // concurrently on two worker connections, SQLite serializes the two inserts
 // and exactly one caller observes changes()>0, so the parent aggregation
 // fires EXACTLY once. Every later call (same connection or any other) sees
@@ -1056,14 +1082,19 @@ bool try_begin_aggregation(Brain& brain, int64_t parent_id) {
   // the fence self-sufficient and idempotent on any schema state (including
   // a pre-migration v12 brain opened by an older binary alongside a newer
   // one — column/table additions do not break the older reader).
+  // n38: DEFAULT (datetime('now')) dropped from the DDL and the INSERT
+  // supplies created_at explicitly (C++-computed UTC text) — dialect-free
+  // SQL that parses on both backends; stored values keep the exact
+  // datetime('now') text shape.
   database.exec(
       "CREATE TABLE IF NOT EXISTS job_aggregation_fence ("
       "parent_id INTEGER NOT NULL PRIMARY KEY, "
-      "created_at TEXT NOT NULL DEFAULT (datetime('now'))"
-      ");");
+      "created_at TEXT NOT NULL);");
   auto st = database.prepare(
-      "INSERT OR IGNORE INTO job_aggregation_fence(parent_id) VALUES(?);");
+      "INSERT INTO job_aggregation_fence(parent_id, created_at) "
+      "VALUES(?,?) ON CONFLICT DO NOTHING;");  // n38: INSERT OR IGNORE -> ON CONFLICT DO NOTHING
   st.bind_int(1, parent_id);
+  st.bind_text(2, util::utc_now());
   st.step_done();
   return database.changes() > 0;
 }

@@ -1,0 +1,11 @@
+**********************************************************************
+** Visual Studio 2026 Developer Command Prompt v18.7.3
+** Copyright (c) 2026 Microsoft Corporation
+**********************************************************************
+[vcvarsall.bat] Environment initialized for: 'x64'
+pg_backend.cpp
+D:\Projects\Qbrain\src\qbrain\storage\pg_backend.cpp(1450): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+D:\Projects\Qbrain\src\qbrain\storage\pg_backend.cpp(1684): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+PG_ON_OK
+pg_backend.cpp
+PG_OFF_OK

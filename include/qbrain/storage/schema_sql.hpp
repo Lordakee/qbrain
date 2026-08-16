@@ -4,6 +4,14 @@
 namespace qbrain::storage {
 inline constexpr const char* kCanonicalSchemaSql = R"QBSQL(
 -- Qbrain schema v1
+-- n38 (SQL census): this file is the SQLITE canonical schema; the PG
+-- equivalent lives in N38-A's kPgSchemaSql (identity columns, timestamptz,
+-- bytea, tsvector+GIN, COLLATE "C"). Per-expression COLLATE BINARY was
+-- removed from shared query SQL and is pinned here at column level (BINARY
+-- is SQLite's default collation for TEXT, so this is semantics-preserving
+-- documentation of the ordering contract). AUTOINCREMENT and
+-- DEFAULT (datetime('now')) are kept: check_schema_integrity and the N17
+-- tests assert the literal DDL text; PG never executes this file.
 PRAGMA foreign_keys = ON;
 
 CREATE TABLE IF NOT EXISTS schema_version (
@@ -23,8 +31,8 @@ CREATE TABLE IF NOT EXISTS sources (
 CREATE TABLE IF NOT EXISTS pages (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   source_id TEXT NOT NULL DEFAULT 'default',
-  slug TEXT NOT NULL,
-  type TEXT NOT NULL DEFAULT 'note',
+  slug TEXT NOT NULL COLLATE BINARY,
+  type TEXT NOT NULL DEFAULT 'note' COLLATE BINARY,
   title TEXT NOT NULL DEFAULT '',
   body TEXT NOT NULL DEFAULT '',
   frontmatter_json TEXT NOT NULL DEFAULT '{}',
@@ -57,11 +65,11 @@ CREATE INDEX IF NOT EXISTS idx_chunks_page ON content_chunks(page_id);
 CREATE TABLE IF NOT EXISTS links (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   source_id TEXT NOT NULL DEFAULT 'default',
-  from_slug TEXT NOT NULL,
-  to_slug TEXT NOT NULL,
+  from_slug TEXT NOT NULL COLLATE BINARY,
+  to_slug TEXT NOT NULL COLLATE BINARY,
   link_type TEXT NOT NULL DEFAULT 'related',
   context TEXT NOT NULL DEFAULT '',
-  link_source TEXT NOT NULL DEFAULT 'markdown',
+  link_source TEXT NOT NULL DEFAULT 'markdown' COLLATE BINARY,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE(source_id, from_slug, to_slug, link_type, link_source)
 );
@@ -125,8 +133,9 @@ CREATE TRIGGER IF NOT EXISTS pages_au AFTER UPDATE ON pages BEGIN
   VALUES (new.id, new.slug, new.title, new.body);
 END;
 
-INSERT OR IGNORE INTO sources(id, name) VALUES ('default', 'Default Source');
-INSERT OR IGNORE INTO schema_version(version) VALUES (1);
+-- n38: INSERT OR IGNORE -> ON CONFLICT DO NOTHING (SQLite 3.46+ / PG both parse it)
+INSERT INTO sources(id, name) VALUES ('default', 'Default Source') ON CONFLICT DO NOTHING;
+INSERT INTO schema_version(version) VALUES (1) ON CONFLICT DO NOTHING;
 
 )QBSQL";
 }

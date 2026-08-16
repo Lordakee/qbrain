@@ -26,20 +26,25 @@ The contract is the **public** surface everything tests against:
 | `qbrain::Brain` | the API consumers use; delegates to `Database` |
 
 **D1 interface (landed)**: `include/qbrain/storage/backend.hpp` defines
-`IStorageBackend` — `open`/`close`/`is_open`/`handle` (documented escape
-hatch)/`exec`/`last_insert_rowid`/`changes`/`create_statement` (returning the
-nested `IStatement`: prepare/reset/clear_bindings/bind_\*/step/step_done/
-column_\*), transactions (`begin_transaction`/`begin_immediate_transaction`/
-`commit_transaction`/`rollback_transaction`, identical semantics to the
-exec-driven SQL forms), busy handling (`set_busy_timeout`) and error
-classification (`last_error_code` as int SQLite rc) — plus the
-`make_sqlite_backend()` factory. `storage::Database` keeps its exact pre-N35
-public API and delegates one-for-one to the interface (a `static_assert`
-proves the member type is the interface type); the SQLite adapter is a
-line-by-line extraction of the former method bodies, zero logic change. The
-N35 contract suite exercises only the public `Database`/`Brain` surface and
-therefore runs unmodified against the refactored and pre-refactored
-implementations alike.
+`IStorageBackend` — `open`/`close`/`is_open`/`exec`/`last_insert_rowid`/
+`changes`/`create_statement` (returning the nested `IStatement`: prepare/
+reset/clear_bindings/bind_\*/step/step_done/column_\*), transactions
+(`begin_transaction`/`begin_immediate_transaction`/`commit_transaction`/
+`rollback_transaction`, identical semantics to the exec-driven SQL forms),
+busy handling (`set_busy_timeout`) and error classification
+(`last_error_code` as int SQLite rc) — plus the `make_sqlite_backend()`
+factory. `storage::Database` keeps its exact pre-N35 public API and
+delegates one-for-one to the interface (a `static_assert` proves the member
+type is the interface type); the SQLite adapter is a line-by-line extraction
+of the former method bodies, zero logic change. The N35 contract suite
+exercises only the public `Database`/`Brain` surface and therefore runs
+unmodified against the refactored and pre-refactored implementations alike.
+**N38 D0.5 amendment**: `handle()` is no longer part of the contract — the
+capabilities that previously escaped through the raw `sqlite3*` are modeled
+as `backend_file_path()` / `backup_to()` / `fts_search()` interface methods;
+`handle()` survives only as the documented SQLite test hook on
+`storage::Database`. The second backend admitted under this amended contract
+is PostgreSQL (§8).
 
 ## 3. Error semantics — `int` (SQLite rc) → error class mapping (P2-4)
 
@@ -139,7 +144,7 @@ added when a concrete second backend is proposed (P2-2).
 
 | Item | Status | Owner / condition |
 |------|--------|-------------------|
-| **PostgreSQL backend** | **Deferred** — no current product-scope or ops justification (RESOLUTION-2026-08-15 N35 clause: "only when product scope and operational requirements justify it"). The ledger claims **no** backend parity beyond SQLite; absence is explicit, not implicit. | Future requirements-driven **Phase-3 proposal** |
+| **PostgreSQL backend** | **Delivered by N38 (see §8)** — supersedes the original N35 deferral ("only when product scope and operational requirements justify it"); scope locked `full` by the D0 census (zero UNRESOLVED structural items) + DSN provisioned at approval time (`docs/nodes/n38-evidence/DSN-PROVISIONED.json`). | N38 (`docs/nodes/N38-PLAN.md`) |
 | **Vector search contract** | **Deferred to N33 domain** (similarity ranking, ANN/top-k semantics). N35 verifies only the embedding blob storage path (byte-identity, G5). | N33 / future vector-contract node |
 | **Complex isolation scenarios** | Deferred with the concurrency admission extensions (§5). | Future second-backend proposal |
 
@@ -155,3 +160,104 @@ added when a concrete second backend is proposed (P2-2).
 | G6 | Backup byte-identity via test-side SQLite backup API (payload sha256 identical; only documented volatile header fields may differ); restore-copy answers row-exact queries and FTS on the restored file |
 | G7 | Migration suite: fresh v13 (single row per version), second open no-op, canonical-v1 → v13 full apply, storage-level idempotence |
 | G8 | Error classification: constraint / syntax / busy pairwise distinguishable, no marker leakage |
+
+---
+
+## 8. PostgreSQL backend (N38)
+
+**Status**: scope `full` (D0 census `docs/nodes/n38-evidence/SQL-CENSUS.json`:
+306 statements, 18 structural, 0 UNRESOLVED — all resolved by the D0.5
+interface extensions; DSN provisioned at approval per P0-2). SQLite remains
+the default backend; PG is explicit opt-in via `QBRAIN_PG_DSN`
+(config: `docs/03-BUILD-WINDOWS.md` PG 节).
+
+### 8.1 Interface coverage
+
+`PgBackend` (`src/qbrain/storage/pg_backend.cpp`, header
+`include/qbrain/storage/pg_backend.hpp`) implements the full N35+D0.5
+`IStorageBackend` surface:
+
+| Contract member | PgBackend implementation |
+|---|---|
+| `open(dsn)` / `close` / `is_open` | DSN is keyword/value or `postgresql://` URI; empty argument reads `$QBRAIN_PG_DSN` (never argv) |
+| `exec` / `last_insert_rowid` / `changes` | `last_insert_rowid()` is RETURNING-based: prepared INSERTs on identity-`id` tables get ` RETURNING id` injected at prepare time (catalog-guarded; `exec()`-path INSERTs do not update it — every production caller uses prepared statements) |
+| `create_statement` → `IStatement` (prepare/reset/clear_bindings/bind_*/step/step_done/column_*) | placeholders translated `?`/`?NNN` → `$N` at prepare (`pg_translate_placeholders`, quoted/comment/dollar-quote aware) |
+| `begin_transaction` / `begin_immediate_transaction` / `commit` / `rollback` | `BEGIN IMMEDIATE` maps to deferred `BEGIN TRANSACTION` (PG takes row locks at first data statement; contention surfaces via lock_timeout) |
+| `set_busy_timeout(ms)` | maps to `lock_timeout`; `ms<=0` → 1 ms (PG `lock_timeout=0` means wait forever — the inverse of sqlite semantics); open default 2000 ms |
+| `last_error_code()` | SQLite-rc int semantics (see §8.2) |
+| `backend_file_path()` | connection descriptor (host/dbname), never the password |
+| `backup_to(dest)` | pg_dump subprocess preferred; structured COPY export fallback (see §8.4) |
+| `fts_search(query, limit, source_id)` | tsvector + GIN (see §8.3) |
+| pure helpers (always compiled, no libpq) | `pg_redact_dsn`, `pg_translate_placeholders`, `pg_canonical_schema_sql`, `pg_fts_normalize_query` |
+| `handle()` | **not applicable** — removed from the contract by D0.5; SQLite test hook only |
+
+Schema bring-up: `pg_ensure_schema(PGconn*)` applies
+`pg_canonical_schema_sql()` idempotently (16 v13 tables, identity PKs,
+timestamptz, bytea embedding, tsvector generated column + GIN, `COLLATE "C"`
+on slug/identifier columns, seed rows, `schema_version` seeded 1..13) in one
+transaction. A `schema_version` above 0 but below 13 is **rejected with
+guidance** (PG databases are born at v13; SQLite is the migration path).
+
+### 8.2 Error mapping — SQLSTATE → contract error class
+
+The PG backend maps PostgreSQL SQLSTATEs onto the **same int rc semantics**
+the SQLite backend exposes, so callers' classification logic is unchanged:
+
+| PG SQLSTATE | Meaning | Contract class (SQLite rc) | Observable marker |
+|---|---|---|---|
+| 55P03 / 40001 / 40P01 | lock_not_available / serialization_failure / deadlock_detected | **busy — retryable** (SQLITE_BUSY 5) | `database is locked` |
+| 23505 / 23502 / 23503 / 23514 | unique / not-null / FK / check violation | **constraint violation** (SQLITE_CONSTRAINT 19) | `UNIQUE constraint failed: …` style |
+| 42601 | syntax_error | **syntax / general error** (SQLITE_ERROR 1) | `syntax error` style |
+| anything else | — | general error (SQLITE_ERROR 1) | raw libpq message |
+
+G8-equivalent rule: the three classes stay pairwise distinguishable and no
+class marker leaks into another class's message (`tests/test_n38.cpp`
+integration G8 asserts this against the live server).
+
+### 8.3 Busy semantics and ranking parity
+
+- **Busy**: PG cannot fail a blocked lock instantly; the backend bounds every
+  wait with `lock_timeout` (open default 2000 ms, `set_busy_timeout` maps
+  onto it). Busy surfaces as the contract busy class and the callers'
+  existing bounded busy-retry loops digest it unchanged (G2-equivalent:
+  advisory-lock contention observable, classified, retryable).
+- **Transaction identity semantics (documented deviation)**: PG identity
+  sequences do not roll back with the transaction — a rolled-back INSERT
+  still consumes its identity value, so the next insert's `id` skips ahead
+  (asserted as `"1:alpha;3:gamma;"` in the PG integration G1; SQLite's
+  suite keeps its own `1;2` shape). Row-level atomicity and visibility are
+  identical (rollback invisible, commit visible cross-connection).
+- **Ranking parity (bm25 vs ts_rank)**: SQLite FTS5 ranks with `bm25(...)`;
+  PG ranks with `ts_rank(...)` over a tsvector (title weight A, body weight
+  B; rank reported negated so `ORDER BY rank ASC` and `score = -rank` keep
+  the SQLite sign conventions). These are **different ranking functions**;
+  the contract asserts identical behavior only for simple exact-term queries
+  (same top page), never bit-for-bit score parity. Multi-term relevance
+  ordering may legitimately differ between backends.
+
+### 8.4 Backup paths
+
+`backup_to(dest)` prefers a **pg_dump** subprocess (plain SQL): pg_dump.exe
+is looked up next to the loaded libpq DLL, on PATH, or under the discovery
+roots; `$QBRAIN_PG_DUMP_EXE` overrides exclusively. When pg_dump is absent
+or fails, the backend falls back to a **structured COPY export** of every
+public table (SQL text whose header documents the downgrade). The fallback
+always exists, so the return value is `true` whenever the export file was
+written; `pg_backup_note_of(backend)` reports which path was used
+(`"pg_dump"` or `"copy-fallback: <reason>"`). Restorability semantics are
+therefore weaker than SQLite's byte-identity backup (§4): the PG contract
+asserts a written, content-carrying, restorable-in-principle artifact; the
+test prints which path was exercised (`[N38-G6]`).
+
+### 8.5 Admission result (§5 gate applied to N38)
+
+Per §5, a backend is recorded as `implemented` only when the full unit
+suite + contract G1–G8 equivalents + migration + concurrency subsets are
+green in the main tree on both build paths, two consecutive rounds. The N38
+admission evidence lives in `docs/nodes/n38-evidence/`
+(`C-VERIFY-NODSN.txt`: 40 registered, 39 SQLite items unmodified + `n38`
+unit group green + visible `[SKIP-PG]`; `C-VERIFY-DSN.txt`: integration
+group G1–G8 + product smoke green against the provisioned DSN). The ledger
+backend note (`docs/OPS-PARITY-LEDGER.md`) states exactly what those runs
+proved — storage-contract level + the exercised product-level smoke subset —
+and nothing more.

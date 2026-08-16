@@ -4,7 +4,6 @@
 #include <string>
 #include <string_view>
 #include <vector>
-#include <sqlite3.h>
 
 namespace qbrain::storage {
 
@@ -23,14 +22,28 @@ namespace qbrain::storage {
 // defined. The code-to-condition mapping table lives in
 // docs/10-STORAGE-CONTRACT.md.
 //
-// Escape hatch (documented): handle() exposes the raw sqlite3* connection.
-// Capabilities not modeled as interface methods -- the pre-migration file
-// backup in migrations (SQLite online backup API, per adopted P2-3 backup is
-// NOT a mandatory interface capability), sqlite3_db_filename, and test
-// hooks -- operate through handle().
+// N38 D0.5 (plan P0-1): handle() is NO LONGER part of this contract. The
+// capabilities that previously escaped through the raw sqlite3* connection
+// are modeled as interface methods below (backend_file_path / backup_to /
+// fts_search), so a second backend can carry them natively. The raw
+// connection pointer remains reachable on the SQLite default path only, as
+// the documented sqlite test hook on storage::Database (see database.hpp).
 //
 // Future backends: any second backend must pass the same contract suite
 // (tests/test_n35.cpp) before it may be listed in docs/OPS-PARITY-LEDGER.md.
+
+// N38 D0.5 (plan P0-3): storage-level full-text row -- exactly the columns
+// the FTS MATCH statement produces. Search-layer conversion (rank counters,
+// score = -bm25) stays at the call site; the seam transports raw rows only.
+struct FtsRow {
+  int64_t page_id = 0;
+  std::string slug;
+  std::string title;
+  std::string type;
+  std::string snippet;
+  double rank = 0.0;  // bm25(pages_fts) AS rank, as returned by the backend
+};
+
 class IStorageBackend {
  public:
   // Prepared-statement half of the contract. One IStatement owns one native
@@ -66,7 +79,6 @@ class IStorageBackend {
   virtual void open(const std::string& path) = 0;
   virtual void close() = 0;
   virtual bool is_open() const = 0;
-  virtual sqlite3* handle() const = 0;  // documented escape hatch (see above)
 
   // Direct execution.
   virtual void exec(std::string_view sql) = 0;
@@ -94,6 +106,33 @@ class IStorageBackend {
   // Error classification (adopted P2-4): last connection error code as an
   // int SQLite rc. SQLITE_OK when the connection is not open.
   virtual int last_error_code() const = 0;
+
+  // ---- N38 D0.5 interface extensions (plan disposition P0-1 / P0-3) ----
+
+  // Backend on-disk identity. SQLite: the main database file path via
+  // sqlite3_db_filename (empty string for :memory: / temporary stores -- the
+  // historical "no file to back up" signal). A future backend returns its
+  // connection descriptor (e.g. host/dbname).
+  virtual std::string backend_file_path() const = 0;
+
+  // Backend-native backup of the whole store to dest. SQLite: the online
+  // backup API (sqlite3_backup_init/step(-1)/finish) exactly as the
+  // pre-N38 migration path did, including the WAL-to-delete-journal
+  // checkpoint on the destination and the historical fatal error texts
+  // ("pre-migration backup open failed: <dest>" / "pre-migration backup
+  // failed: <dest>"). Returns true when the backup file was written.
+  // A future backend uses its native dump path (PG: pg_dump, with a
+  // structured COPY export fallback).
+  virtual bool backup_to(const std::string& dest) = 0;
+
+  // Full-text search seam. SQLite: the FTS5 external-content MATCH statement
+  // that previously lived as raw SQL in search/hybrid.cpp, with identical
+  // behavior (backend-side query quoting, snippet/bm25 columns, optional
+  // source_id filter, ORDER BY rank ASC, slug ASC). A future backend maps
+  // query/limit/source_id onto its native full-text engine (PG:
+  // tsvector + GIN).
+  virtual std::vector<FtsRow> fts_search(const std::string& query, int limit,
+                                         const std::string& source_id) = 0;
 };
 
 // Factory for the default SQLite backend (Windows-default per the N35
