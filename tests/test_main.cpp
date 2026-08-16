@@ -64,6 +64,7 @@ void test_n32_scan_integration();
 void test_n34();
 void test_n33_multimodal();
 void test_n35_contract_suite();
+void test_n36_token_scope();
 
 int main() {
   int failed = 0;
@@ -108,6 +109,7 @@ int main() {
       {"n34", test_n34},
       {"n33_multimodal", test_n33_multimodal},
       {"n35_contract_suite", test_n35_contract_suite},
+      {"n36_token_scope", test_n36_token_scope},
   };
   for (auto& t : tests) {
     try {

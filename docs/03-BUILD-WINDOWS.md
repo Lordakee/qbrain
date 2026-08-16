@@ -73,3 +73,15 @@ C:\Program Files (x86)\Windows Kits\10\Lib\10.0.26100.0\ucrt\x64
 ```
 
 若本地 MCP server 正运行在 `build\cl\qbrain.exe`，`scripts\build-cl.ps1` 会在链接前停止同一路径的本地 `qbrain.exe` 进程以释放文件锁。
+
+## Token-scoped HTTP MCP auth (N36)
+
+`QBRAIN_MCP_TOKENS` (env, `;`-separated): `name:token:scope[,scope]` with
+scope in {read, write, admin}; tokens are ASCII printable, 16-256 chars.
+The HTTP MCP validates `Authorization: Bearer <token>` in constant time and
+maps the scope to the central authorization gate (write/admin capabilities);
+malformed headers and unknown tokens are rejected with 401. Audit lines log
+the token's sha256 prefix (16 hex chars) — never the token itself. The legacy
+`QBRAIN_MCP_TOKEN` remains transport auth with no capability (N30 semantics).
+Explicitly deferred: TLS (loopback-only boundary), OAuth, dynamic user
+stores, token rotation, per-token brain/source restrictions (Phase-3).

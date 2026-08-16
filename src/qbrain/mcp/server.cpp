@@ -284,7 +284,8 @@ std::unordered_map<std::string, std::string> analytics_args_from_params(const js
   return args;
 }
 
-json handle_request(Brain& brain, const ServeOptions& opts, const json& req) {
+json handle_request(Brain& brain, const ServeOptions& opts, const json& req,
+                   const std::string* capability_override = nullptr) {
   json id = nullptr;
   if (req.contains("id")) id = req["id"];
 
@@ -342,6 +343,8 @@ json handle_request(Brain& brain, const ServeOptions& opts, const json& req) {
     // write default-deny (--allow-write opt-in) applies to stdio as well.
     ctx.remote = opts.http_transport;
     ctx.via_mcp = true;
+    if (capability_override && !capability_override->empty())
+      ctx.authenticated_capability = capability_override;
     ctx.allow_write = opts.allow_write;
     ctx.args = is_analytics_operation(name)
                    ? analytics_args_from_params(arguments)
@@ -369,7 +372,8 @@ json handle_request(Brain& brain, const ServeOptions& opts, const json& req) {
 }  // namespace
 
 std::string handle_rpc_body(Brain& brain, const ServeOptions& opts,
-                            const std::string& request_json) {
+                            const std::string& request_json,
+                            const std::string* capability_override) {
   json req;
   try {
     req = json::parse(request_json);
@@ -378,7 +382,7 @@ std::string handle_rpc_body(Brain& brain, const ServeOptions& opts,
   }
   try {
     if (req.is_array()) return make_error(nullptr, -32600, "batch not supported").dump();
-    auto resp = handle_request(brain, opts, req);
+    auto resp = handle_request(brain, opts, req, capability_override);
     if (resp.is_null() || resp.empty()) return {};
     return resp.dump();
   } catch (const std::exception&) {

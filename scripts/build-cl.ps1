@@ -82,6 +82,7 @@ $productionSources = @(
   "src\qbrain\mcp\jsonrpc.cpp",
   "src\qbrain\mcp\server.cpp",
   "src\qbrain\mcp\http_server.cpp",
+  "src\qbrain\mcp\auth.cpp",
   "src\qbrain\cli\app.cpp",
   "src\qbrain\cli\commands.cpp",
   "src\qbrain\main.cpp"
@@ -97,7 +98,7 @@ $prodObjNames = @(
   "paths","hash","log","string_util","time_util","database","migrate","types","brain",
   "extract","traverse","analytics","scan","astlite","packs","lint","store","image_meta","vector","rrf","hybrid","rerank","minions","dream",
   "chunker","markdown","import","http_client","embed","chat","registry","handlers",
-  "inbox_watch","live_sync","jsonrpc","server","http_server","app","commands","main"
+  "inbox_watch","live_sync","jsonrpc","server","auth","http_server","app","commands","main"
 )
 $prodObjList = ($prodObjNames | ForEach-Object { "$_.obj" }) -join " "
 

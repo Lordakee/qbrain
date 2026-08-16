@@ -46,6 +46,10 @@ int run_stdio_server(Brain& brain, const ServeOptions& opts);
 int run_http_server(Brain& brain, const ServeOptions& opts, const std::string& token, int port = 7420);
 
 // Single-request handler for tests (JSON-RPC request object as string → response body)
-std::string handle_rpc_body(Brain& brain, const ServeOptions& opts, const std::string& request_json);
+// N36: capability_override, when non-null, is the authenticated token
+// capability ("write"|"admin") fed to the N30 central authorization gate.
+std::string handle_rpc_body(Brain& brain, const ServeOptions& opts,
+                            const std::string& request_json,
+                            const std::string* capability_override = nullptr);
 
 }  // namespace qbrain::mcp

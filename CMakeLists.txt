@@ -137,6 +137,7 @@ qbrain_lib(mcp
   src/qbrain/mcp/jsonrpc.cpp
   src/qbrain/mcp/server.cpp
   src/qbrain/mcp/http_server.cpp
+  src/qbrain/mcp/auth.cpp
 )
 target_link_libraries(qbrain_mcp PUBLIC qbrain_ops qbrain_core qbrain_util)
 if(WIN32)
@@ -193,6 +194,7 @@ add_executable(qbrain_tests
   tests/test_n34.cpp
   tests/test_n33.cpp
   tests/test_n35.cpp
+  tests/test_n36.cpp
 )
 target_link_libraries(qbrain_tests PRIVATE
   qbrain_cli qbrain_mcp qbrain_ops qbrain_schema qbrain_search qbrain_jobs qbrain_cycle qbrain_graph qbrain_codeintel qbrain_ingest qbrain_ai

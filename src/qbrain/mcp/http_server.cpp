@@ -1,3 +1,4 @@
+#include "qbrain/mcp/auth.hpp"
 #include "qbrain/mcp/server.hpp"
 #include "qbrain/ops/registry.hpp"
 #include "qbrain/ingest/import.hpp"
@@ -189,8 +190,15 @@ HttpRoute route_http_request(const HttpRequestLine& request) {
 
 int run_http_server(Brain& brain, const ServeOptions& opts, const std::string& token, int port) {
 #ifdef _WIN32
-  if (token.empty()) {
-    std::cerr << "[qbrain-http] token required (set QBRAIN_MCP_TOKEN env, not argv)\n";
+  // N36: scoped tokens from QBRAIN_MCP_TOKENS (name:token:scope[,scope]; ';'-separated).
+  // Legacy QBRAIN_MCP_TOKEN stays valid transport auth with no capability (N30 semantics).
+  std::vector<mcp::ScopedToken> scoped_tokens;
+  if (const char* scoped_cfg = std::getenv("QBRAIN_MCP_TOKENS")) {
+    scoped_tokens = mcp::parse_scoped_tokens(scoped_cfg);
+    std::cerr << "[qbrain-http] " << scoped_tokens.size() << " scoped token(s) loaded\n";
+  }
+  if (token.empty() && scoped_tokens.empty()) {
+    std::cerr << "[qbrain-http] token required (set QBRAIN_MCP_TOKEN or QBRAIN_MCP_TOKENS env, not argv)\n";
     return 2;
   }
   WSADATA wsa;
@@ -320,9 +328,37 @@ int run_http_server(Brain& brain, const ServeOptions& opts, const std::string& t
 
     std::string response_body;
     int status = 200;
-    if (!check_auth(headers, token)) {
+    // N36: scoped-token authentication feeds the N30 central authorization
+    // gate; malformed headers and unknown tokens both compare as mismatch.
+    std::string request_capability;
+    bool authenticated = false;
+    std::string audit_identity = "anonymous";
+    if (!token.empty() && check_auth(headers, token)) {
+      authenticated = true;
+      audit_identity = mcp::audit_hash_prefix(token) + "/legacy";
+    } else if (!scoped_tokens.empty()) {
+      std::string_view value;
+      if (find_single_header(headers, "Authorization", &value) == HeaderStatus::present) {
+        value = trim_ows(value);
+        constexpr std::string_view kScheme = "Bearer";
+        if (value.size() > kScheme.size() &&
+            ascii_iequals(value.substr(0, kScheme.size()), kScheme)) {
+          value = trim_ows(value.substr(kScheme.size()));
+          if (!value.empty() && value.size() <= 256) {
+            if (auto auth = mcp::authenticate_bearer(scoped_tokens, value)) {
+              authenticated = true;
+              request_capability = auth->capability;
+              audit_identity = auth->hash_prefix + "/" + auth->name;
+            }
+          }
+        }
+      }
+    }
+    if (!authenticated) {
       status = 401;
       response_body = R"({"error":"unauthorized"})";
+      std::cerr << "[qbrain-http] audit method=" << (route == HttpRoute::JsonRpc ? "POST" : "GET")
+                << " result=401 identity=" << audit_identity << "\n";
     } else {
       switch (route) {
         case HttpRoute::Ingest: {
@@ -351,7 +387,10 @@ int run_http_server(Brain& brain, const ServeOptions& opts, const std::string& t
           // alone never authorizes remote mutation).
           ServeOptions http_opts = opts;
           http_opts.http_transport = true;
-          response_body = handle_rpc_body(brain, http_opts, body);
+          response_body = handle_rpc_body(brain, http_opts, body,
+                                          request_capability.empty()
+                                              ? nullptr
+                                              : &request_capability);
           if (response_body.empty()) response_body = R"({"jsonrpc":"2.0","result":{}})";
           break;
         }
@@ -378,6 +417,8 @@ int run_http_server(Brain& brain, const ServeOptions& opts, const std::string& t
       }
     }
     const std::string ctype = (route == HttpRoute::Admin) ? "text/html; charset=utf-8" : "application/json";
+    if (authenticated)
+      std::cerr << "[qbrain-http] audit result=" << status << " identity=" << audit_identity << "\n";
     send_http_response(status, ctype, response_body);
     closesocket(client);
   }
