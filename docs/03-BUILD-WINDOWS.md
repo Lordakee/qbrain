@@ -155,3 +155,12 @@ GRANT ALL ON DATABASE qbrain_n38_test TO qbrain_test;
      `lpt1`-`lpt9`，折叠后比较）同样拒绝。
 4. 行为由 `tests/test_n37.cpp`（注册项 `n37_packaging`）断言：版本常量、
    隔离 `LOCALAPPDATA` 覆盖下的路径结构、以及上述敌意 id 的拒绝行为。
+
+## Rerank model (N39)
+
+Optional independent `"rerank"` section in config.json (`model`, `base_url`,
+`api_key`). Empty fields fall back to the matching `chat` value, so omitting
+the section entirely keeps the pre-N39 behavior (rerank uses the chat model).
+`rerank.api_key` is DB/env only and is never mirrored to the file plane
+(same rule as `embedding.api_key`/`chat.api_key`). Typical use: a cheaper or
+faster model for `search --rerank` while `think` uses the main chat model.

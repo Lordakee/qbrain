@@ -236,6 +236,12 @@ Config load_file_config() {
       if (ch.contains("base_url")) c.chat_base_url = ch["base_url"];
       if (ch.contains("api_key")) c.chat_api_key = ch["api_key"];
     }
+    if (j.contains("rerank")) {  // N39: optional; empty fields fall back to chat
+      auto& rr = j["rerank"];
+      if (rr.contains("model")) c.rerank_model = rr["model"];
+      if (rr.contains("base_url")) c.rerank_base_url = rr["base_url"];
+      if (rr.contains("api_key")) c.rerank_api_key = rr["api_key"];
+    }
     if (j.contains("search")) {
       auto& s = j["search"];
       if (s.contains("rrf_k")) c.search_rrf_k = s["rrf_k"];
@@ -260,6 +266,20 @@ void save_file_config(const Config& c) {
   j["search"] = {{"rrf_k", c.search_rrf_k}, {"default_limit", c.search_default_limit}};
   std::ofstream out(util::config_path());
   out << j.dump(2);
+}
+
+Config rerank_config(const Config& c) {
+  // N39 (plan Option A): map rerank fields into the chat slots of a copy so
+  // chat_complete consumes them unchanged; empty rerank fields keep the chat
+  // values (current behavior when no rerank section is configured).
+  Config copy = c;
+  if (!c.rerank_model.empty()) copy.chat_model = c.rerank_model;
+  if (!c.rerank_base_url.empty()) copy.chat_base_url = c.rerank_base_url;
+  if (!c.rerank_api_key.empty()) copy.chat_api_key = c.rerank_api_key;
+  copy.rerank_model = c.rerank_model;
+  copy.rerank_base_url = c.rerank_base_url;
+  copy.rerank_api_key = c.rerank_api_key;
+  return copy;
 }
 
 std::string resolve_api_key(const Config& c, bool for_chat) {
@@ -291,6 +311,9 @@ void Brain::load_config() {
       else if (k == "chat.model") config_.chat_model = v;
       else if (k == "chat.base_url") config_.chat_base_url = v;
       else if (k == "chat.api_key") config_.chat_api_key = v;
+      else if (k == "rerank.model") config_.rerank_model = v;  // N39
+      else if (k == "rerank.base_url") config_.rerank_base_url = v;
+      else if (k == "rerank.api_key") config_.rerank_api_key = v;
       else if (k == "search.rrf_k") config_.search_rrf_k = std::stoi(v);
       else if (k == "search.default_limit") config_.search_default_limit = std::stoi(v);
     }
@@ -305,7 +328,8 @@ void Brain::save_config_value(const std::string& key, const std::string& value) 
   st.step_done();
   load_config();
   // API keys stay DB/env only; still mirror non-secret keys to file plane.
-  if (key != "embedding.api_key" && key != "chat.api_key") {
+  if (key != "embedding.api_key" && key != "chat.api_key" &&  // N39
+      key != "rerank.api_key") {
     save_file_config(config_);
   }
 }

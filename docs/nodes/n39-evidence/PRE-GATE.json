@@ -1,0 +1,17 @@
+{
+  "node": "N39",
+  "captured_at": "2026-08-16T15:18:36.988Z",
+  "baseline": "7ed151c (N38 pushed; N39 deliverables absent)",
+  "plan_sha256": "b35b916ea8f84359d755efe5cd7ae31d51112eb662b10c819cce82314b4ee00f",
+  "plan_audit_sha256": "5a3df5adb82c144352715fcf7076f243e89480211e8c81db5a7b7a2b46b9befc",
+  "scoped_files": {
+    "include/qbrain/core/types.hpp": "35472c36ff62bec42b282b987d2c39b4315f09ac29ff78883be7076898dbd6f3",
+    "src/qbrain/core/brain.cpp": "6025a9721a3b842679b496f3171fe9b83209253c29dac0c07d2ec3b7c69c0d8b",
+    "include/qbrain/core/brain.hpp": "b957fcc7ce5732fffd659892cb482008c1b53f359997697a470e7f5329b0bd02",
+    "src/qbrain/search/rerank.cpp": "67d87412d90d14c79e1f44b19262917105d7433c66264e170f910c97a8dbb505",
+    "include/qbrain/search/rerank.hpp": "7486917838473af720043e9cb6b71752ac950e3693de26f6aeae69b0ceb33148"
+  },
+  "deliverables_absence_proof": {
+    "tests/test_n39.cpp": "expected-absent"
+  }
+}

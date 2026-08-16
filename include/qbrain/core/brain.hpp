@@ -260,4 +260,10 @@ Config load_file_config();
 void save_file_config(const Config& c);
 std::string resolve_api_key(const Config& c, bool for_chat);
 
+// N39: effective rerank configuration. Returns a copy whose chat_* slots hold
+// the rerank values when set, else the chat values (pure fallback, no env
+// lookups — configured chat key beats env in the rerank path, matching the
+// per-section convention).
+Config rerank_config(const Config& c);
+
 }  // namespace qbrain

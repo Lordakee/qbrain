@@ -13,6 +13,10 @@ struct RerankerOpts {
   bool use_llm = false;
   // Rerank requests may use a shorter deadline but are always capped at 3000 ms.
   int timeout_ms = 3000;
+  // N39 test seam: when non-null, apply_reranker copies the effective
+  // (rerank-config-merged) Config into it before the LLM call. Production
+  // must leave null.
+  Config* cfg_capture_for_test = nullptr;
   // Test seam: when set, replaces LLM call. Production must leave null.
   // May throw or return empty/partial — apply_reranker must fail-open.
   std::function<std::vector<SearchHit>(const std::string& query,

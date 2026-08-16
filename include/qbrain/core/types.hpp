@@ -92,6 +92,10 @@ struct Config {
   std::string chat_model = "gpt-4o-mini";
   std::string chat_base_url = "https://api.openai.com/v1";
   std::string chat_api_key;
+  // N39: independent rerank model config; empty fields fall back to chat.
+  std::string rerank_model;
+  std::string rerank_base_url;
+  std::string rerank_api_key;
   int search_rrf_k = 60;
   int search_default_limit = 10;
 };

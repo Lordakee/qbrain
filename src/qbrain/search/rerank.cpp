@@ -349,6 +349,11 @@ std::vector<SearchHit> apply_reranker(const Config& cfg, const std::string& quer
                                       const RerankerOpts& opts) {
   if (!opts.enabled || results.empty() || opts.top_n_in <= 0) return results;
 
+  // N39: the rerank LLM call uses the independent rerank configuration
+  // (falling back to chat per rerank_config); capture it for tests.
+  const Config effective = rerank_config(cfg);
+  if (opts.cfg_capture_for_test) *opts.cfg_capture_for_test = effective;
+
   const auto original = results;
   try {
     const size_t rerank_count =
@@ -368,7 +373,7 @@ std::vector<SearchHit> apply_reranker(const Config& cfg, const std::string& quer
           const int timeout_ms = opts.timeout_ms > 0
                                      ? std::min(opts.timeout_ms, kMaxRerankTimeoutMs)
                                      : kMaxRerankTimeoutMs;
-          attempt = request_llm_reorder(cfg, query, head, timeout_ms);
+          attempt = request_llm_reorder(effective, query, head, timeout_ms);
         }
       } catch (...) {
         attempt = {false, {}, FailureReason::local_exception};
