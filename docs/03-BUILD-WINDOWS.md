@@ -183,3 +183,21 @@ Example:
   "reasoning_effort": "max"
 }
 ```
+
+## Native rerank API (rerank.api_type = "native")
+
+Set `rerank.api_type` to `"native"` to use a dedicated rerank API endpoint
+(e.g., Zhipu bigmodel `/rerank`) instead of LLM-based rerank. The request
+format is `{model, query, documents: [{title, text}...]}` and the response
+`{results: [{index, relevance_score}...]}` reorders by score descending.
+
+```json
+"rerank": {
+  "model": "rerank",
+  "base_url": "https://open.bigmodel.cn/api/paas/v4",
+  "api_key": "...",
+  "api_type": "native"
+}
+```
+
+Omit `api_type` (or set `"llm"`) to keep the N39 chat-based rerank behavior.

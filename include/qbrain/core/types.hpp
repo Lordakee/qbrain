@@ -98,6 +98,8 @@ struct Config {
   std::string rerank_model;
   std::string rerank_base_url;
   std::string rerank_api_key;
+  // N40: "llm" (default, chat-based rerank) or "native" (dedicated /rerank API).
+  std::string rerank_api_type;
   int search_rrf_k = 60;
   int search_default_limit = 10;
 };

@@ -243,6 +243,7 @@ Config load_file_config() {
       if (rr.contains("model")) c.rerank_model = rr["model"];
       if (rr.contains("base_url")) c.rerank_base_url = rr["base_url"];
       if (rr.contains("api_key")) c.rerank_api_key = rr["api_key"];
+      if (rr.contains("api_type")) c.rerank_api_type = rr["api_type"];
     }
     if (j.contains("search")) {
       auto& s = j["search"];
@@ -281,6 +282,7 @@ Config rerank_config(const Config& c) {
   copy.rerank_model = c.rerank_model;
   copy.rerank_base_url = c.rerank_base_url;
   copy.rerank_api_key = c.rerank_api_key;
+  copy.rerank_api_type = c.rerank_api_type;
   return copy;
 }
 
@@ -318,6 +320,7 @@ void Brain::load_config() {
       else if (k == "rerank.model") config_.rerank_model = v;  // N39
       else if (k == "rerank.base_url") config_.rerank_base_url = v;
       else if (k == "rerank.api_key") config_.rerank_api_key = v;
+      else if (k == "rerank.api_type") config_.rerank_api_type = v;  // N40
       else if (k == "search.rrf_k") config_.search_rrf_k = std::stoi(v);
       else if (k == "search.default_limit") config_.search_default_limit = std::stoi(v);
     }

@@ -1,5 +1,6 @@
 #include "qbrain/search/rerank.hpp"
 #include "qbrain/ai/chat.hpp"
+#include "qbrain/ai/http_client.hpp"
 #include "qbrain/core/brain.hpp"
 #include "qbrain/util/hash.hpp"
 #include "qbrain/util/string_util.hpp"
@@ -8,6 +9,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
+#include <nlohmann/json.hpp>
 #include <ctime>
 #include <filesystem>
 #include <fstream>
@@ -303,6 +305,60 @@ LlmAttempt reorder_from_content(const std::string& content,
   return {true, std::move(reordered), FailureReason::transport_error};
 }
 
+// N40: native rerank API call (e.g., bigmodel /rerank, Cohere /rerank).
+// Sends {model, query, documents: [{title, text}...]} and receives
+// {results: [{index, relevance_score}...]} sorted by score descending.
+LlmAttempt request_native_rerank(const Config& cfg, const std::string& query,
+                                 const std::vector<SearchHit>& baseline, int timeout_ms) {
+  auto key = resolve_api_key(cfg, true);
+  if (key.empty()) return {false, {}, FailureReason::transport_error};
+
+  nlohmann::json body;
+  body["model"] = cfg.rerank_model.empty() ? cfg.chat_model : cfg.rerank_model;
+  body["query"] = query;
+  auto docs = nlohmann::json::array();
+  for (const auto& h : baseline) {
+    auto text = h.title + " " + h.snippet;
+    if (text.size() > 480) text.resize(480);
+    docs.push_back({{"title", h.title}, {"text", text}});
+  }
+  body["documents"] = docs;
+
+  auto base = cfg.rerank_base_url.empty() ? cfg.chat_base_url : cfg.rerank_base_url;
+  auto resp = ai::http_post_json(base, "/rerank", key, body.dump(), timeout_ms);
+  if (resp.status < 200 || resp.status >= 300)
+    return {false, {}, FailureReason::transport_error};
+
+  try {
+    auto j = nlohmann::json::parse(resp.body);
+    if (!j.contains("results") || !j["results"].is_array())
+      return {false, {}, FailureReason::malformed_response};
+    // Build score-indexed order; fall back to original on any inconsistency.
+    std::vector<std::pair<double, size_t>> scored;
+    for (const auto& item : j["results"]) {
+      auto idx = item.value("index", -1);
+      auto score = item.value("relevance_score", 0.0);
+      if (idx < 0 || static_cast<size_t>(idx) >= baseline.size())
+        return {false, {}, FailureReason::malformed_response};
+      scored.emplace_back(score, static_cast<size_t>(idx));
+    }
+    if (scored.size() != baseline.size())
+      return {false, {}, FailureReason::malformed_response};
+    std::sort(scored.begin(), scored.end(),
+              [](const auto& a, const auto& b) { return a.first > b.first; });
+    std::vector<SearchHit> out;
+    out.reserve(baseline.size());
+    for (const auto& [score, idx] : scored) {
+      SearchHit h = baseline[idx];
+      h.rerank_score = score;
+      out.push_back(std::move(h));
+    }
+    return {true, std::move(out), FailureReason::empty_response};
+  } catch (...) {
+    return {false, {}, FailureReason::malformed_response};
+  }
+}
+
 LlmAttempt request_llm_reorder(const Config& cfg, const std::string& query,
                                const std::vector<SearchHit>& baseline,
                                int timeout_ms) {
@@ -373,7 +429,10 @@ std::vector<SearchHit> apply_reranker(const Config& cfg, const std::string& quer
           const int timeout_ms = opts.timeout_ms > 0
                                      ? std::min(opts.timeout_ms, kMaxRerankTimeoutMs)
                                      : kMaxRerankTimeoutMs;
-          attempt = request_llm_reorder(effective, query, head, timeout_ms);
+          if (cfg.rerank_api_type == "native")
+            attempt = request_native_rerank(effective, query, head, timeout_ms);
+          else
+            attempt = request_llm_reorder(effective, query, head, timeout_ms);
         }
       } catch (...) {
         attempt = {false, {}, FailureReason::local_exception};
