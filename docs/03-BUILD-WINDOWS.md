@@ -164,3 +164,22 @@ the section entirely keeps the pre-N39 behavior (rerank uses the chat model).
 `rerank.api_key` is DB/env only and is never mirrored to the file plane
 (same rule as `embedding.api_key`/`chat.api_key`). Typical use: a cheaper or
 faster model for `search --rerank` while `think` uses the main chat model.
+
+## Chat Responses API and reasoning effort (user-directed change)
+
+config.json or `qbrain config set` supports two new chat keys:
+- `chat.endpoint`: `"responses"` (default, OpenAI Responses API) or
+  `"chat_completions"` (legacy endpoint)
+- `chat.reasoning_effort`: `"low"`, `"medium"`, `"high"`, or `"max"`
+  (sent as `reasoning.effort` on the Responses endpoint; empty = omit)
+
+Example:
+```json
+"chat": {
+  "model": "gpt-5.6-luna",
+  "base_url": "http://your-relay:8080/v1",
+  "api_key": "sk-...",
+  "endpoint": "responses",
+  "reasoning_effort": "max"
+}
+```

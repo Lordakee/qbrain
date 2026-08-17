@@ -235,6 +235,8 @@ Config load_file_config() {
       if (ch.contains("model")) c.chat_model = ch["model"];
       if (ch.contains("base_url")) c.chat_base_url = ch["base_url"];
       if (ch.contains("api_key")) c.chat_api_key = ch["api_key"];
+      if (ch.contains("reasoning_effort")) c.chat_reasoning_effort = ch["reasoning_effort"];
+      if (ch.contains("endpoint")) c.chat_endpoint = ch["endpoint"];
     }
     if (j.contains("rerank")) {  // N39: optional; empty fields fall back to chat
       auto& rr = j["rerank"];
@@ -311,6 +313,8 @@ void Brain::load_config() {
       else if (k == "chat.model") config_.chat_model = v;
       else if (k == "chat.base_url") config_.chat_base_url = v;
       else if (k == "chat.api_key") config_.chat_api_key = v;
+      else if (k == "chat.reasoning_effort") config_.chat_reasoning_effort = v;
+      else if (k == "chat.endpoint") config_.chat_endpoint = v;
       else if (k == "rerank.model") config_.rerank_model = v;  // N39
       else if (k == "rerank.base_url") config_.rerank_base_url = v;
       else if (k == "rerank.api_key") config_.rerank_api_key = v;
