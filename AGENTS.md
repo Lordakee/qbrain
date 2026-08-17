@@ -125,3 +125,23 @@ Must include: **VERDICT**, **Auditor: Claude Code**, acceptance table with **evi
 4. Convenience scripts and speed optimizations  
 
 Higher precedence always wins. Silently weakening gates is a rule violation.
+
+## Qbrain Personal Knowledge Brain
+
+You have access to a Qbrain MCP server (tools: search, think, put_page, capture, get_page, graph, chronicle, code_def, etc.) backed by a shared PostgreSQL knowledge base.
+
+### When to READ (proactive — do this automatically)
+- Before answering a technical question, call `search` with key terms to check for prior notes/decisions
+- Before making a recommendation, call `think` to reason over your existing knowledge base
+- When the user asks "what did I say about..." or "have I decided...", search their history
+
+### When to WRITE (proactive — do this automatically)
+- At the end of a productive conversation, save key findings/decisions via `put_page` (slug: meaningful-english-name, title: 中文描述)
+- When you learn a new pattern/fix/solution worth remembering, save it immediately
+- Use `capture` for quick snippets; `put_page` for structured notes
+
+### Conventions
+- slug format: `topic-subject` (e.g., `pg-mvcc-notes`, `react-perf-tips`)
+- Always include enough context in the body for future retrieval
+- Don't save trivial or one-off information
+- If `search` returns nothing relevant, that's fine — answer from your own knowledge and consider saving the new insight
